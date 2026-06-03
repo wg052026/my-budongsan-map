@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>내 부동산 지도</title>
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; }
+  #map { width: 100%; height: 100%; }
+  .info { padding: 12px 14px; min-width: 210px; line-height: 1.6; font-size: 14px; }
+  .info .name { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+  .info .stars { font-size: 16px; letter-spacing: 1px; margin-bottom: 6px; }
+  .info .stars .on { color: #f5a623; }
+  .info .stars .off { color: #d9d9d9; }
+  .info .stars .num { color: #888; font-size: 12px; margin-left: 4px; }
+  .info .price { color: #d63333; font-weight: 700; }
+  .info .good { color: #1a73e8; margin-top: 6px; display: block; }
+  #legend { position: absolute; top: 10px; left: 10px; z-index: 2;
+    background: #fff; padding: 10px 12px; border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3); font-size: 13px; line-height: 1.8; }
+  #legend b { display: block; margin-bottom: 4px; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+</style>
+</head>
+<body>
+
+<div id="legend">
+  <b>범례</b>
+  <span class="dot" style="background:#d63333"></span> 아파트 단지<br>
+  <span class="dot" style="background:#1a73e8"></span> 호재 (역·개발 등)
+</div>
+
+<div id="map"></div>
+
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=4bf901407b6a5ba5987c36e02683827e"></script>
+
+<script>
+// ============================================================
+//  ★ 여기만 고치면 됩니다 ★
+//  단지를 추가하려면 { } 한 칸을 복사해서 쉼표(,)로 이어 붙이세요.
+//  type:  "apt"=아파트(빨강) / "good"=호재(파랑)
+//  score: 내 점수 0~5 (별 개수). 호재는 0 또는 생략하면 별 안 뜸.
+// ============================================================
+var places = [
+  {
+    type: "apt",
+    name: "○○아파트",
+    score: 4,
+    lat: 37.4979, lng: 127.0276,
+    price: "전용 84㎡ · 12.5억 (25.03 거래)",
+    note: "재건축 안전진단 통과 / GTX-A 도보 7분"
+  },
+  {
+    type: "apt",
+    name: "△△재개발구역",
+    score: 5,
+    lat: 37.5050, lng: 127.0400,
+    price: "입주권 9.8억 (25.02 거래)",
+    note: "관리처분인가 예정 (26년 상반기)"
+  },
+  {
+    type: "apt",
+    name: "□□아파트",
+    score: 2,
+    lat: 37.4920, lng: 127.0210,
+    price: "전용 59㎡ · 8.2억 (25.01 거래)",
+    note: "구축, 학군 보통"
+  },
+  {
+    type: "good",
+    name: "GTX-A 신설역 (예정)",
+    score: 0,
+    lat: 37.5010, lng: 127.0330,
+    price: "",
+    note: "2028년 개통 예정"
+  }
+];
+// ============================================================
+//  ↓↓↓ 아래는 건드리지 않아도 됩니다 ↓↓↓
+// ============================================================
+
+function makeStars(score) {
+  if (!score || score < 1) return "";
+  var s = Math.max(0, Math.min(5, Math.round(score)));
+  var html = '<div class="stars">';
+  for (var i = 1; i <= 5; i++) {
+    html += '<span class="' + (i <= s ? 'on' : 'off') + '">★</span>';
+  }
+  html += '<span class="num">(' + s + '/5)</span></div>';
+  return html;
+}
+
+var map = new kakao.maps.Map(document.getElementById('map'), {
+  center: new kakao.maps.LatLng(places[0].lat, places[0].lng),
+  level: 5
+});
+
+places.forEach(function(p) {
+  var pos = new kakao.maps.LatLng(p.lat, p.lng);
+
+  var marker = new kakao.maps.Marker({
+    position: pos,
+    map: map,
+    title: p.name
+  });
+
+  var html = '<div class="info">'
+    + '<div class="name">' + p.name + '</div>'
+    + makeStars(p.score)
+    + (p.price ? '<div class="price">' + p.price + '</div>' : '')
+    + (p.note ? '<span class="good">★ ' + p.note + '</span>' : '')
+    + '</div>';
+
+  var infowindow = new kakao.maps.InfoWindow({ content: html });
+
+  kakao.maps.event.addListener(marker, 'click', function() {
+    infowindow.open(map, marker);
+  });
+});
+</script>
+</body>
+</html>
