@@ -32,7 +32,7 @@
 
 <div id="map"></div>
 
-<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=4bf901407b6a5ba5987c36e02683827e"></script>
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=4bf901407b6a5ba5987c36e02683827e&autoload=false"></script>
 
 <script>
 // ============================================================
@@ -90,31 +90,33 @@ function makeStars(score) {
   return html;
 }
 
-var map = new kakao.maps.Map(document.getElementById('map'), {
-  center: new kakao.maps.LatLng(places[0].lat, places[0].lng),
-  level: 5
-});
-
-places.forEach(function(p) {
-  var pos = new kakao.maps.LatLng(p.lat, p.lng);
-
-  var marker = new kakao.maps.Marker({
-    position: pos,
-    map: map,
-    title: p.name
+kakao.maps.load(function() {
+  var map = new kakao.maps.Map(document.getElementById('map'), {
+    center: new kakao.maps.LatLng(places[0].lat, places[0].lng),
+    level: 5
   });
 
-  var html = '<div class="info">'
-    + '<div class="name">' + p.name + '</div>'
-    + makeStars(p.score)
-    + (p.price ? '<div class="price">' + p.price + '</div>' : '')
-    + (p.note ? '<span class="good">★ ' + p.note + '</span>' : '')
-    + '</div>';
+  places.forEach(function(p) {
+    var pos = new kakao.maps.LatLng(p.lat, p.lng);
 
-  var infowindow = new kakao.maps.InfoWindow({ content: html });
+    var marker = new kakao.maps.Marker({
+      position: pos,
+      map: map,
+      title: p.name
+    });
 
-  kakao.maps.event.addListener(marker, 'click', function() {
-    infowindow.open(map, marker);
+    var html = '<div class="info">'
+      + '<div class="name">' + p.name + '</div>'
+      + makeStars(p.score)
+      + (p.price ? '<div class="price">' + p.price + '</div>' : '')
+      + (p.note ? '<span class="good">★ ' + p.note + '</span>' : '')
+      + '</div>';
+
+    var infowindow = new kakao.maps.InfoWindow({ content: html });
+
+    kakao.maps.event.addListener(marker, 'click', function() {
+      infowindow.open(map, marker);
+    });
   });
 });
 </script>
