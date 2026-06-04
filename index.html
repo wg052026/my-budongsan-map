@@ -19,7 +19,7 @@
     #map { width:100%; height:100vh; }
 
     /* ===== 마커 (2칸 고정폭) ===== */
-    .mk-wrap { transform:translate(-50%,-100%); text-align:center; cursor:pointer; }
+    .mk-wrap { text-align:center; cursor:pointer; }
     .mk-box { width:116px; border:1.5px solid rgba(255,255,255,0.4); border-radius:9px;
       overflow:hidden; box-shadow:0 1px 6px rgba(0,0,0,0.55); }
     .mk-name { color:#fff; font-size:12px; font-weight:700; padding:3px 8px 2px;
@@ -365,9 +365,9 @@
     }
     function drawMarker(p){
       var color=scoreColor(p), pos=new kakao.maps.LatLng(p.lat,p.lng);
-      var marker=new kakao.maps.CustomOverlay({position:pos,content:markerHtml(p,color),yAnchor:1,clickable:true});
+      var marker=new kakao.maps.CustomOverlay({position:pos,content:markerHtml(p,color),xAnchor:0.5,yAnchor:1,clickable:true});
       marker.setMap(map);
-      var iw=new kakao.maps.CustomOverlay({position:pos,content:iwHtml(p,color),yAnchor:1.18,clickable:true});
+      var iw=new kakao.maps.CustomOverlay({position:pos,content:iwHtml(p,color),xAnchor:0.5,yAnchor:1.18,clickable:true});
       marker.__onClick=function(){ window.__closeIW(); iw.setMap(map); openIW=iw; map.panTo(pos); };
       p.__marker=marker; p.__iw=iw;
       markerObjs.push(marker);
@@ -539,12 +539,12 @@
 
     function placePin(latlng){
       if (tempPin) tempPin.setMap(null);
-      var html='<div style="transform:translate(-50%,-100%);text-align:center;">' +
+      var html='<div style="text-align:center;">' +
         '<div style="background:#888780;color:#fff;font-size:12px;font-weight:700;padding:4px 9px;' +
         'border-radius:14px;border:1.5px dashed rgba(255,255,255,0.7);">새 위치</div>' +
         '<div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;' +
         'border-top:7px solid #888780;margin:0 auto;"></div></div>';
-      tempPin=new kakao.maps.CustomOverlay({position:latlng,content:html,yAnchor:1}); tempPin.setMap(map);
+      tempPin=new kakao.maps.CustomOverlay({position:latlng,content:html,xAnchor:0.5,yAnchor:1}); tempPin.setMap(map);
     }
     function fillRegionCode(latlng){
       geocoder.coord2RegionCode(latlng.getLng(), latlng.getLat(), function(result,status){
