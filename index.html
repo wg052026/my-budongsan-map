@@ -387,10 +387,30 @@
     var autoCache={};   // __id -> 자동 실거래가값 (재렌더에도 유지)
 
     window.__closeIW = function(){ if(openIW){ openIW.setMap(null); openIW=null; } };
+    window.__mkClick = function(id){
+      var p = findById(id);
+      if (p && p.__marker && p.__marker.__onClick){ p.__marker.__onClick(); }
+    };
+    window.__editItem = function(id){ startEdit(id); };
+    window.__deleteItem = function(id){ deleteItem(id); };
+    window.__refreshDeal = function(id){
+      var rp = findById(id);
+      if (!rp) return;
+      var url = DEAL_API + "?lawd=" + encodeURIComponent(rp.code) +
+                "&apt=" + encodeURIComponent(rp.name) + "&months=6";
+      fetch(url).then(function(r){return r.json();}).then(function(j){
+        var v = (j && j.ok && j.latest)
+          ? { amountText:j.latest.amountText, pyeong:j.latest.pyeong, date:j.latest.date, area:j.latest.areaM2 }
+          : null;
+        autoCache[rp.__id]=v; rp.auto=v;
+        refreshMarker(rp);
+        if (rp.__iw){ rp.__iw.setMap(map); openIW=rp.__iw; }
+      }).catch(function(){ autoCache[rp.__id]=null; rp.auto=null; refreshMarker(rp); });
+    };
 
     function markerHtml(p, color){
       var disp = p.disp && p.disp.trim() ? p.disp : p.name;
-      return '<div class="mk-wrap" data-id="'+p.__id+'">' +
+      return '<div class="mk-wrap" data-id="'+p.__id+'" onclick="window.__mkClick(\''+p.__id+'\')">' +
         '<div class="mk-box" style="background:'+color+';">' +
           '<div class="mk-name">'+esc(disp)+'</div>' +
           '<div class="mk-sub">'+subLineHtml(p)+'</div>' +
@@ -402,12 +422,12 @@
       var info = infoLine(p);
       var infoEl = info ? '<div class="iw-info">'+esc(info)+'</div>' : '';
       var refreshBtn = isAutoPrice(p)
-        ? '<button class="iw-refresh" data-id="'+p.__id+'" style="margin-top:8px;width:100%;background:#2c3742;border:0.5px solid rgba(255,255,255,0.2);color:#cfe8db;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;">↻ 실거래가 갱신</button>'
+        ? '<button class="iw-refresh" onclick="window.__refreshDeal(\''+p.__id+'\')" style="margin-top:8px;width:100%;background:#2c3742;border:0.5px solid rgba(255,255,255,0.2);color:#cfe8db;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;">↻ 실거래가 갱신</button>'
         : '';
       var editDel =
         '<div style="display:flex;gap:6px;margin-top:8px;">' +
-          '<button class="iw-edit" data-id="'+p.__id+'" style="flex:1;background:#3a3f49;border:none;color:#e8eaed;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;">✏ 수정</button>' +
-          '<button class="iw-del" data-id="'+p.__id+'" style="flex:1;background:#5a3a3a;border:none;color:#f0d6d6;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;">🗑 삭제</button>' +
+          '<button class="iw-edit" onclick="window.__editItem(\''+p.__id+'\')" style="flex:1;background:#3a3f49;border:none;color:#e8eaed;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;">✏ 수정</button>' +
+          '<button class="iw-del" onclick="window.__deleteItem(\''+p.__id+'\')" style="flex:1;background:#5a3a3a;border:none;color:#f0d6d6;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;">🗑 삭제</button>' +
         '</div>';
       return '<div class="iw"><div class="iw-top">' +
         '<div class="iw-name">'+esc(p.name)+'</div>' +
@@ -605,40 +625,6 @@
     renderFailBtn();
 
 
-    document.getElementById("map").addEventListener("click", function(e){
-      var t = e.target;
-      // 실거래가 갱신
-      var rb = t.closest ? t.closest(".iw-refresh") : null;
-      if (rb){
-        var rp = findById(rb.getAttribute("data-id"));
-        if (rp){
-          rb.textContent = "갱신중…";
-          var url = DEAL_API + "?lawd=" + encodeURIComponent(rp.code) +
-                    "&apt=" + encodeURIComponent(rp.name) + "&months=6";
-          fetch(url).then(function(r){return r.json();}).then(function(j){
-            var v = (j && j.ok && j.latest)
-              ? { amountText:j.latest.amountText, pyeong:j.latest.pyeong, date:j.latest.date, area:j.latest.areaM2 }
-              : null;
-            autoCache[rp.__id]=v; rp.auto=v;
-            refreshMarker(rp);
-            if (rp.__iw){ rp.__iw.setMap(map); openIW=rp.__iw; }
-          }).catch(function(){ autoCache[rp.__id]=null; rp.auto=null; refreshMarker(rp); });
-        }
-        return;
-      }
-      // 수정
-      var eb = t.closest ? t.closest(".iw-edit") : null;
-      if (eb){ startEdit(eb.getAttribute("data-id")); return; }
-      // 삭제
-      var db = t.closest ? t.closest(".iw-del") : null;
-      if (db){ deleteItem(db.getAttribute("data-id")); return; }
-      // 마커 클릭
-      var wrap = t.closest ? t.closest(".mk-wrap") : null;
-      if (!wrap) return;
-      var p = findById(wrap.getAttribute("data-id"));
-      if (p && p.__marker) p.__marker.__onClick();
-    });
-
     // ===== 수정/삭제 =====
     function deleteItem(id){
       var p = findById(id);
@@ -821,63 +807,63 @@
       buildAll();
       var fails = loadFails();
       if (!all.length && !fails.length){ alert("내보낼 항목이 없습니다."); return; }
-      var rows = all.map(function(p, i){
-        return {
-          "번호": i+1,
-          "상태": "정상",
-          "종류": p.kind||"apt",
-          "이름": p.name||"",
-          "표시명": p.disp||"",
-          "점수": (p.score===0||p.score)?p.score:"",
-          "평": p.py||"",
-          "실거래가": p.price||"",
-          "대지지분": (p.land&&parseFloat(p.land)>0)?parseFloat(p.land):"",
-          "종(용도)": p.jong||"",
-          "단계": p.stage||"",
-          "호재내용": p.sub||"",
-          "메모": p.note||"",
-          "그룹": p.group||"",
-          "위도": p.lat!=null?Number(p.lat).toFixed(6):"",
-          "경도": p.lng!=null?Number(p.lng).toFixed(6):"",
-          "법정동코드": p.code||""
-        };
+
+      // 정상 + 실패를 하나로 모으고, seq(원본 카카오 순서)로 정렬
+      var merged = [];
+      all.forEach(function(p){
+        merged.push({ status:"정상", seq:(p.seq!=null?p.seq:999999), p:p });
       });
-      // 변환 실패 항목도 같은 시트에 "실패" 상태로 추가 (좌표 비어있음)
-      var startNo = rows.length;
-      fails.forEach(function(f, i){
-        rows.push({
-          "번호": startNo+i+1,
-          "상태": "실패(좌표없음)",
-          "종류": "apt",
-          "이름": f.name||"",
-          "표시명": "",
-          "점수": "",
-          "평": "",
-          "실거래가": "",
-          "대지지분": (f.land&&parseFloat(f.land)>0)?parseFloat(f.land):"",
-          "종(용도)": f.jong||"",
-          "단계": "",
-          "호재내용": "",
-          "메모": f.note||"",
-          "그룹": f.group||"",
-          "위도": "",
-          "경도": "",
-          "법정동코드": "",
-          "주소": f.addr||""   // 실패분은 주소를 넣어둬야 좌표 다시 찾을 수 있음
-        });
+      fails.forEach(function(f){
+        merged.push({ status:"실패(좌표없음)", seq:(f.seq!=null?f.seq:999999), f:f });
       });
+      // seq 순 정렬 (같으면 정상 먼저)
+      merged.sort(function(a,b){
+        if (a.seq!==b.seq) return a.seq-b.seq;
+        return (a.status==="정상"?0:1)-(b.status==="정상"?0:1);
+      });
+
+      var rows = merged.map(function(m, i){
+        if (m.status==="정상"){
+          var p=m.p;
+          return {
+            "번호": i+1, "상태":"정상", "종류": p.kind||"apt", "이름": p.name||"",
+            "표시명": p.disp||"", "점수": (p.score===0||p.score)?p.score:"",
+            "평": p.py||"", "실거래가": p.price||"",
+            "대지지분": (p.land&&parseFloat(p.land)>0)?parseFloat(p.land):"",
+            "종(용도)": p.jong||"", "단계": p.stage||"", "호재내용": p.sub||"",
+            "메모": p.note||"", "그룹": p.group||"",
+            "위도": p.lat!=null?Number(p.lat).toFixed(6):"",
+            "경도": p.lng!=null?Number(p.lng).toFixed(6):"",
+            "법정동코드": p.code||"", "주소": ""
+          };
+        } else {
+          var f=m.f;
+          return {
+            "번호": i+1, "상태":"실패(좌표없음)", "종류":"apt", "이름": f.name||"",
+            "표시명": "", "점수": (f.score===0||f.score)?f.score:"",
+            "평": "", "실거래가": "",
+            "대지지분": (f.land&&parseFloat(f.land)>0)?parseFloat(f.land):"",
+            "종(용도)": f.jong||"", "단계": "", "호재내용": "",
+            "메모": f.note||"", "그룹": f.group||"",
+            "위도": "", "경도": "", "법정동코드": "",
+            "주소": f.addr||""   // 실패분은 주소를 넣어둬야 좌표 다시 찾을 수 있음
+          };
+        }
+      });
+
       var ws = XLSX.utils.json_to_sheet(rows);
       ws["!cols"] = [{wch:5},{wch:13},{wch:7},{wch:30},{wch:12},{wch:6},{wch:8},{wch:10},{wch:9},{wch:8},{wch:8},{wch:16},{wch:14},{wch:11},{wch:11},{wch:11},{wch:40}];
-      // 실패 행 빨강 강조
-      if (fails.length){
-        var range = XLSX.utils.decode_range(ws["!ref"]);
-        for (var r=startNo+1; r<=range.e.r; r++){
+      // 실패 행 빨강 강조 (엑셀 버전에 따라 색 미적용될 수 있음)
+      var range = XLSX.utils.decode_range(ws["!ref"]);
+      merged.forEach(function(m, idx){
+        if (m.status!=="정상"){
+          var rr = idx+1; // 헤더가 0행
           for (var c=range.s.c; c<=range.e.c; c++){
-            var addr = XLSX.utils.encode_cell({r:r, c:c});
-            if (ws[addr]){ ws[addr].s = { fill:{ fgColor:{ rgb:"FFE0E0" } } }; }
+            var ad = XLSX.utils.encode_cell({r:rr, c:c});
+            if (ws[ad]){ ws[ad].s = { fill:{ fgColor:{ rgb:"FFE0E0" } } }; }
           }
         }
-      }
+      });
       var wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "목록");
       var d = new Date(), pad=function(n){return (n<10?"0":"")+n;};
@@ -903,8 +889,9 @@
           // 컬럼명 유연 매칭
           function pick(r, keys){ for (var i=0;i<keys.length;i++){ if (r[keys[i]]!==undefined && r[keys[i]]!=="") return r[keys[i]]; } return ""; }
 
-          var parsed=[], skipped=0;
+          var parsed=[], skipped=0, seqCounter=0;
           rows.forEach(function(r){
+            seqCounter++;
             var name = String(pick(r,["이름","name","아파트명","단지명"])).trim();
             var addr = String(pick(r,["주소","addr","address","소재지"])).trim();
             var lat = parseFloat(pick(r,["위도","lat","latitude"]));
@@ -913,6 +900,7 @@
             if (!name || (isNaN(lat)&&isNaN(lng)&&!addr)){ skipped++; return; }
             var scoreRaw = pick(r,["점수","score","등급"]);
             var score = (scoreRaw===""||scoreRaw==null)?0:parseInt(scoreRaw,10); if(isNaN(score))score=0;
+            var seqRaw = parseInt(pick(r,["번호","seq","순번"]),10);
             parsed.push({
               kind: String(pick(r,["종류","kind"])||"apt").trim()||"apt",
               name: name,
@@ -927,6 +915,7 @@
               sub: String(pick(r,["호재내용","sub"])||"").trim(),
               note: String(pick(r,["메모","note"])||"").trim(),
               group: String(pick(r,["그룹","레이어","group","layer"])||"").trim(),
+              seq: isNaN(seqRaw)?seqCounter:seqRaw,
               lat: isNaN(lat)?null:lat, lng: isNaN(lng)?null:lng,
               code: String(pick(r,["법정동코드","code"])||"").trim()
             });
@@ -970,7 +959,7 @@
                 if ((p.lat==null||p.lng==null) && p.addr){
                   var geo=await geocodeOne(p.addr);
                   if (geo){ p.lat=geo.lat; p.lng=geo.lng; if(!p.code) p.code=geo.code; okc++; }
-                  else { failList.push({name:p.name, addr:p.addr, group:p.group||"", land:p.land||0, jong:p.jong||"", note:p.note||""}); }
+                  else { failList.push({name:p.name, addr:p.addr, group:p.group||"", land:p.land||0, jong:p.jong||"", note:p.note||"", seq:p.seq, score:p.score||0}); }
                   done++;
                   pBar.style.width = Math.round(done/needGeo*100)+"%";
                   pText.textContent = done+" / "+needGeo+"  (성공 "+okc+" · 실패 "+failList.length+")";
@@ -1010,7 +999,7 @@
       return all.map(function(p){
         return '  { kind:'+q(p.kind)+', name:'+q(p.name)+', disp:'+q(p.disp)+', score:'+(p.score||0)+',\n' +
                '    py:'+q(p.py)+', price:'+q(p.price)+', land:'+(parseFloat(p.land)||0)+', jong:'+q(p.jong||"")+', stage:'+q(p.stage)+', sub:'+q(p.sub)+',\n' +
-               '    note:'+q(p.note)+', group:'+q(p.group||"")+', lat:'+Number(p.lat).toFixed(6)+', lng:'+Number(p.lng).toFixed(6)+', code:'+q(p.code)+' },';
+               '    note:'+q(p.note)+', group:'+q(p.group||"")+', seq:'+(p.seq!=null?p.seq:0)+', lat:'+Number(p.lat).toFixed(6)+', lng:'+Number(p.lng).toFixed(6)+', code:'+q(p.code)+' },';
       }).join("\n");
     }
 
