@@ -544,18 +544,43 @@
     }
     function drawMarker(p){
       var color=scoreColor(p), pos=new kakao.maps.LatLng(p.lat,p.lng);
-      var marker=new kakao.maps.CustomOverlay({position:pos,content:markerHtml(p,color),xAnchor:0.5,yAnchor:1,clickable:true});
+      // content를 실제 DOM 엘리먼트로 만들어 클릭을 직접 바인딩
+      var el=document.createElement("div");
+      el.innerHTML=markerHtml(p,color);
+      var marker=new kakao.maps.CustomOverlay({position:pos,content:el,xAnchor:0.5,yAnchor:1,clickable:true});
       marker.setMap(map);
-      var iw=new kakao.maps.CustomOverlay({position:pos,content:iwHtml(p,color),xAnchor:0.5,yAnchor:1.18,clickable:true});
+
+      var iwEl=document.createElement("div");
+      iwEl.innerHTML=iwHtml(p,color);
+      var iw=new kakao.maps.CustomOverlay({position:pos,content:iwEl,xAnchor:0.5,yAnchor:1.18,clickable:true});
       marker.__onClick=function(){ window.__closeIW(); iw.setMap(map); openIW=iw; map.panTo(pos); };
+
+      // 마커 클릭
+      el.addEventListener("click", function(ev){ ev.stopPropagation(); marker.__onClick(); });
+      // 정보창 내부 버튼 클릭 (위임)
+      bindIwButtons(iwEl, p.__id);
+
+      marker.__el=el; iw.__el=iwEl;
       p.__marker=marker; p.__iw=iw;
       markerObjs.push(marker);
+    }
+    // 정보창 버튼 클릭 바인딩
+    function bindIwButtons(iwEl, id){
+      iwEl.addEventListener("click", function(ev){
+        var t=ev.target;
+        if (t.closest && t.closest(".iw-close")){ ev.stopPropagation(); window.__closeIW(); return; }
+        if (t.closest && t.closest(".iw-edit")){ ev.stopPropagation(); startEdit(id); return; }
+        if (t.closest && t.closest(".iw-del")){ ev.stopPropagation(); deleteItem(id); return; }
+        if (t.closest && t.closest(".iw-refresh")){ ev.stopPropagation(); window.__refreshDeal(id); return; }
+      });
     }
     // 마커 하나만 다시 그림 (자동값 도착 시)
     function refreshMarker(p){
       var color=scoreColor(p);
-      if (p.__marker){ p.__marker.setContent(markerHtml(p, color)); }
-      if (p.__iw){ p.__iw.setContent(iwHtml(p, color)); }
+      if (p.__marker && p.__marker.__el){ p.__marker.__el.innerHTML = markerHtml(p, color); }
+      else if (p.__marker){ p.__marker.setContent(markerHtml(p, color)); }
+      if (p.__iw && p.__iw.__el){ p.__iw.__el.innerHTML = iwHtml(p, color); bindIwButtons(p.__iw.__el, p.__id); }
+      else if (p.__iw){ p.__iw.setContent(iwHtml(p, color)); }
     }
     // 자동 실거래가 조회 — 평·가격 비운 아파트만 (결과는 id 캐시에 보관)
     function autoFetchPrices(){
