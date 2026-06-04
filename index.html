@@ -200,6 +200,9 @@
     { kind:"apt", name:"래미안퍼스티지", disp:"래미안", score:5,
       py:"34평", price:"38억", land:13.5, stage:"", sub:"",
       note:"학군 우수 · GTX-A 도보 7분", lat:37.5045, lng:127.0095, code:"11650" },
+    { kind:"apt", name:"도곡렉슬", disp:"도곡렉슬", score:4,
+      py:"", price:"", land:12.0, stage:"", sub:"",
+      note:"평·가격 비움 → 실거래가 자동 조회 예시", lat:37.4900, lng:127.0470, code:"11680" },
     { kind:"redev", name:"성수전략정비구역", disp:"성수정비", score:4,
       py:"", price:"", land:0, stage:"사시", sub:"",
       note:"신통기획 추진 · 한강변", lat:37.5445, lng:127.0560, code:"11200" },
@@ -210,6 +213,11 @@
       py:"", price:"", land:0, stage:"", sub:"지하철 호재",
       note:"GTX-A 개통 · 광역 접근성", lat:37.4870, lng:127.1010, code:"11680" }
   ];
+  // =======================================================================
+  //  실거래가 자동조회 서버 (STEP 2에서 배포한 웹앱 URL)
+  // =======================================================================
+  var DEAL_API = "https://script.google.com/macros/s/AKfycbxsuOxVn9uhzKcLk2FoKnARjf9GiRkD4bguMKGxh0qDBxVt8m_Htc9W1Ovy-apchqUu1g/exec";
+
   // =======================================================================
   //  ↓↓↓ 아래는 건드리지 않아도 됩니다 ↓↓↓
   // =======================================================================
@@ -238,12 +246,22 @@
   function isAuto(kind){ return kind==="apt" || kind==="school"; }
   function hasStars(p){ return !(p.kind==="spot" || p.kind==="school"); }
 
+  // 아파트가 자동조회 대상인지 (평·실거래가 둘 다 비어있으면 자동)
+  function isAutoPrice(p){
+    return p.kind==="apt" && (!p.py || !p.py.trim()) && (!p.price || !p.price.trim());
+  }
+  // 표시용 평/가격 (자동값 우선 폴백)
+  function shownPy(p){ if (p.py && p.py.trim()) return p.py; if (p.auto && p.auto.pyeong) return p.auto.pyeong+"평"; return ""; }
+  function shownPrice(p){ if (p.price && p.price.trim()) return p.price; if (p.auto && p.auto.amountText) return p.auto.amountText; return ""; }
+
   // 마커 아래줄 HTML
   function subLineHtml(p){
     if (p.kind==="apt"){
       var lc = landColor(parseFloat(p.land)||0);
-      var left = esc(p.py)+(p.py&&p.price?" ":"")+esc(p.price);
-      var landTxt = (p.land!==""&&p.land!=null&&!isNaN(parseFloat(p.land))) ? (" <span style=\"color:"+lc+";\">"+pad2(p.land)+"평</span>") : "";
+      var py = shownPy(p), price = shownPrice(p);
+      var left = esc(py)+(py&&price?" ":"")+esc(price);
+      if (!left && isAutoPrice(p)) left = (p.auto===undefined) ? "조회중…" : "거래없음";
+      var landTxt = (p.land!==""&&p.land!=null&&!isNaN(parseFloat(p.land))&&parseFloat(p.land)>0) ? (" <span style=\"color:"+lc+";\">"+pad2(p.land)+"평</span>") : "";
       return "<span style=\"color:#fff;\">"+left+"</span>"+landTxt;
     } else if (p.kind==="redev"){
       return "<span style=\"color:#fff;\">"+esc(p.stage)+"</span>";
@@ -254,8 +272,10 @@
   // 정보창 정보 줄
   function infoLine(p){
     if (p.kind==="apt"){
-      var t = (p.py||"")+(p.price?(" "+p.price):"");
-      if (p.land!==""&&p.land!=null&&!isNaN(parseFloat(p.land))) t += " · 대지 "+(parseFloat(p.land))+"평";
+      var py = shownPy(p), price = shownPrice(p);
+      var t = py+(price?(" "+price):"");
+      if (p.land!==""&&p.land!=null&&!isNaN(parseFloat(p.land))&&parseFloat(p.land)>0) t += " · 대지 "+(parseFloat(p.land))+"평";
+      if (p.auto && p.auto.date && isAutoPrice(p)) t += "  ("+p.auto.date+" 실거래)";
       return t.trim();
     } else if (p.kind==="redev"){ return p.stage||""; }
     else { return p.sub||""; }
@@ -287,27 +307,82 @@
       var stars = hasStars(p) ? '<div class="iw-stars" style="color:'+color+';">'+starStr(p.score)+'</div>' : '';
       var info = infoLine(p);
       var infoEl = info ? '<div class="iw-info">'+esc(info)+'</div>' : '';
+      var refreshBtn = isAutoPrice(p)
+        ? '<button class="iw-refresh" data-idx="'+p.__idx+'" style="margin-top:8px;width:100%;background:#2c3742;border:0.5px solid rgba(255,255,255,0.2);color:#cfe8db;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;">↻ 실거래가 갱신</button>'
+        : '';
       return '<div class="iw"><div class="iw-top">' +
         '<div class="iw-name">'+esc(p.name)+'</div>' +
         '<button class="iw-close" aria-label="닫기" onclick="window.__closeIW()">✕</button></div>' +
         stars + infoEl +
-        '<div class="iw-note">'+esc(p.note)+'</div></div>';
+        '<div class="iw-note">'+esc(p.note)+'</div>' +
+        refreshBtn + '</div>';
     }
     function renderAll(){
       markerObjs.forEach(function(o){ o.setMap(null); }); markerObjs=[];
       all = places.concat(added);
       all.forEach(function(p, idx){
-        var color=scoreColor(p), pos=new kakao.maps.LatLng(p.lat,p.lng);
-        var marker=new kakao.maps.CustomOverlay({position:pos,content:markerHtml(p,idx,color),yAnchor:1,clickable:true});
-        marker.setMap(map);
-        var iw=new kakao.maps.CustomOverlay({position:pos,content:iwHtml(p,color),yAnchor:1.18,clickable:true});
-        marker.__onClick=function(){ window.__closeIW(); iw.setMap(map); openIW=iw; map.panTo(pos); };
-        p.__marker=marker; markerObjs.push(marker);
+        drawMarker(p, idx);
+      });
+      autoFetchPrices();
+    }
+    function drawMarker(p, idx){
+      var color=scoreColor(p), pos=new kakao.maps.LatLng(p.lat,p.lng);
+      if (p.__marker) p.__marker.setMap(null);
+      var marker=new kakao.maps.CustomOverlay({position:pos,content:markerHtml(p,idx,color),yAnchor:1,clickable:true});
+      marker.setMap(map);
+      var iw=new kakao.maps.CustomOverlay({position:pos,content:iwHtml(p,color),yAnchor:1.18,clickable:true});
+      marker.__onClick=function(){ window.__closeIW(); iw.setMap(map); openIW=iw; map.panTo(pos); };
+      p.__marker=marker; p.__iw=iw; p.__idx=idx;
+      markerObjs.push(marker);
+    }
+    // 마커 하나만 다시 그림 (자동값 도착 시)
+    function refreshMarker(p){
+      var color=scoreColor(p);
+      if (p.__marker){ p.__marker.setContent(markerHtml(p, p.__idx, color)); }
+      if (p.__iw){ p.__iw.setContent(iwHtml(p, color)); }
+    }
+    // 자동 실거래가 조회 — 평·가격 비운 아파트만
+    function autoFetchPrices(){
+      if (!DEAL_API || DEAL_API.indexOf("script.google")<0) return;
+      all.forEach(function(p){
+        if (!isAutoPrice(p)) return;
+        if (!p.code) return;            // 법정동코드 없으면 스킵
+        if (p.auto !== undefined) { refreshMarker(p); return; }  // 이미 조회됨
+        var url = DEAL_API + "?lawd=" + encodeURIComponent(p.code) +
+                  "&apt=" + encodeURIComponent(p.name) + "&months=3";
+        fetch(url).then(function(r){ return r.json(); }).then(function(j){
+          if (j && j.ok && j.latest){
+            p.auto = { amountText:j.latest.amountText, pyeong:j.latest.pyeong, date:j.latest.date, area:j.latest.areaM2 };
+          } else {
+            p.auto = null;  // 거래 없음
+          }
+          refreshMarker(p);
+        }).catch(function(){ p.auto = null; refreshMarker(p); });
       });
     }
     renderAll();
 
     document.getElementById("map").addEventListener("click", function(e){
+      // 실거래가 갱신 버튼
+      var rb = e.target.closest ? e.target.closest(".iw-refresh") : null;
+      if (rb){
+        var ri = parseInt(rb.getAttribute("data-idx"),10);
+        var rp = all[ri];
+        if (rp){
+          rb.textContent = "갱신중…";
+          var url = DEAL_API + "?lawd=" + encodeURIComponent(rp.code) +
+                    "&apt=" + encodeURIComponent(rp.name) + "&months=6";
+          fetch(url).then(function(r){return r.json();}).then(function(j){
+            rp.auto = (j && j.ok && j.latest)
+              ? { amountText:j.latest.amountText, pyeong:j.latest.pyeong, date:j.latest.date, area:j.latest.areaM2 }
+              : null;
+            refreshMarker(rp);
+            if (rp.__iw){ rp.__iw.setMap(map); openIW=rp.__iw; }
+          }).catch(function(){ rp.auto=null; refreshMarker(rp); });
+        }
+        return;
+      }
+      // 마커 클릭
       var wrap = e.target.closest ? e.target.closest(".mk-wrap") : null;
       if (!wrap) return;
       var i=parseInt(wrap.getAttribute("data-idx"),10);
