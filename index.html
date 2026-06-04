@@ -186,6 +186,9 @@
 
   <div id="topright">
     <button id="bulkBtn">📋 주소 목록 일괄 추가</button>
+    <button id="xlsxOutBtn">⬇ 엑셀로 빼기</button>
+    <button id="xlsxInBtn">⬆ 엑셀로 넣기</button>
+    <input type="file" id="xlsxFile" accept=".xlsx,.xls" style="display:none;" />
     <button id="exportBtn">⟱ 코드 내보내기</button>
     <button id="clearBtn">🗑 내 추가분 비우기</button>
   </div>
@@ -218,6 +221,7 @@
 
   <script type="text/javascript"
     src="//dapi.kakao.com/v2/maps/sdk.js?appkey=e8e7bcbd62321728c0f6c0d5e0a0b087&autoload=false&libraries=services"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <script>
   // =======================================================================
@@ -636,6 +640,99 @@
       }
       resetPanel();
       renderAll();
+    });
+
+    // ===== 엑셀로 빼기 (전체 항목 → .xlsx) =====
+    document.getElementById("xlsxOutBtn").addEventListener("click", function(){
+      buildAll();
+      if (!all.length){ alert("내보낼 항목이 없습니다."); return; }
+      var rows = all.map(function(p, i){
+        return {
+          "번호": i+1,
+          "종류": p.kind||"apt",
+          "이름": p.name||"",
+          "표시명": p.disp||"",
+          "점수": (p.score===0||p.score)?p.score:"",
+          "평": p.py||"",
+          "실거래가": p.price||"",
+          "대지지분": (p.land&&parseFloat(p.land)>0)?parseFloat(p.land):"",
+          "종(용도)": p.jong||"",
+          "단계": p.stage||"",
+          "호재내용": p.sub||"",
+          "메모": p.note||"",
+          "위도": p.lat!=null?Number(p.lat).toFixed(6):"",
+          "경도": p.lng!=null?Number(p.lng).toFixed(6):"",
+          "법정동코드": p.code||""
+        };
+      });
+      var ws = XLSX.utils.json_to_sheet(rows);
+      ws["!cols"] = [{wch:5},{wch:7},{wch:30},{wch:12},{wch:6},{wch:8},{wch:10},{wch:9},{wch:8},{wch:8},{wch:16},{wch:16},{wch:11},{wch:11},{wch:11}];
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "목록");
+      var d = new Date(), pad=function(n){return (n<10?"0":"")+n;};
+      var fn = "부동산지도_"+d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+".xlsx";
+      XLSX.writeFile(wb, fn);
+    });
+
+    // ===== 엑셀로 넣기 (.xlsx → 추가항목 반영) =====
+    document.getElementById("xlsxInBtn").addEventListener("click", function(){
+      document.getElementById("xlsxFile").click();
+    });
+    document.getElementById("xlsxFile").addEventListener("change", function(e){
+      var file = e.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function(ev){
+        try {
+          var wb = XLSX.read(new Uint8Array(ev.target.result), {type:"array"});
+          var ws = wb.Sheets[wb.SheetNames[0]];
+          var rows = XLSX.utils.sheet_to_json(ws, {defval:""});
+          if (!rows.length){ alert("엑셀에서 읽은 행이 없습니다."); return; }
+
+          // 컬럼명 유연 매칭
+          function pick(r, keys){ for (var i=0;i<keys.length;i++){ if (r[keys[i]]!==undefined && r[keys[i]]!=="") return r[keys[i]]; } return ""; }
+
+          var imported=[], skipped=0;
+          rows.forEach(function(r){
+            var name = String(pick(r,["이름","name","아파트명","단지명"])).trim();
+            var lat = parseFloat(pick(r,["위도","lat","latitude"]));
+            var lng = parseFloat(pick(r,["경도","lng","longitude"]));
+            if (!name || isNaN(lat) || isNaN(lng)){ skipped++; return; }  // 좌표 없으면 못넣음
+            var scoreRaw = pick(r,["점수","score","등급"]);
+            var score = (scoreRaw===""||scoreRaw==null)?0:parseInt(scoreRaw,10); if(isNaN(score))score=0;
+            imported.push({
+              kind: String(pick(r,["종류","kind"])||"apt").trim()||"apt",
+              name: name,
+              disp: String(pick(r,["표시명","disp"])||"").trim(),
+              score: Math.max(0,Math.min(5,score)),
+              py: String(pick(r,["평","py"])||"").trim(),
+              price: String(pick(r,["실거래가","price","가격"])||"").trim(),
+              land: parseFloat(pick(r,["대지지분","land"]))||0,
+              jong: String(pick(r,["종(용도)","종","jong"])||"").trim(),
+              stage: String(pick(r,["단계","stage"])||"").trim(),
+              sub: String(pick(r,["호재내용","sub"])||"").trim(),
+              note: String(pick(r,["메모","note"])||"").trim(),
+              lat: lat, lng: lng,
+              code: String(pick(r,["법정동코드","code"])||"").trim()
+            });
+          });
+
+          if (!imported.length){ alert("넣을 수 있는 행이 없습니다.\n(이름·위도·경도가 있어야 합니다)"); return; }
+          var msg = imported.length+"개를 지도에 넣습니다.";
+          if (skipped) msg += "\n(좌표 없는 "+skipped+"개는 건너뜀)";
+          msg += "\n\n[확인]=기존 추가분에 더하기 / [취소]=기존 추가분 교체";
+          var append = confirm(msg);
+          if (append){ imported.forEach(function(p){ added.push(p); }); }
+          else { added = imported; }
+          saveAdded(added);
+          renderAll();
+          alert("완료! "+imported.length+"개 반영됨.");
+        } catch(err){
+          alert("엑셀 읽기 실패: "+err.message);
+        }
+        document.getElementById("xlsxFile").value="";  // 같은 파일 재선택 가능하게
+      };
+      reader.readAsArrayBuffer(file);
     });
 
     document.getElementById("exportBtn").addEventListener("click", function(){
