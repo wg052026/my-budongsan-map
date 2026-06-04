@@ -100,6 +100,19 @@
     #progText { color:#cfe8db; font-size:13px; margin-top:10px; }
     #progFail { color:#C9982F; font-size:11px; margin-top:8px; line-height:1.5; max-height:80px; overflow-y:auto; }
 
+    #failBox { display:none; position:absolute; inset:0; z-index:45; background:rgba(0,0,0,0.55);
+      align-items:center; justify-content:center; }
+    #failBox .inner { width:min(520px,90%); background:#23272f; border:0.5px solid rgba(255,255,255,0.2);
+      border-radius:12px; padding:16px; }
+    #failBox h3 { margin:0 0 8px; color:#f2f3f5; font-size:14px; }
+    #failBox p { margin:0 0 10px; color:#9aa0ab; font-size:12px; line-height:1.6; }
+    #failList { max-height:300px; overflow-y:auto; background:#1a1d24; border-radius:8px; padding:8px; }
+    #failList .fl-row { padding:6px 4px; border-bottom:0.5px solid rgba(255,255,255,0.07); font-size:12px; color:#e8eaed; }
+    #failList .fl-row:last-child { border-bottom:none; }
+    #failList .fl-addr { color:#9aa0ab; font-size:11px; margin-top:2px; }
+    #failBox .acts { display:flex; gap:8px; margin-top:12px; }
+    #failBox .acts button { flex:1; border:none; border-radius:6px; padding:8px; font-size:12px; font-weight:700; cursor:pointer; }
+
     #groupPanel { position:absolute; left:12px; bottom:12px; z-index:20; background:rgba(35,39,47,0.95);
       border:0.5px solid rgba(255,255,255,0.2); border-radius:10px; padding:10px 12px; max-width:230px;
       max-height:45vh; overflow-y:auto; box-shadow:0 2px 10px rgba(0,0,0,0.4); }
@@ -109,6 +122,8 @@
     .gp-row .gp-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .gp-row .gp-cnt { color:#9aa0ab; font-size:11px; flex-shrink:0; }
     .gp-row .gp-del { background:#5a3a3a; border:none; color:#f0d6d6; border-radius:5px;
+      padding:2px 6px; font-size:11px; cursor:pointer; flex-shrink:0; }
+    .gp-row .gp-ren { background:#3a3f49; border:none; color:#cfe8db; border-radius:5px;
       padding:2px 6px; font-size:11px; cursor:pointer; flex-shrink:0; }
     .gp-row input[type=checkbox] { accent-color:#3F9E7E; }
   </style>
@@ -187,6 +202,10 @@
     <label>메모 (클릭 시 표시)</label>
     <textarea id="f-note" placeholder="호재 / 학군 / 기타 메모"></textarea>
 
+    <label>그룹 (레이어)</label>
+    <input id="f-group" placeholder="예: 용인수원화성평택" list="groupOptions" />
+    <datalist id="groupOptions"></datalist>
+
     <input id="f-code" placeholder="법정동코드 (자동)" readonly style="opacity:0.85;" />
     <button id="addBtn" class="btn btn-add" disabled>추가</button>
   </div>
@@ -198,6 +217,20 @@
     <button id="exportBtn">⟱ 코드 내보내기</button>
     <button id="saveGhBtn">💾 GitHub에 저장</button>
     <button id="clearBtn">🗑 내 추가분 비우기</button>
+    <button id="failBtn" style="display:none; background:#5a3a3a; border-color:rgba(240,214,214,0.3); color:#f0d6d6;">⚠ 실패 0</button>
+  </div>
+
+  <div id="failBox">
+    <div class="inner">
+      <h3>주소 변환 실패 목록</h3>
+      <p>아래 단지는 카카오에서 주소 좌표를 못 찾았습니다(주로 신축·지번 주소). 좌표를 채워 다시 넣거나, 지도에서 핀으로 직접 추가하면 됩니다.</p>
+      <div id="failList"></div>
+      <div class="acts">
+        <button id="failXlsxBtn" style="background:#3F9E7E; color:#fff;">실패분만 엑셀로 빼기</button>
+        <button id="failClearBtn" style="background:#5a3a3a; color:#f0d6d6;">목록 비우기</button>
+        <button id="closeFail" style="background:#3a3f49; color:#e8eaed;">닫기</button>
+      </div>
+    </div>
   </div>
 
   <div id="groupPanel">
@@ -252,6 +285,9 @@
   function saveAdded(a){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(a)); }catch(e){} }
   function loadHidden(){ try{ return JSON.parse(localStorage.getItem(HIDE_KEY)||"[]"); }catch(e){ return []; } }
   function saveHidden(a){ try{ localStorage.setItem(HIDE_KEY, JSON.stringify(a)); }catch(e){} }
+  var FAIL_KEY = "budongsan_fails_v1";   // 마지막 변환 실패 목록
+  function loadFails(){ try{ return JSON.parse(localStorage.getItem(FAIL_KEY)||"[]"); }catch(e){ return []; } }
+  function saveFails(a){ try{ localStorage.setItem(FAIL_KEY, JSON.stringify(a)); }catch(e){} }
   function groupOf(p){ return (p && p.group && String(p.group).trim()) ? String(p.group).trim() : "기타"; }
   // edits: { "fix:3": {필드...}, "fix:5": "__deleted__", ... }
   function loadEdits(){ try{ return JSON.parse(localStorage.getItem(EDIT_KEY)||"{}"); }catch(e){ return {}; } }
@@ -415,6 +451,7 @@
             '<span class="gp-name">'+esc(g)+'</span>' +
             '<span class="gp-cnt">'+counts[g]+'</span>' +
           '</label>' +
+          '<button class="gp-ren" data-g="'+esc(g)+'" title="이름변경/합치기">✎</button>' +
           '<button class="gp-del" data-g="'+esc(g)+'">🗑</button>';
         listEl.appendChild(row);
       });
@@ -450,6 +487,40 @@
           renderAll();
         });
       });
+      // 이름변경 / 합치기 버튼: 새 이름 입력 (기존 그룹명 입력하면 합쳐짐)
+      listEl.querySelectorAll('.gp-ren').forEach(function(btn){
+        btn.addEventListener("click", function(){
+          var g=this.getAttribute("data-g");
+          var nv=prompt('"'+g+'" 그룹의 새 이름을 입력하세요.\n(이미 있는 그룹 이름을 적으면 그 그룹과 합쳐집니다)', g);
+          if (nv===null) return;
+          nv=String(nv).trim();
+          if (!nv || nv===g) return;
+          // 추가항목(add:) 중 이 그룹 → 새 이름
+          added.forEach(function(p){ if (groupOf(p)===g) p.group=nv; });
+          saveAdded(added);
+          // 고정항목(fix:) 중 이 그룹 → edits에 group만 덮어쓰기
+          all.forEach(function(p){
+            if (groupOf(p)===g && p.__id && p.__id.indexOf("fix:")===0){
+              var cur = (edits[p.__id] && edits[p.__id]!=="__deleted__") ? edits[p.__id] : Object.assign({}, p);
+              cur.group=nv; delete cur.__id; delete cur.__marker; delete cur.__iw; delete cur.auto;
+              edits[p.__id]=cur;
+            }
+          });
+          saveEdits(edits);
+          // 숨김상태도 새 이름으로 이전
+          var h=loadHidden(); var oi=h.indexOf(g);
+          if (oi>=0){ h.splice(oi,1); if(h.indexOf(nv)<0) h.push(nv); saveHidden(h); }
+          renderAll();
+        });
+      });
+    }
+    // 수정 패널의 그룹 자동완성(datalist) 갱신
+    function refreshGroupOptions(){
+      var dl=document.getElementById("groupOptions");
+      if (!dl) return;
+      var seen={}, html="";
+      all.forEach(function(p){ var g=groupOf(p); if(g!=="기타" && !seen[g]){ seen[g]=1; html+='<option value="'+esc(g)+'">'; } });
+      dl.innerHTML=html;
     }
     function drawMarker(p){
       var color=scoreColor(p), pos=new kakao.maps.LatLng(p.lat,p.lng);
@@ -485,7 +556,54 @@
     }
     renderAll();
 
-    function findById(id){ for (var i=0;i<all.length;i++){ if (all[i].__id===id) return all[i]; } return null; }
+    // ===== 실패 목록 버튼/모달 =====
+    function renderFailBtn(){
+      var fails=loadFails();
+      var btn=document.getElementById("failBtn");
+      if (!btn) return;
+      if (fails.length){ btn.style.display=""; btn.textContent="⚠ 실패 "+fails.length; }
+      else { btn.style.display="none"; }
+    }
+    function openFailBox(){
+      var fails=loadFails();
+      var listEl=document.getElementById("failList");
+      listEl.innerHTML="";
+      if (!fails.length){ listEl.innerHTML='<div class="fl-row" style="color:#9aa0ab;">실패한 항목이 없습니다.</div>'; }
+      else {
+        fails.forEach(function(f, i){
+          var row=document.createElement("div"); row.className="fl-row";
+          row.innerHTML = '<div>'+(i+1)+'. '+esc(f.name)+(f.group?' <span style="color:#7d8a85;">['+esc(f.group)+']</span>':'')+'</div>' +
+                          '<div class="fl-addr">'+esc(f.addr||"(주소 없음)")+'</div>';
+          listEl.appendChild(row);
+        });
+      }
+      document.getElementById("failBox").style.display="flex";
+    }
+    document.getElementById("failBtn").addEventListener("click", openFailBox);
+    document.getElementById("closeFail").addEventListener("click", function(){
+      document.getElementById("failBox").style.display="none";
+    });
+    document.getElementById("failClearBtn").addEventListener("click", function(){
+      if (!confirm("실패 목록을 비울까요?")) return;
+      saveFails([]); renderFailBtn();
+      document.getElementById("failBox").style.display="none";
+    });
+    document.getElementById("failXlsxBtn").addEventListener("click", function(){
+      var fails=loadFails();
+      if (!fails.length){ alert("실패한 항목이 없습니다."); return; }
+      var rows=fails.map(function(f,i){
+        return { "번호":i+1, "이름":f.name||"", "주소":f.addr||"",
+                 "대지지분":(f.land&&parseFloat(f.land)>0)?parseFloat(f.land):"",
+                 "종":f.jong||"", "점수":"", "메모":f.note||"", "그룹":f.group||"",
+                 "위도":"", "경도":"", "법정동코드":"" };
+      });
+      var ws=XLSX.utils.json_to_sheet(rows);
+      ws["!cols"]=[{wch:5},{wch:30},{wch:42},{wch:9},{wch:7},{wch:6},{wch:18},{wch:14},{wch:11},{wch:11},{wch:11}];
+      var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"실패목록");
+      XLSX.writeFile(wb, "부동산_변환실패목록.xlsx");
+    });
+    renderFailBtn();
+
 
     document.getElementById("map").addEventListener("click", function(e){
       var t = e.target;
@@ -551,6 +669,8 @@
       if (p.kind==="redev") document.getElementById("f-stage").value = p.stage||"조합전";
       document.getElementById("f-spot").value = p.sub||"";
       document.getElementById("f-note").value = p.note||"";
+      document.getElementById("f-group").value = p.group||"";
+      refreshGroupOptions();
       document.getElementById("f-code").value = p.code||"";
       pendingPos = new kakao.maps.LatLng(p.lat, p.lng);
       placePin(pendingPos); map.panTo(pendingPos);
@@ -561,7 +681,7 @@
     function resetPanel(){
       editingId=null;
       if (tempPin){ tempPin.setMap(null); tempPin=null; } pendingPos=null;
-      ["f-name","f-disp","f-py","f-price","f-land","f-spot","f-note","f-code","f-search"].forEach(function(id){ document.getElementById(id).value=""; });
+      ["f-name","f-disp","f-py","f-price","f-land","f-spot","f-note","f-group","f-code","f-search"].forEach(function(id){ document.getElementById(id).value=""; });
       clearCands();
       var h=document.getElementById("pin-hint"); h.textContent="📍 먼저 지도를 클릭해 위치를 찍으세요"; h.classList.remove("on");
       var b=document.getElementById("addBtn"); b.textContent="추가"; b.disabled=true;
@@ -670,9 +790,11 @@
         py: kind==="apt"?document.getElementById("f-py").value.trim():"",
         price: kind==="apt"?document.getElementById("f-price").value.trim():"",
         land: kind==="apt"?(document.getElementById("f-land").value.trim()||0):0,
+        jong: editingId ? ((findById(editingId)||{}).jong||"") : "",
         stage: kind==="redev"?document.getElementById("f-stage").value:"",
         sub: (kind==="spot"||kind==="school")?document.getElementById("f-spot").value.trim():"",
         note:document.getElementById("f-note").value.trim(),
+        group:document.getElementById("f-group").value.trim(),
         lat:pendingPos.getLat(), lng:pendingPos.getLng(),
         code:document.getElementById("f-code").value.trim()
       };
@@ -697,10 +819,12 @@
     // ===== 엑셀로 빼기 (전체 항목 → .xlsx) =====
     document.getElementById("xlsxOutBtn").addEventListener("click", function(){
       buildAll();
-      if (!all.length){ alert("내보낼 항목이 없습니다."); return; }
+      var fails = loadFails();
+      if (!all.length && !fails.length){ alert("내보낼 항목이 없습니다."); return; }
       var rows = all.map(function(p, i){
         return {
           "번호": i+1,
+          "상태": "정상",
           "종류": p.kind||"apt",
           "이름": p.name||"",
           "표시명": p.disp||"",
@@ -718,8 +842,42 @@
           "법정동코드": p.code||""
         };
       });
+      // 변환 실패 항목도 같은 시트에 "실패" 상태로 추가 (좌표 비어있음)
+      var startNo = rows.length;
+      fails.forEach(function(f, i){
+        rows.push({
+          "번호": startNo+i+1,
+          "상태": "실패(좌표없음)",
+          "종류": "apt",
+          "이름": f.name||"",
+          "표시명": "",
+          "점수": "",
+          "평": "",
+          "실거래가": "",
+          "대지지분": (f.land&&parseFloat(f.land)>0)?parseFloat(f.land):"",
+          "종(용도)": f.jong||"",
+          "단계": "",
+          "호재내용": "",
+          "메모": f.note||"",
+          "그룹": f.group||"",
+          "위도": "",
+          "경도": "",
+          "법정동코드": "",
+          "주소": f.addr||""   // 실패분은 주소를 넣어둬야 좌표 다시 찾을 수 있음
+        });
+      });
       var ws = XLSX.utils.json_to_sheet(rows);
-      ws["!cols"] = [{wch:5},{wch:7},{wch:30},{wch:12},{wch:6},{wch:8},{wch:10},{wch:9},{wch:8},{wch:8},{wch:16},{wch:14},{wch:11},{wch:11},{wch:11}];
+      ws["!cols"] = [{wch:5},{wch:13},{wch:7},{wch:30},{wch:12},{wch:6},{wch:8},{wch:10},{wch:9},{wch:8},{wch:8},{wch:16},{wch:14},{wch:11},{wch:11},{wch:11},{wch:40}];
+      // 실패 행 빨강 강조
+      if (fails.length){
+        var range = XLSX.utils.decode_range(ws["!ref"]);
+        for (var r=startNo+1; r<=range.e.r; r++){
+          for (var c=range.s.c; c<=range.e.c; c++){
+            var addr = XLSX.utils.encode_cell({r:r, c:c});
+            if (ws[addr]){ ws[addr].s = { fill:{ fgColor:{ rgb:"FFE0E0" } } }; }
+          }
+        }
+      }
       var wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "목록");
       var d = new Date(), pad=function(n){return (n<10?"0":"")+n;};
@@ -794,7 +952,7 @@
 
           // 좌표 없는 건 주소로 변환
           (async function(){
-            var failNames=[];
+            var failList=[];
             if (needGeo){
               // 진행률 오버레이 표시
               var pBox=document.getElementById("progBox");
@@ -812,12 +970,12 @@
                 if ((p.lat==null||p.lng==null) && p.addr){
                   var geo=await geocodeOne(p.addr);
                   if (geo){ p.lat=geo.lat; p.lng=geo.lng; if(!p.code) p.code=geo.code; okc++; }
-                  else { failNames.push(p.name); }
+                  else { failList.push({name:p.name, addr:p.addr, group:p.group||"", land:p.land||0, jong:p.jong||"", note:p.note||""}); }
                   done++;
                   pBar.style.width = Math.round(done/needGeo*100)+"%";
-                  pText.textContent = done+" / "+needGeo+"  (성공 "+okc+" · 실패 "+failNames.length+")";
-                  if (failNames.length){
-                    pFail.innerHTML = "변환 실패: "+failNames.slice(0,12).join(", ")+(failNames.length>12?" 외 "+(failNames.length-12)+"개":"");
+                  pText.textContent = done+" / "+needGeo+"  (성공 "+okc+" · 실패 "+failList.length+")";
+                  if (failList.length){
+                    pFail.innerHTML = "변환 실패: "+failList.slice(0,12).map(function(f){return f.name;}).join(", ")+(failList.length>12?" 외 "+(failList.length-12)+"개":"");
                   }
                   await new Promise(function(r){ setTimeout(r,120); });
                 }
@@ -826,13 +984,15 @@
             }
             var imported = parsed.filter(function(p){ return p.lat!=null && p.lng!=null; })
                                  .map(function(p){ var o=Object.assign({},p); delete o.addr; return o; });
-            if (!imported.length){ alert("좌표를 확정한 항목이 없습니다."); return; }
+            if (!imported.length && !failList.length){ alert("좌표를 확정한 항목이 없습니다."); return; }
             if (append){ imported.forEach(function(p){ added.push(p); }); }
             else { added = imported; }
             saveAdded(added);
+            saveFails(failList);   // 실패 목록 저장 → 우상단 버튼으로 확인
             renderAll();
+            renderFailBtn();
             var done2 = "완료! "+imported.length+"개 반영됨.";
-            if (failNames.length) done2 += "\n주소 변환 실패 "+failNames.length+"개: "+failNames.slice(0,10).join(", ")+(failNames.length>10?" 외":"");
+            if (failList.length) done2 += "\n변환 실패 "+failList.length+"개는 우상단 '⚠ 실패' 버튼에서 확인하세요.";
             alert(done2);
           })();
         } catch(err){
