@@ -90,20 +90,17 @@
     #exportBox .acts { display:flex; gap:8px; margin-top:10px; }
     #exportBox .acts button { flex:1; border:none; border-radius:6px; padding:8px; font-size:12px; font-weight:700; cursor:pointer; }
 
-    #bulkBox { display:none; position:absolute; inset:0; z-index:40; background:rgba(0,0,0,0.55);
-      align-items:center; justify-content:center; }
-    #bulkBox .inner { width:min(560px,90%); background:#23272f; border:0.5px solid rgba(255,255,255,0.2);
-      border-radius:12px; padding:16px; }
-    #bulkBox h3 { margin:0 0 8px; color:#f2f3f5; font-size:14px; }
-    #bulkBox p { margin:0 0 10px; color:#9aa0ab; font-size:12px; line-height:1.6; }
-    #bulkText { width:100%; box-sizing:border-box; height:200px; background:#1a1d24;
-      border:0.5px solid rgba(255,255,255,0.2); color:#e8eaed; border-radius:8px; padding:10px;
-      font-family:monospace; font-size:12px; }
-    #bulkBox .acts { display:flex; gap:8px; margin-top:10px; }
-    #bulkBox .acts button { flex:1; border:none; border-radius:6px; padding:8px; font-size:12px; font-weight:700; cursor:pointer; }
-    #bulkProgress { margin-top:10px; color:#cfe8db; font-size:12px; line-height:1.6; max-height:120px; overflow-y:auto; }
-    #bulkBar { height:6px; background:#1a1d24; border-radius:4px; overflow:hidden; margin-top:8px; }
-    #bulkBar > div { height:100%; width:0%; background:#3F9E7E; transition:width 0.2s; }
+    #groupPanel { position:absolute; left:12px; bottom:12px; z-index:20; background:rgba(35,39,47,0.95);
+      border:0.5px solid rgba(255,255,255,0.2); border-radius:10px; padding:10px 12px; max-width:230px;
+      max-height:45vh; overflow-y:auto; box-shadow:0 2px 10px rgba(0,0,0,0.4); }
+    #groupPanel .gp-head { color:#cfe8db; font-size:12px; font-weight:700; margin-bottom:8px; }
+    .gp-row { display:flex; align-items:center; gap:6px; padding:3px 0; }
+    .gp-row label { flex:1; display:flex; align-items:center; gap:6px; color:#e8eaed; font-size:12px; cursor:pointer; min-width:0; }
+    .gp-row .gp-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .gp-row .gp-cnt { color:#9aa0ab; font-size:11px; flex-shrink:0; }
+    .gp-row .gp-del { background:#5a3a3a; border:none; color:#f0d6d6; border-radius:5px;
+      padding:2px 6px; font-size:11px; cursor:pointer; flex-shrink:0; }
+    .gp-row input[type=checkbox] { accent-color:#3F9E7E; }
   </style>
 </head>
 <body>
@@ -185,12 +182,17 @@
   </div>
 
   <div id="topright">
-    <button id="bulkBtn">📋 주소 목록 일괄 추가</button>
     <button id="xlsxOutBtn">⬇ 엑셀로 빼기</button>
     <button id="xlsxInBtn">⬆ 엑셀로 넣기</button>
     <input type="file" id="xlsxFile" accept=".xlsx,.xls" style="display:none;" />
     <button id="exportBtn">⟱ 코드 내보내기</button>
+    <button id="saveGhBtn">💾 GitHub에 저장</button>
     <button id="clearBtn">🗑 내 추가분 비우기</button>
+  </div>
+
+  <div id="groupPanel">
+    <div class="gp-head">레이어 (그룹)</div>
+    <div id="gpList"></div>
   </div>
 
   <div id="exportBox">
@@ -205,55 +207,17 @@
     </div>
   </div>
 
-  <div id="bulkBox">
-    <div class="inner">
-      <h3>📋 주소 목록 일괄 추가</h3>
-      <p>카카오맵 즐겨찾기 목록을 그대로 붙여넣으세요 (장소/이름/주소 반복). 이름 끝 숫자는 <b>대지지분</b>으로, 끝의 "아파트"는 자동 제거됩니다. 전부 아파트로 추가되며 평·가격은 비워둬 실거래가가 자동 조회됩니다.</p>
-      <textarea id="bulkText" placeholder="장소&#10;동탄역시범우남퍼스트빌아파트&#10;경기 화성시 동탄대로시범길 276 (청계동)&#10;&#10;더보기&#10;장소&#10;..."></textarea>
-      <div id="bulkBar"><div></div></div>
-      <div id="bulkProgress"></div>
-      <div class="acts">
-        <button id="bulkRun" style="background:#3F9E7E; color:#fff;">변환·추가 시작</button>
-        <button id="closeBulk" style="background:#3a3f49; color:#e8eaed;">닫기</button>
-      </div>
-    </div>
-  </div>
-
   <script type="text/javascript"
     src="//dapi.kakao.com/v2/maps/sdk.js?appkey=e8e7bcbd62321728c0f6c0d5e0a0b087&autoload=false&libraries=services"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="data.js?v=1"></script>
 
   <script>
   // =======================================================================
-  //  ★ 고정 항목 — 여기만 고치면 됩니다 ★
-  // -----------------------------------------------------------------------
-  //  한 칸 형식 (종류별 필요한 값만 채우면 됨):
-  //  { kind:"apt", name:"래미안퍼스티지", disp:"래미안", score:5,
-  //    py:"34평", price:"38억", land:13.5,        // 아파트용
-  //    stage:"",                                   // 재건축용 (조합전/조합/사시/관처/관처후)
-  //    sub:"",                                      // 호재용 아래줄 텍스트
-  //    note:"메모", lat:37.5, lng:127.0, code:"11650" }
-  //   - kind: apt / school / redev / spot
-  //   - disp: 마커에 뜰 짧은 이름 (비우면 name)
-  //   - code: 법정동코드 5자리 (자동화 STEP3용, 핀 찍으면 자동 입력됨)
+  //  고정 항목은 data.js 에서 불러옵니다 (window.PLACES)
+  //  → 지도의 "💾 GitHub에 저장" 버튼이 data.js 를 자동으로 갱신합니다.
   // =======================================================================
-  var places = [
-    { kind:"apt", name:"래미안퍼스티지", disp:"래미안", score:5,
-      py:"34평", price:"38억", land:13.5, stage:"", sub:"",
-      note:"학군 우수 · GTX-A 도보 7분", lat:37.5045, lng:127.0095, code:"11650" },
-    { kind:"apt", name:"도곡렉슬", disp:"도곡렉슬", score:4,
-      py:"", price:"", land:12.0, stage:"", sub:"",
-      note:"평·가격 비움 → 실거래가 자동 조회 예시", lat:37.4900, lng:127.0470, code:"11680" },
-    { kind:"redev", name:"성수전략정비구역", disp:"성수정비", score:4,
-      py:"", price:"", land:0, stage:"사시", sub:"",
-      note:"신통기획 추진 · 한강변", lat:37.5445, lng:127.0560, code:"11200" },
-    { kind:"school", name:"대청중학교", disp:"대청중", score:0,
-      py:"", price:"", land:0, stage:"", sub:"학군",
-      note:"학군 우수 · 배정 가능", lat:37.4960, lng:127.0640, code:"11680" },
-    { kind:"spot", name:"GTX 수서역", disp:"GTX수서", score:0,
-      py:"", price:"", land:0, stage:"", sub:"지하철 호재",
-      note:"GTX-A 개통 · 광역 접근성", lat:37.4870, lng:127.1010, code:"11680" }
-  ];
+  var places = (window.PLACES || []).slice();
   // =======================================================================
   //  실거래가 자동조회 서버 (STEP 2에서 배포한 웹앱 URL)
   // =======================================================================
@@ -264,8 +228,12 @@
   // =======================================================================
   var STORE_KEY = "budongsan_added_v2";
   var EDIT_KEY  = "budongsan_edits_v1";   // 고정항목 편집/삭제 오버라이드
+  var HIDE_KEY  = "budongsan_hidden_groups_v1";  // 숨긴 그룹 이름들
   function loadAdded(){ try{ return JSON.parse(localStorage.getItem(STORE_KEY)||"[]"); }catch(e){ return []; } }
   function saveAdded(a){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(a)); }catch(e){} }
+  function loadHidden(){ try{ return JSON.parse(localStorage.getItem(HIDE_KEY)||"[]"); }catch(e){ return []; } }
+  function saveHidden(a){ try{ localStorage.setItem(HIDE_KEY, JSON.stringify(a)); }catch(e){} }
+  function groupOf(p){ return (p && p.group && String(p.group).trim()) ? String(p.group).trim() : "기타"; }
   // edits: { "fix:3": {필드...}, "fix:5": "__deleted__", ... }
   function loadEdits(){ try{ return JSON.parse(localStorage.getItem(EDIT_KEY)||"{}"); }catch(e){ return {}; } }
   function saveEdits(o){ try{ localStorage.setItem(EDIT_KEY, JSON.stringify(o)); }catch(e){} }
@@ -396,8 +364,73 @@
     function renderAll(){
       markerObjs.forEach(function(o){ o.setMap(null); }); markerObjs=[];
       buildAll();
-      all.forEach(function(p){ drawMarker(p); });
+      var hidden = loadHidden();
+      all.forEach(function(p){ if (hidden.indexOf(groupOf(p))<0) drawMarker(p); });
       autoFetchPrices();
+      renderGroupPanel();
+    }
+
+    // 그룹(레이어) 패널: 그룹별 개수 + 표시/숨김 체크박스 + 삭제버튼
+    function renderGroupPanel(){
+      var panel=document.getElementById("groupPanel");
+      var listEl=document.getElementById("gpList");
+      if (!panel||!listEl) return;
+      // 그룹별 개수 집계
+      var counts={}, order=[];
+      all.forEach(function(p){
+        var g=groupOf(p);
+        if (counts[g]===undefined){ counts[g]=0; order.push(g); }
+        counts[g]++;
+      });
+      if (!order.length){ panel.style.display="none"; return; }
+      // 그룹이 "기타" 하나뿐이면 패널 숨김(굳이 필요없음)
+      if (order.length===1 && order[0]==="기타"){ panel.style.display="none"; return; }
+      panel.style.display="block";
+      var hidden=loadHidden();
+      listEl.innerHTML="";
+      order.forEach(function(g){
+        var row=document.createElement("div"); row.className="gp-row";
+        var checked = hidden.indexOf(g)<0;
+        row.innerHTML =
+          '<label><input type="checkbox" '+(checked?"checked":"")+' data-g="'+esc(g)+'">' +
+            '<span class="gp-name">'+esc(g)+'</span>' +
+            '<span class="gp-cnt">'+counts[g]+'</span>' +
+          '</label>' +
+          '<button class="gp-del" data-g="'+esc(g)+'">🗑</button>';
+        listEl.appendChild(row);
+      });
+      // 체크박스: 표시/숨김 토글
+      listEl.querySelectorAll('input[type=checkbox]').forEach(function(cb){
+        cb.addEventListener("change", function(){
+          var g=this.getAttribute("data-g");
+          var h=loadHidden();
+          var idx=h.indexOf(g);
+          if (this.checked){ if(idx>=0) h.splice(idx,1); }
+          else { if(idx<0) h.push(g); }
+          saveHidden(h);
+          renderAll();
+        });
+      });
+      // 삭제 버튼: 그 그룹 전체 삭제
+      listEl.querySelectorAll('.gp-del').forEach(function(btn){
+        btn.addEventListener("click", function(){
+          var g=this.getAttribute("data-g");
+          if (!confirm('"'+g+'" 그룹의 '+(counts[g])+'개를 모두 삭제할까요?\n(이 기기 화면에서만. GitHub 영구반영은 "코드 내보내기"로)')) return;
+          // 추가항목(add:) 중 이 그룹 제거
+          added = added.filter(function(p){ return groupOf(p)!==g; });
+          saveAdded(added);
+          // 고정항목(fix:) 중 이 그룹은 삭제 오버라이드
+          all.forEach(function(p){
+            if (groupOf(p)===g && p.__id && p.__id.indexOf("fix:")===0){
+              edits[p.__id]="__deleted__";
+            }
+          });
+          saveEdits(edits);
+          // 숨김목록에서도 제거
+          var h=loadHidden(); var i=h.indexOf(g); if(i>=0){ h.splice(i,1); saveHidden(h); }
+          renderAll();
+        });
+      });
     }
     function drawMarker(p){
       var color=scoreColor(p), pos=new kakao.maps.LatLng(p.lat,p.lng);
@@ -660,13 +693,14 @@
           "단계": p.stage||"",
           "호재내용": p.sub||"",
           "메모": p.note||"",
+          "그룹": p.group||"",
           "위도": p.lat!=null?Number(p.lat).toFixed(6):"",
           "경도": p.lng!=null?Number(p.lng).toFixed(6):"",
           "법정동코드": p.code||""
         };
       });
       var ws = XLSX.utils.json_to_sheet(rows);
-      ws["!cols"] = [{wch:5},{wch:7},{wch:30},{wch:12},{wch:6},{wch:8},{wch:10},{wch:9},{wch:8},{wch:8},{wch:16},{wch:16},{wch:11},{wch:11},{wch:11}];
+      ws["!cols"] = [{wch:5},{wch:7},{wch:30},{wch:12},{wch:6},{wch:8},{wch:10},{wch:9},{wch:8},{wch:8},{wch:16},{wch:14},{wch:11},{wch:11},{wch:11}];
       var wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "목록");
       var d = new Date(), pad=function(n){return (n<10?"0":"")+n;};
@@ -692,17 +726,20 @@
           // 컬럼명 유연 매칭
           function pick(r, keys){ for (var i=0;i<keys.length;i++){ if (r[keys[i]]!==undefined && r[keys[i]]!=="") return r[keys[i]]; } return ""; }
 
-          var imported=[], skipped=0;
+          var parsed=[], skipped=0;
           rows.forEach(function(r){
             var name = String(pick(r,["이름","name","아파트명","단지명"])).trim();
+            var addr = String(pick(r,["주소","addr","address","소재지"])).trim();
             var lat = parseFloat(pick(r,["위도","lat","latitude"]));
             var lng = parseFloat(pick(r,["경도","lng","longitude"]));
-            if (!name || isNaN(lat) || isNaN(lng)){ skipped++; return; }  // 좌표 없으면 못넣음
+            // 이름 없거나, (좌표도 없고 주소도 없으면) 못 넣음
+            if (!name || (isNaN(lat)&&isNaN(lng)&&!addr)){ skipped++; return; }
             var scoreRaw = pick(r,["점수","score","등급"]);
             var score = (scoreRaw===""||scoreRaw==null)?0:parseInt(scoreRaw,10); if(isNaN(score))score=0;
-            imported.push({
+            parsed.push({
               kind: String(pick(r,["종류","kind"])||"apt").trim()||"apt",
               name: name,
+              addr: addr,
               disp: String(pick(r,["표시명","disp"])||"").trim(),
               score: Math.max(0,Math.min(5,score)),
               py: String(pick(r,["평","py"])||"").trim(),
@@ -712,21 +749,55 @@
               stage: String(pick(r,["단계","stage"])||"").trim(),
               sub: String(pick(r,["호재내용","sub"])||"").trim(),
               note: String(pick(r,["메모","note"])||"").trim(),
-              lat: lat, lng: lng,
+              group: String(pick(r,["그룹","레이어","group","layer"])||"").trim(),
+              lat: isNaN(lat)?null:lat, lng: isNaN(lng)?null:lng,
               code: String(pick(r,["법정동코드","code"])||"").trim()
             });
           });
 
-          if (!imported.length){ alert("넣을 수 있는 행이 없습니다.\n(이름·위도·경도가 있어야 합니다)"); return; }
-          var msg = imported.length+"개를 지도에 넣습니다.";
-          if (skipped) msg += "\n(좌표 없는 "+skipped+"개는 건너뜀)";
+          if (!parsed.length){ alert("넣을 수 있는 행이 없습니다.\n(이름과, 좌표 또는 주소가 있어야 합니다)"); return; }
+
+          // 그룹명: 엑셀에 그룹 컬럼이 비어있는 항목이 있으면 한 번 입력받아 적용
+          var emptyGroup = parsed.filter(function(p){ return !p.group; }).length;
+          if (emptyGroup){
+            var gname = prompt("이 묶음의 그룹(레이어) 이름을 정하세요.\n예: 용인수원화성평택\n\n나중에 이 그룹만 통째로 켜고/끄고/삭제할 수 있습니다.", "");
+            if (gname===null){ document.getElementById("xlsxFile").value=""; return; }  // 취소
+            gname = String(gname).trim() || "기타";
+            parsed.forEach(function(p){ if(!p.group) p.group=gname; });
+          }
+
+          var needGeo = parsed.filter(function(p){ return (p.lat==null||p.lng==null) && p.addr; }).length;
+          var msg = parsed.length+"개를 지도에 넣습니다.";
+          if (needGeo) msg += "\n(좌표 없는 "+needGeo+"개는 주소로 자동 변환 — 시간이 좀 걸립니다)";
+          if (skipped) msg += "\n(이름·좌표·주소 모두 없는 "+skipped+"개는 건너뜀)";
           msg += "\n\n[확인]=기존 추가분에 더하기 / [취소]=기존 추가분 교체";
           var append = confirm(msg);
-          if (append){ imported.forEach(function(p){ added.push(p); }); }
-          else { added = imported; }
-          saveAdded(added);
-          renderAll();
-          alert("완료! "+imported.length+"개 반영됨.");
+
+          // 좌표 없는 건 주소로 변환
+          (async function(){
+            var failNames=[];
+            if (needGeo){
+              for (var i=0;i<parsed.length;i++){
+                var p=parsed[i];
+                if ((p.lat==null||p.lng==null) && p.addr){
+                  var geo=await geocodeOne(p.addr);
+                  if (geo){ p.lat=geo.lat; p.lng=geo.lng; if(!p.code) p.code=geo.code; }
+                  else { failNames.push(p.name); }
+                  await new Promise(function(r){ setTimeout(r,120); });
+                }
+              }
+            }
+            var imported = parsed.filter(function(p){ return p.lat!=null && p.lng!=null; })
+                                 .map(function(p){ var o=Object.assign({},p); delete o.addr; return o; });
+            if (!imported.length){ alert("좌표를 확정한 항목이 없습니다."); return; }
+            if (append){ imported.forEach(function(p){ added.push(p); }); }
+            else { added = imported; }
+            saveAdded(added);
+            renderAll();
+            var done = "완료! "+imported.length+"개 반영됨.";
+            if (failNames.length) done += "\n주소 변환 실패 "+failNames.length+"개: "+failNames.slice(0,10).join(", ")+(failNames.length>10?" 외":"");
+            alert(done);
+          })();
         } catch(err){
           alert("엑셀 읽기 실패: "+err.message);
         }
@@ -735,16 +806,21 @@
       reader.readAsArrayBuffer(file);
     });
 
+    // 현재 전체 항목을 places 코드 라인 문자열로 (export / GitHub저장 공용)
+    function buildPlacesCode(){
+      buildAll();
+      function q(s){ return '"'+String(s==null?"":s).replace(/"/g,'\\"')+'"'; }
+      return all.map(function(p){
+        return '  { kind:'+q(p.kind)+', name:'+q(p.name)+', disp:'+q(p.disp)+', score:'+(p.score||0)+',\n' +
+               '    py:'+q(p.py)+', price:'+q(p.price)+', land:'+(parseFloat(p.land)||0)+', jong:'+q(p.jong||"")+', stage:'+q(p.stage)+', sub:'+q(p.sub)+',\n' +
+               '    note:'+q(p.note)+', group:'+q(p.group||"")+', lat:'+Number(p.lat).toFixed(6)+', lng:'+Number(p.lng).toFixed(6)+', code:'+q(p.code)+' },';
+      }).join("\n");
+    }
+
     document.getElementById("exportBtn").addEventListener("click", function(){
       buildAll();
       if (!all.length){ alert("내보낼 항목이 없습니다."); return; }
-      function q(s){ return '"'+String(s==null?"":s).replace(/"/g,'\\"')+'"'; }
-      var lines=all.map(function(p){
-        return '    { kind:'+q(p.kind)+', name:'+q(p.name)+', disp:'+q(p.disp)+', score:'+(p.score||0)+',\n' +
-               '      py:'+q(p.py)+', price:'+q(p.price)+', land:'+(parseFloat(p.land)||0)+', jong:'+q(p.jong||"")+', stage:'+q(p.stage)+', sub:'+q(p.sub)+',\n' +
-               '      note:'+q(p.note)+', lat:'+Number(p.lat).toFixed(6)+', lng:'+Number(p.lng).toFixed(6)+', code:'+q(p.code)+' },';
-      });
-      document.getElementById("exportText").value=lines.join("\n");
+      document.getElementById("exportText").value=buildPlacesCode();
       document.getElementById("exportBox").style.display="flex";
     });
     document.getElementById("copyBtn").addEventListener("click", function(){
@@ -756,38 +832,83 @@
       document.getElementById("copyBtn").textContent="복사";
     });
 
-    // ===== 주소 목록 일괄 추가 =====
-    document.getElementById("bulkBtn").addEventListener("click", function(){
-      document.getElementById("bulkBox").style.display="flex";
-    });
-    document.getElementById("closeBulk").addEventListener("click", function(){
-      document.getElementById("bulkBox").style.display="none";
-    });
+    // ===== GitHub에 자동 저장 (data.js 갱신) =====
+    var GH_OWNER  = "wg052026";
+    var GH_REPO   = "my-budongsan-map";
+    var GH_BRANCH = "main";          // 저장소 기본 브랜치 (main 또는 master)
+    var GH_PATH   = "data.js";
+    var GH_TOKEN_KEY = "budongsan_gh_token_v1";
 
-    // 카카오맵 즐겨찾기 목록 텍스트 → [{name, addr, land, jong, note}]
-    function parseBulk(text){
-      var lines = text.split("\n").map(function(s){return s.trim();}).filter(function(s){return s.length>0;});
-      var items = [];
-      for (var i=0;i<lines.length;i++){
-        if (lines[i]==="장소"){
-          var name = lines[i+1]||"", addr = lines[i+2]||"", land="", jong="", note="";
-          // 괄호 꼬리 (2025년02월예정) 등 제거
-          name = name.replace(/\s*\((?:19|20)\d{2}년[^)]*\)\s*$/,"").trim();
-          // "대장" 꼬리 → 메모로
-          var dm = name.match(/\s+(대장|[^\s]*대장)$/);
-          if (dm){ note = name.match(/(\S*대장)\s*$/)[1]; name = name.replace(/\s+\S*대장\s*$/,"").trim(); }
-          // 대지지분 + 종: "16.77(2)" 또는 "13.91"
-          var m = name.match(/\s+([\d]+\.[\d]+)(?:\((\d+)\))?\s*$/);
-          if (m){ land = m[1]; if (m[2]) jong = m[2]+"종"; name = name.replace(/\s+[\d.]+(?:\(\d+\))?\s*$/,"").trim(); }
-          // 끝의 "아파트" 제거
-          name = name.replace(/아파트$/,"").trim();
-          if (name && addr) items.push({name:name, addr:addr, land:land, jong:jong, note:note});
-          i += 2;
-        }
+    function ghToken(){
+      var t = localStorage.getItem(GH_TOKEN_KEY) || "";
+      if (!t){
+        t = prompt("GitHub 토큰을 입력하세요. (한 번만 입력하면 이 기기에 저장됩니다)\n\nGitHub → Settings → Developer settings → Fine-grained tokens 에서\nmy-budongsan-map 저장소의 Contents = Read and write 권한으로 발급", "");
+        if (t===null) return "";
+        t = String(t).trim();
+        if (t) localStorage.setItem(GH_TOKEN_KEY, t);
       }
-      return items;
+      return t;
     }
 
+    // UTF-8 → base64 (한글 안전)
+    function toB64(str){
+      return btoa(unescape(encodeURIComponent(str)));
+    }
+
+    document.getElementById("saveGhBtn").addEventListener("click", async function(){
+      var btn=this;
+      buildAll();
+      if (!all.length){ alert("저장할 항목이 없습니다."); return; }
+      var token = ghToken();
+      if (!token){ return; }
+
+      var fileText =
+        "// 부동산 지도 데이터 — 지도의 'GitHub에 저장' 버튼이 자동 갱신합니다.\n" +
+        "// 마지막 저장: " + new Date().toLocaleString("ko-KR") + " · 총 " + all.length + "개\n" +
+        "window.PLACES = [\n" + buildPlacesCode() + "\n];\n";
+
+      var apiBase = "https://api.github.com/repos/"+GH_OWNER+"/"+GH_REPO+"/contents/"+GH_PATH;
+      var headers = { "Authorization":"Bearer "+token, "Accept":"application/vnd.github+json" };
+
+      btn.disabled=true; var orig=btn.textContent; btn.textContent="저장 중…";
+      try {
+        // 1) 기존 파일 sha 조회 (있으면 업데이트, 없으면 신규)
+        var sha = null;
+        var getRes = await fetch(apiBase+"?ref="+GH_BRANCH, { headers: headers });
+        if (getRes.status===200){ var info=await getRes.json(); sha=info.sha; }
+        else if (getRes.status===401){ throw new Error("토큰이 거부됨(401). 토큰을 다시 입력하세요."); }
+        else if (getRes.status===404){ sha=null; }  // 파일 신규 생성
+
+        // 2) PUT 으로 커밋
+        var body = {
+          message: "지도 데이터 갱신 ("+all.length+"개) — "+new Date().toISOString(),
+          content: toB64(fileText),
+          branch: GH_BRANCH
+        };
+        if (sha) body.sha = sha;
+
+        var putRes = await fetch(apiBase, { method:"PUT", headers: headers, body: JSON.stringify(body) });
+        if (putRes.status===200 || putRes.status===201){
+          btn.textContent="저장됨 ✓";
+          setTimeout(function(){ btn.textContent=orig; btn.disabled=false; }, 2000);
+          alert("GitHub에 저장 완료! ("+all.length+"개)\n\n잠시 후 공유 지도에 반영됩니다.\n(새로고침 시 data.js 캐시 때문에 1~2분 걸릴 수 있어요)");
+        } else if (putRes.status===401){
+          throw new Error("토큰이 거부됨(401). 토큰을 다시 입력하세요.");
+        } else if (putRes.status===409){
+          throw new Error("충돌(409). 다시 한 번 눌러보세요.");
+        } else {
+          var err=await putRes.text();
+          throw new Error("저장 실패 ("+putRes.status+")\n"+err.slice(0,200));
+        }
+      } catch(e){
+        btn.textContent=orig; btn.disabled=false;
+        // 토큰 문제면 저장된 토큰 삭제하고 재입력 유도
+        if (String(e.message).indexOf("401")>=0){ localStorage.removeItem(GH_TOKEN_KEY); }
+        alert("GitHub 저장 오류:\n"+e.message);
+      }
+    });
+
+    // 주소 → 좌표·법정동코드 변환 (엑셀 넣기에서 사용)
     function geocodeOne(addr){
       return new Promise(function(resolve){
         // 주소에서 끝의 (청계동) 같은 법정동 괄호 제거 후 검색
@@ -812,42 +933,6 @@
       });
     }
 
-    document.getElementById("bulkRun").addEventListener("click", async function(){
-      var btn = this;
-      var text = document.getElementById("bulkText").value;
-      var items = parseBulk(text);
-      var prog = document.getElementById("bulkProgress");
-      var bar = document.querySelector("#bulkBar > div");
-      if (!items.length){ prog.innerHTML="<span style=\"color:#B85C52;\">인식된 장소가 없습니다. 형식을 확인하세요.</span>"; return; }
-      btn.disabled=true; btn.textContent="변환 중…";
-      prog.innerHTML = "총 "+items.length+"개 인식. 좌표 변환 시작…<br>";
-
-      var ok=0, fail=0, failNames=[];
-      for (var i=0;i<items.length;i++){
-        var it = items[i];
-        var geo = await geocodeOne(it.addr);
-        if (geo){
-          var p = { kind:"apt", name:it.name, disp:"", score:0,
-                    py:"", price:"", land:it.land||0, jong:it.jong||"",
-                    stage:"", sub:"", note:it.note||"",
-                    lat:geo.lat, lng:geo.lng, code:geo.code };
-          added.push(p);
-          ok++;
-        } else { fail++; failNames.push(it.name); }
-        bar.style.width = Math.round((i+1)/items.length*100)+"%";
-        if ((i+1)%10===0 || i===items.length-1){
-          prog.innerHTML = "진행 "+(i+1)+"/"+items.length+" · 성공 "+ok+" · 실패 "+fail +
-            (failNames.length? "<br><span style=\"color:#C9982F;\">실패: "+failNames.slice(0,15).join(", ")+(failNames.length>15?" 외 "+(failNames.length-15)+"개":"")+"</span>":"");
-          prog.scrollTop = prog.scrollHeight;
-        }
-        await new Promise(function(r){ setTimeout(r, 120); });  // 과도한 호출 방지
-      }
-
-      saveAdded(added);
-      renderAll();
-      btn.disabled=false; btn.textContent="변환·추가 시작";
-      prog.innerHTML += "<br><b style=\"color:#3F9E7E;\">완료! "+ok+"개 추가됨.</b> 닫고 지도에서 확인하세요. (영구 반영하려면 '코드 내보내기')";
-    });
     document.getElementById("clearBtn").addEventListener("click", function(){
       if (!added.length && !Object.keys(edits).length){ alert("초기화할 변경분이 없습니다."); return; }
       if (!confirm("화면에서 한 추가·수정·삭제를 모두 되돌립니다.\n(코드의 고정 항목 원본만 남음)\n계속할까요?")) return;
