@@ -222,8 +222,12 @@
   //  ↓↓↓ 아래는 건드리지 않아도 됩니다 ↓↓↓
   // =======================================================================
   var STORE_KEY = "budongsan_added_v2";
+  var EDIT_KEY  = "budongsan_edits_v1";   // 고정항목 편집/삭제 오버라이드
   function loadAdded(){ try{ return JSON.parse(localStorage.getItem(STORE_KEY)||"[]"); }catch(e){ return []; } }
   function saveAdded(a){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(a)); }catch(e){} }
+  // edits: { "fix:3": {필드...}, "fix:5": "__deleted__", ... }
+  function loadEdits(){ try{ return JSON.parse(localStorage.getItem(EDIT_KEY)||"{}"); }catch(e){ return {}; } }
+  function saveEdits(o){ try{ localStorage.setItem(EDIT_KEY, JSON.stringify(o)); }catch(e){} }
 
   // 색채 — 나중에 조절. 점수 색(차분 톤) / 호재·학교 회색
   function scoreColor(p){
@@ -283,7 +287,29 @@
 
   kakao.maps.load(function () {
     var added = loadAdded();
-    var all = places.concat(added);
+    var edits = loadEdits();
+    var all = [];
+
+    // 고정항목(fix) + 추가항목(add)을 합치고, 편집/삭제 오버라이드 적용
+    function buildAll(){
+      var list = [];
+      places.forEach(function(p, i){
+        var id = "fix:" + i;
+        if (edits[id] === "__deleted__") return;
+        var merged = Object.assign({}, p, edits[id] || {});
+        merged.__id = id;
+        list.push(merged);
+      });
+      added.forEach(function(p, i){
+        var item = Object.assign({}, p);
+        item.__id = item.__id || ("add:" + i);
+        list.push(item);
+      });
+      all = list;
+      return all;
+    }
+    buildAll();
+
     var center = all.length ? new kakao.maps.LatLng(all[0].lat, all[0].lng)
                             : new kakao.maps.LatLng(37.4979,127.0276);
     var map = new kakao.maps.Map(document.getElementById("map"), { center:center, level:6 });
@@ -291,12 +317,14 @@
     var geocoder = new kakao.maps.services.Geocoder();
     var ps = new kakao.maps.services.Places();
     var openIW=null, markerObjs=[], tempPin=null, pendingPos=null;
+    var editingId=null;
+    var autoCache={};   // __id -> 자동 실거래가값 (재렌더에도 유지)
 
     window.__closeIW = function(){ if(openIW){ openIW.setMap(null); openIW=null; } };
 
-    function markerHtml(p, idx, color){
+    function markerHtml(p, color){
       var disp = p.disp && p.disp.trim() ? p.disp : p.name;
-      return '<div class="mk-wrap" data-idx="'+idx+'">' +
+      return '<div class="mk-wrap" data-id="'+p.__id+'">' +
         '<div class="mk-box" style="background:'+color+';">' +
           '<div class="mk-name">'+esc(disp)+'</div>' +
           '<div class="mk-sub">'+subLineHtml(p)+'</div>' +
@@ -308,86 +336,141 @@
       var info = infoLine(p);
       var infoEl = info ? '<div class="iw-info">'+esc(info)+'</div>' : '';
       var refreshBtn = isAutoPrice(p)
-        ? '<button class="iw-refresh" data-idx="'+p.__idx+'" style="margin-top:8px;width:100%;background:#2c3742;border:0.5px solid rgba(255,255,255,0.2);color:#cfe8db;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;">↻ 실거래가 갱신</button>'
+        ? '<button class="iw-refresh" data-id="'+p.__id+'" style="margin-top:8px;width:100%;background:#2c3742;border:0.5px solid rgba(255,255,255,0.2);color:#cfe8db;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;">↻ 실거래가 갱신</button>'
         : '';
+      var editDel =
+        '<div style="display:flex;gap:6px;margin-top:8px;">' +
+          '<button class="iw-edit" data-id="'+p.__id+'" style="flex:1;background:#3a3f49;border:none;color:#e8eaed;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;">✏ 수정</button>' +
+          '<button class="iw-del" data-id="'+p.__id+'" style="flex:1;background:#5a3a3a;border:none;color:#f0d6d6;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;">🗑 삭제</button>' +
+        '</div>';
       return '<div class="iw"><div class="iw-top">' +
         '<div class="iw-name">'+esc(p.name)+'</div>' +
         '<button class="iw-close" aria-label="닫기" onclick="window.__closeIW()">✕</button></div>' +
         stars + infoEl +
         '<div class="iw-note">'+esc(p.note)+'</div>' +
-        refreshBtn + '</div>';
+        refreshBtn + editDel + '</div>';
     }
     function renderAll(){
       markerObjs.forEach(function(o){ o.setMap(null); }); markerObjs=[];
-      all = places.concat(added);
-      all.forEach(function(p, idx){
-        drawMarker(p, idx);
-      });
+      buildAll();
+      all.forEach(function(p){ drawMarker(p); });
       autoFetchPrices();
     }
-    function drawMarker(p, idx){
+    function drawMarker(p){
       var color=scoreColor(p), pos=new kakao.maps.LatLng(p.lat,p.lng);
-      if (p.__marker) p.__marker.setMap(null);
-      var marker=new kakao.maps.CustomOverlay({position:pos,content:markerHtml(p,idx,color),yAnchor:1,clickable:true});
+      var marker=new kakao.maps.CustomOverlay({position:pos,content:markerHtml(p,color),yAnchor:1,clickable:true});
       marker.setMap(map);
       var iw=new kakao.maps.CustomOverlay({position:pos,content:iwHtml(p,color),yAnchor:1.18,clickable:true});
       marker.__onClick=function(){ window.__closeIW(); iw.setMap(map); openIW=iw; map.panTo(pos); };
-      p.__marker=marker; p.__iw=iw; p.__idx=idx;
+      p.__marker=marker; p.__iw=iw;
       markerObjs.push(marker);
     }
     // 마커 하나만 다시 그림 (자동값 도착 시)
     function refreshMarker(p){
       var color=scoreColor(p);
-      if (p.__marker){ p.__marker.setContent(markerHtml(p, p.__idx, color)); }
+      if (p.__marker){ p.__marker.setContent(markerHtml(p, color)); }
       if (p.__iw){ p.__iw.setContent(iwHtml(p, color)); }
     }
-    // 자동 실거래가 조회 — 평·가격 비운 아파트만
+    // 자동 실거래가 조회 — 평·가격 비운 아파트만 (결과는 id 캐시에 보관)
     function autoFetchPrices(){
       if (!DEAL_API || DEAL_API.indexOf("script.google")<0) return;
       all.forEach(function(p){
         if (!isAutoPrice(p)) return;
-        if (!p.code) return;            // 법정동코드 없으면 스킵
-        if (p.auto !== undefined) { refreshMarker(p); return; }  // 이미 조회됨
+        if (!p.code) return;
+        if (autoCache[p.__id] !== undefined){ p.auto = autoCache[p.__id]; refreshMarker(p); return; }
         var url = DEAL_API + "?lawd=" + encodeURIComponent(p.code) +
                   "&apt=" + encodeURIComponent(p.name) + "&months=3";
         fetch(url).then(function(r){ return r.json(); }).then(function(j){
-          if (j && j.ok && j.latest){
-            p.auto = { amountText:j.latest.amountText, pyeong:j.latest.pyeong, date:j.latest.date, area:j.latest.areaM2 };
-          } else {
-            p.auto = null;  // 거래 없음
-          }
-          refreshMarker(p);
-        }).catch(function(){ p.auto = null; refreshMarker(p); });
+          var v = (j && j.ok && j.latest)
+            ? { amountText:j.latest.amountText, pyeong:j.latest.pyeong, date:j.latest.date, area:j.latest.areaM2 }
+            : null;
+          autoCache[p.__id]=v; p.auto=v; refreshMarker(p);
+        }).catch(function(){ autoCache[p.__id]=null; p.auto=null; refreshMarker(p); });
       });
     }
     renderAll();
 
+    function findById(id){ for (var i=0;i<all.length;i++){ if (all[i].__id===id) return all[i]; } return null; }
+
     document.getElementById("map").addEventListener("click", function(e){
-      // 실거래가 갱신 버튼
-      var rb = e.target.closest ? e.target.closest(".iw-refresh") : null;
+      var t = e.target;
+      // 실거래가 갱신
+      var rb = t.closest ? t.closest(".iw-refresh") : null;
       if (rb){
-        var ri = parseInt(rb.getAttribute("data-idx"),10);
-        var rp = all[ri];
+        var rp = findById(rb.getAttribute("data-id"));
         if (rp){
           rb.textContent = "갱신중…";
           var url = DEAL_API + "?lawd=" + encodeURIComponent(rp.code) +
                     "&apt=" + encodeURIComponent(rp.name) + "&months=6";
           fetch(url).then(function(r){return r.json();}).then(function(j){
-            rp.auto = (j && j.ok && j.latest)
+            var v = (j && j.ok && j.latest)
               ? { amountText:j.latest.amountText, pyeong:j.latest.pyeong, date:j.latest.date, area:j.latest.areaM2 }
               : null;
+            autoCache[rp.__id]=v; rp.auto=v;
             refreshMarker(rp);
             if (rp.__iw){ rp.__iw.setMap(map); openIW=rp.__iw; }
-          }).catch(function(){ rp.auto=null; refreshMarker(rp); });
+          }).catch(function(){ autoCache[rp.__id]=null; rp.auto=null; refreshMarker(rp); });
         }
         return;
       }
+      // 수정
+      var eb = t.closest ? t.closest(".iw-edit") : null;
+      if (eb){ startEdit(eb.getAttribute("data-id")); return; }
+      // 삭제
+      var db = t.closest ? t.closest(".iw-del") : null;
+      if (db){ deleteItem(db.getAttribute("data-id")); return; }
       // 마커 클릭
-      var wrap = e.target.closest ? e.target.closest(".mk-wrap") : null;
+      var wrap = t.closest ? t.closest(".mk-wrap") : null;
       if (!wrap) return;
-      var i=parseInt(wrap.getAttribute("data-idx"),10);
-      if (!isNaN(i) && all[i] && all[i].__marker) all[i].__marker.__onClick();
+      var p = findById(wrap.getAttribute("data-id"));
+      if (p && p.__marker) p.__marker.__onClick();
     });
+
+    // ===== 수정/삭제 =====
+    function deleteItem(id){
+      var p = findById(id);
+      if (!p) return;
+      if (!confirm("'"+p.name+"' 항목을 삭제할까요?")) return;
+      window.__closeIW();
+      if (id.indexOf("fix:")===0){ edits[id]="__deleted__"; saveEdits(edits); }
+      else {
+        var i = parseInt(id.split(":")[1],10);
+        added.splice(i,1); saveAdded(added);
+      }
+      renderAll();
+    }
+    function startEdit(id){
+      var p = findById(id);
+      if (!p) return;
+      window.__closeIW();
+      editingId = id;
+      // 패널에 값 채우기
+      document.getElementById("f-kind").value = p.kind;
+      syncKindUI();
+      document.getElementById("f-name").value = p.name||"";
+      document.getElementById("f-disp").value = p.disp||"";
+      if (p.kind!=="spot" && p.kind!=="school") document.getElementById("f-score").value = String(p.score||0);
+      document.getElementById("f-py").value = p.py||"";
+      document.getElementById("f-price").value = p.price||"";
+      document.getElementById("f-land").value = (p.land&&parseFloat(p.land)>0)?p.land:"";
+      if (p.kind==="redev") document.getElementById("f-stage").value = p.stage||"조합전";
+      document.getElementById("f-spot").value = p.sub||"";
+      document.getElementById("f-note").value = p.note||"";
+      document.getElementById("f-code").value = p.code||"";
+      pendingPos = new kakao.maps.LatLng(p.lat, p.lng);
+      placePin(pendingPos); map.panTo(pendingPos);
+      var h=document.getElementById("pin-hint"); h.textContent="✏ 수정 중: "+p.name+" (위치 바꾸려면 지도 클릭)"; h.classList.add("on");
+      var b=document.getElementById("addBtn"); b.textContent="수정 저장"; b.disabled=false;
+      document.getElementById("panel").scrollTop=0;
+    }
+    function resetPanel(){
+      editingId=null;
+      if (tempPin){ tempPin.setMap(null); tempPin=null; } pendingPos=null;
+      ["f-name","f-disp","f-py","f-price","f-land","f-spot","f-note","f-code","f-search"].forEach(function(id){ document.getElementById(id).value=""; });
+      clearCands();
+      var h=document.getElementById("pin-hint"); h.textContent="📍 먼저 지도를 클릭해 위치를 찍으세요"; h.classList.remove("on");
+      var b=document.getElementById("addBtn"); b.textContent="추가"; b.disabled=true;
+    }
 
     // ===== 패널 종류별 UI =====
     function syncKindUI(){
@@ -491,29 +574,39 @@
         score: (kind==="spot"||kind==="school")?0:parseInt(document.getElementById("f-score").value,10),
         py: kind==="apt"?document.getElementById("f-py").value.trim():"",
         price: kind==="apt"?document.getElementById("f-price").value.trim():"",
-        land: kind==="apt"?document.getElementById("f-land").value.trim():0,
+        land: kind==="apt"?(document.getElementById("f-land").value.trim()||0):0,
         stage: kind==="redev"?document.getElementById("f-stage").value:"",
         sub: (kind==="spot"||kind==="school")?document.getElementById("f-spot").value.trim():"",
         note:document.getElementById("f-note").value.trim(),
         lat:pendingPos.getLat(), lng:pendingPos.getLng(),
         code:document.getElementById("f-code").value.trim()
       };
-      added.push(p); saveAdded(added);
-      if (tempPin){ tempPin.setMap(null); tempPin=null; } pendingPos=null;
-      ["f-name","f-disp","f-py","f-price","f-land","f-spot","f-note","f-code","f-search"].forEach(function(id){ document.getElementById(id).value=""; });
-      clearCands();
-      var h=document.getElementById("pin-hint"); h.textContent="📍 먼저 지도를 클릭해 위치를 찍으세요"; h.classList.remove("on");
-      document.getElementById("addBtn").disabled=true;
+
+      if (editingId){
+        // 수정 저장
+        if (editingId.indexOf("fix:")===0){
+          edits[editingId] = p;            // 고정항목 오버라이드
+          saveEdits(edits);
+        } else {
+          var i = parseInt(editingId.split(":")[1],10);
+          added[i] = p; saveAdded(added);  // 추가항목 갱신
+        }
+      } else {
+        // 신규 추가
+        added.push(p); saveAdded(added);
+      }
+      resetPanel();
       renderAll();
     });
 
     document.getElementById("exportBtn").addEventListener("click", function(){
-      if (!added.length){ alert("화면에서 추가한 항목이 없습니다."); return; }
+      buildAll();
+      if (!all.length){ alert("내보낼 항목이 없습니다."); return; }
       function q(s){ return '"'+String(s==null?"":s).replace(/"/g,'\\"')+'"'; }
-      var lines=added.map(function(p){
-        return '    { kind:'+q(p.kind)+', name:'+q(p.name)+', disp:'+q(p.disp)+', score:'+p.score+',\n' +
+      var lines=all.map(function(p){
+        return '    { kind:'+q(p.kind)+', name:'+q(p.name)+', disp:'+q(p.disp)+', score:'+(p.score||0)+',\n' +
                '      py:'+q(p.py)+', price:'+q(p.price)+', land:'+(parseFloat(p.land)||0)+', stage:'+q(p.stage)+', sub:'+q(p.sub)+',\n' +
-               '      note:'+q(p.note)+', lat:'+p.lat.toFixed(6)+', lng:'+p.lng.toFixed(6)+', code:'+q(p.code)+' },';
+               '      note:'+q(p.note)+', lat:'+Number(p.lat).toFixed(6)+', lng:'+Number(p.lng).toFixed(6)+', code:'+q(p.code)+' },';
       });
       document.getElementById("exportText").value=lines.join("\n");
       document.getElementById("exportBox").style.display="flex";
@@ -527,9 +620,12 @@
       document.getElementById("copyBtn").textContent="복사";
     });
     document.getElementById("clearBtn").addEventListener("click", function(){
-      if (!added.length){ alert("비울 추가분이 없습니다."); return; }
-      if (!confirm("화면에서 추가한 항목을 모두 지웁니다. (고정 항목은 유지)\n계속할까요?")) return;
-      added=[]; saveAdded(added); renderAll();
+      if (!added.length && !Object.keys(edits).length){ alert("초기화할 변경분이 없습니다."); return; }
+      if (!confirm("화면에서 한 추가·수정·삭제를 모두 되돌립니다.\n(코드의 고정 항목 원본만 남음)\n계속할까요?")) return;
+      added=[]; saveAdded(added);
+      edits={}; saveEdits(edits);
+      resetPanel();
+      renderAll();
     });
   });
   </script>
