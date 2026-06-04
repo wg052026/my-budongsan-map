@@ -1,0 +1,15 @@
+{
+  "name": "내 부동산 지도",
+  "short_name": "부동산지도",
+  "description": "내가 고른 단지·재개발·호재를 실거래가와 함께 지도에 표시",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1a1d24",
+  "theme_color": "#1a1d24",
+  "icons": [
+    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
