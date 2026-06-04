@@ -89,6 +89,21 @@
       font-family:monospace; font-size:12px; }
     #exportBox .acts { display:flex; gap:8px; margin-top:10px; }
     #exportBox .acts button { flex:1; border:none; border-radius:6px; padding:8px; font-size:12px; font-weight:700; cursor:pointer; }
+
+    #bulkBox { display:none; position:absolute; inset:0; z-index:40; background:rgba(0,0,0,0.55);
+      align-items:center; justify-content:center; }
+    #bulkBox .inner { width:min(560px,90%); background:#23272f; border:0.5px solid rgba(255,255,255,0.2);
+      border-radius:12px; padding:16px; }
+    #bulkBox h3 { margin:0 0 8px; color:#f2f3f5; font-size:14px; }
+    #bulkBox p { margin:0 0 10px; color:#9aa0ab; font-size:12px; line-height:1.6; }
+    #bulkText { width:100%; box-sizing:border-box; height:200px; background:#1a1d24;
+      border:0.5px solid rgba(255,255,255,0.2); color:#e8eaed; border-radius:8px; padding:10px;
+      font-family:monospace; font-size:12px; }
+    #bulkBox .acts { display:flex; gap:8px; margin-top:10px; }
+    #bulkBox .acts button { flex:1; border:none; border-radius:6px; padding:8px; font-size:12px; font-weight:700; cursor:pointer; }
+    #bulkProgress { margin-top:10px; color:#cfe8db; font-size:12px; line-height:1.6; max-height:120px; overflow-y:auto; }
+    #bulkBar { height:6px; background:#1a1d24; border-radius:4px; overflow:hidden; margin-top:8px; }
+    #bulkBar > div { height:100%; width:0%; background:#3F9E7E; transition:width 0.2s; }
   </style>
 </head>
 <body>
@@ -103,8 +118,8 @@
       <div>
         <select id="f-kind">
           <option value="apt">아파트</option>
-          <option value="school">학교</option>
           <option value="redev">재건축/재개발</option>
+          <option value="school">학교</option>
           <option value="spot">지하철·학원가 등 호재</option>
         </select>
       </div>
@@ -170,6 +185,7 @@
   </div>
 
   <div id="topright">
+    <button id="bulkBtn">📋 주소 목록 일괄 추가</button>
     <button id="exportBtn">⟱ 코드 내보내기</button>
     <button id="clearBtn">🗑 내 추가분 비우기</button>
   </div>
@@ -182,6 +198,20 @@
       <div class="acts">
         <button id="copyBtn" style="background:#3F9E7E; color:#fff;">복사</button>
         <button id="closeExport" style="background:#3a3f49; color:#e8eaed;">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="bulkBox">
+    <div class="inner">
+      <h3>📋 주소 목록 일괄 추가</h3>
+      <p>카카오맵 즐겨찾기 목록을 그대로 붙여넣으세요 (장소/이름/주소 반복). 이름 끝 숫자는 <b>대지지분</b>으로, 끝의 "아파트"는 자동 제거됩니다. 전부 아파트로 추가되며 평·가격은 비워둬 실거래가가 자동 조회됩니다.</p>
+      <textarea id="bulkText" placeholder="장소&#10;동탄역시범우남퍼스트빌아파트&#10;경기 화성시 동탄대로시범길 276 (청계동)&#10;&#10;더보기&#10;장소&#10;..."></textarea>
+      <div id="bulkBar"><div></div></div>
+      <div id="bulkProgress"></div>
+      <div class="acts">
+        <button id="bulkRun" style="background:#3F9E7E; color:#fff;">변환·추가 시작</button>
+        <button id="closeBulk" style="background:#3a3f49; color:#e8eaed;">닫기</button>
       </div>
     </div>
   </div>
@@ -273,7 +303,8 @@
       var left = esc(py)+(py&&price?" ":"")+esc(price);
       if (!left && isAutoPrice(p)) left = (p.auto===undefined) ? "조회중…" : "거래없음";
       var landTxt = (p.land!==""&&p.land!=null&&!isNaN(parseFloat(p.land))&&parseFloat(p.land)>0) ? (" <span style=\"color:"+lc+";\">"+pad2(p.land)+"평</span>") : "";
-      return "<span style=\"color:#fff;\">"+left+"</span>"+landTxt;
+      var jongTxt = (p.jong && String(p.jong).trim()) ? ("<span style=\"color:#9aa39e; font-size:9px; margin-left:2px;\">"+esc(p.jong)+"</span>") : "";
+      return "<span style=\"color:#fff;\">"+left+"</span>"+landTxt+jongTxt;
     } else if (p.kind==="redev"){
       return "<span style=\"color:#fff;\">"+esc(p.stage)+"</span>";
     } else {
@@ -286,6 +317,7 @@
       var py = shownPy(p), price = shownPrice(p);
       var t = py+(price?(" "+price):"");
       if (p.land!==""&&p.land!=null&&!isNaN(parseFloat(p.land))&&parseFloat(p.land)>0) t += " · 대지 "+(parseFloat(p.land))+"평";
+      if (p.jong && String(p.jong).trim()) t += " · "+p.jong;
       if (p.auto && p.auto.date && isAutoPrice(p)) t += "  ("+p.auto.date+" 실거래)";
       return t.trim();
     } else if (p.kind==="redev"){ return p.stage||""; }
@@ -612,7 +644,7 @@
       function q(s){ return '"'+String(s==null?"":s).replace(/"/g,'\\"')+'"'; }
       var lines=all.map(function(p){
         return '    { kind:'+q(p.kind)+', name:'+q(p.name)+', disp:'+q(p.disp)+', score:'+(p.score||0)+',\n' +
-               '      py:'+q(p.py)+', price:'+q(p.price)+', land:'+(parseFloat(p.land)||0)+', stage:'+q(p.stage)+', sub:'+q(p.sub)+',\n' +
+               '      py:'+q(p.py)+', price:'+q(p.price)+', land:'+(parseFloat(p.land)||0)+', jong:'+q(p.jong||"")+', stage:'+q(p.stage)+', sub:'+q(p.sub)+',\n' +
                '      note:'+q(p.note)+', lat:'+Number(p.lat).toFixed(6)+', lng:'+Number(p.lng).toFixed(6)+', code:'+q(p.code)+' },';
       });
       document.getElementById("exportText").value=lines.join("\n");
@@ -625,6 +657,99 @@
     document.getElementById("closeExport").addEventListener("click", function(){
       document.getElementById("exportBox").style.display="none";
       document.getElementById("copyBtn").textContent="복사";
+    });
+
+    // ===== 주소 목록 일괄 추가 =====
+    document.getElementById("bulkBtn").addEventListener("click", function(){
+      document.getElementById("bulkBox").style.display="flex";
+    });
+    document.getElementById("closeBulk").addEventListener("click", function(){
+      document.getElementById("bulkBox").style.display="none";
+    });
+
+    // 카카오맵 즐겨찾기 목록 텍스트 → [{name, addr, land, jong, note}]
+    function parseBulk(text){
+      var lines = text.split("\n").map(function(s){return s.trim();}).filter(function(s){return s.length>0;});
+      var items = [];
+      for (var i=0;i<lines.length;i++){
+        if (lines[i]==="장소"){
+          var name = lines[i+1]||"", addr = lines[i+2]||"", land="", jong="", note="";
+          // 괄호 꼬리 (2025년02월예정) 등 제거
+          name = name.replace(/\s*\((?:19|20)\d{2}년[^)]*\)\s*$/,"").trim();
+          // "대장" 꼬리 → 메모로
+          var dm = name.match(/\s+(대장|[^\s]*대장)$/);
+          if (dm){ note = name.match(/(\S*대장)\s*$/)[1]; name = name.replace(/\s+\S*대장\s*$/,"").trim(); }
+          // 대지지분 + 종: "16.77(2)" 또는 "13.91"
+          var m = name.match(/\s+([\d]+\.[\d]+)(?:\((\d+)\))?\s*$/);
+          if (m){ land = m[1]; if (m[2]) jong = m[2]+"종"; name = name.replace(/\s+[\d.]+(?:\(\d+\))?\s*$/,"").trim(); }
+          // 끝의 "아파트" 제거
+          name = name.replace(/아파트$/,"").trim();
+          if (name && addr) items.push({name:name, addr:addr, land:land, jong:jong, note:note});
+          i += 2;
+        }
+      }
+      return items;
+    }
+
+    function geocodeOne(addr){
+      return new Promise(function(resolve){
+        // 주소에서 끝의 (청계동) 같은 법정동 괄호 제거 후 검색
+        var q = addr.replace(/\s*\([^)]*\)\s*$/,"").trim();
+        geocoder.addressSearch(q, function(result, status){
+          if (status===kakao.maps.services.Status.OK && result[0]){
+            var r = result[0];
+            var lat = parseFloat(r.y), lng = parseFloat(r.x);
+            // 법정동코드 5자리
+            geocoder.coord2RegionCode(lng, lat, function(rc, st2){
+              var code = "";
+              if (st2===kakao.maps.services.Status.OK){
+                var b=null; for (var k=0;k<rc.length;k++){ if(rc[k].region_type==="B"){ b=rc[k]; break; } }
+                if (b && b.code) code = String(b.code).substring(0,5);
+              }
+              resolve({lat:lat, lng:lng, code:code});
+            });
+          } else {
+            resolve(null);  // 주소 검색 실패
+          }
+        });
+      });
+    }
+
+    document.getElementById("bulkRun").addEventListener("click", async function(){
+      var btn = this;
+      var text = document.getElementById("bulkText").value;
+      var items = parseBulk(text);
+      var prog = document.getElementById("bulkProgress");
+      var bar = document.querySelector("#bulkBar > div");
+      if (!items.length){ prog.innerHTML="<span style=\"color:#B85C52;\">인식된 장소가 없습니다. 형식을 확인하세요.</span>"; return; }
+      btn.disabled=true; btn.textContent="변환 중…";
+      prog.innerHTML = "총 "+items.length+"개 인식. 좌표 변환 시작…<br>";
+
+      var ok=0, fail=0, failNames=[];
+      for (var i=0;i<items.length;i++){
+        var it = items[i];
+        var geo = await geocodeOne(it.addr);
+        if (geo){
+          var p = { kind:"apt", name:it.name, disp:"", score:0,
+                    py:"", price:"", land:it.land||0, jong:it.jong||"",
+                    stage:"", sub:"", note:it.note||"",
+                    lat:geo.lat, lng:geo.lng, code:geo.code };
+          added.push(p);
+          ok++;
+        } else { fail++; failNames.push(it.name); }
+        bar.style.width = Math.round((i+1)/items.length*100)+"%";
+        if ((i+1)%10===0 || i===items.length-1){
+          prog.innerHTML = "진행 "+(i+1)+"/"+items.length+" · 성공 "+ok+" · 실패 "+fail +
+            (failNames.length? "<br><span style=\"color:#C9982F;\">실패: "+failNames.slice(0,15).join(", ")+(failNames.length>15?" 외 "+(failNames.length-15)+"개":"")+"</span>":"");
+          prog.scrollTop = prog.scrollHeight;
+        }
+        await new Promise(function(r){ setTimeout(r, 120); });  // 과도한 호출 방지
+      }
+
+      saveAdded(added);
+      renderAll();
+      btn.disabled=false; btn.textContent="변환·추가 시작";
+      prog.innerHTML += "<br><b style=\"color:#3F9E7E;\">완료! "+ok+"개 추가됨.</b> 닫고 지도에서 확인하세요. (영구 반영하려면 '코드 내보내기')";
     });
     document.getElementById("clearBtn").addEventListener("click", function(){
       if (!added.length && !Object.keys(edits).length){ alert("초기화할 변경분이 없습니다."); return; }
