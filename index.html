@@ -90,6 +90,16 @@
     #exportBox .acts { display:flex; gap:8px; margin-top:10px; }
     #exportBox .acts button { flex:1; border:none; border-radius:6px; padding:8px; font-size:12px; font-weight:700; cursor:pointer; }
 
+    #progBox { display:none; position:absolute; inset:0; z-index:50; background:rgba(0,0,0,0.6);
+      align-items:center; justify-content:center; }
+    #progBox .inner { width:min(420px,86%); background:#23272f; border:0.5px solid rgba(255,255,255,0.2);
+      border-radius:12px; padding:20px; text-align:center; }
+    #progTitle { color:#f2f3f5; font-size:14px; font-weight:700; margin-bottom:14px; }
+    #progBar { height:10px; background:#1a1d24; border-radius:6px; overflow:hidden; }
+    #progBar > div { height:100%; width:0%; background:#3F9E7E; transition:width 0.15s; }
+    #progText { color:#cfe8db; font-size:13px; margin-top:10px; }
+    #progFail { color:#C9982F; font-size:11px; margin-top:8px; line-height:1.5; max-height:80px; overflow-y:auto; }
+
     #groupPanel { position:absolute; left:12px; bottom:12px; z-index:20; background:rgba(35,39,47,0.95);
       border:0.5px solid rgba(255,255,255,0.2); border-radius:10px; padding:10px 12px; max-width:230px;
       max-height:45vh; overflow-y:auto; box-shadow:0 2px 10px rgba(0,0,0,0.4); }
@@ -193,6 +203,15 @@
   <div id="groupPanel">
     <div class="gp-head">레이어 (그룹)</div>
     <div id="gpList"></div>
+  </div>
+
+  <div id="progBox">
+    <div class="inner">
+      <div id="progTitle">주소를 좌표로 변환 중…</div>
+      <div id="progBar"><div></div></div>
+      <div id="progText">0 / 0</div>
+      <div id="progFail"></div>
+    </div>
   </div>
 
   <div id="exportBox">
@@ -777,15 +796,33 @@
           (async function(){
             var failNames=[];
             if (needGeo){
+              // 진행률 오버레이 표시
+              var pBox=document.getElementById("progBox");
+              var pBar=document.querySelector("#progBar > div");
+              var pText=document.getElementById("progText");
+              var pTitle=document.getElementById("progTitle");
+              var pFail=document.getElementById("progFail");
+              pTitle.textContent="주소를 좌표로 변환 중…";
+              pFail.innerHTML=""; pBar.style.width="0%"; pText.textContent="0 / "+needGeo;
+              pBox.style.display="flex";
+
+              var done=0, okc=0;
               for (var i=0;i<parsed.length;i++){
                 var p=parsed[i];
                 if ((p.lat==null||p.lng==null) && p.addr){
                   var geo=await geocodeOne(p.addr);
-                  if (geo){ p.lat=geo.lat; p.lng=geo.lng; if(!p.code) p.code=geo.code; }
+                  if (geo){ p.lat=geo.lat; p.lng=geo.lng; if(!p.code) p.code=geo.code; okc++; }
                   else { failNames.push(p.name); }
+                  done++;
+                  pBar.style.width = Math.round(done/needGeo*100)+"%";
+                  pText.textContent = done+" / "+needGeo+"  (성공 "+okc+" · 실패 "+failNames.length+")";
+                  if (failNames.length){
+                    pFail.innerHTML = "변환 실패: "+failNames.slice(0,12).join(", ")+(failNames.length>12?" 외 "+(failNames.length-12)+"개":"");
+                  }
                   await new Promise(function(r){ setTimeout(r,120); });
                 }
               }
+              pBox.style.display="none";
             }
             var imported = parsed.filter(function(p){ return p.lat!=null && p.lng!=null; })
                                  .map(function(p){ var o=Object.assign({},p); delete o.addr; return o; });
@@ -794,9 +831,9 @@
             else { added = imported; }
             saveAdded(added);
             renderAll();
-            var done = "완료! "+imported.length+"개 반영됨.";
-            if (failNames.length) done += "\n주소 변환 실패 "+failNames.length+"개: "+failNames.slice(0,10).join(", ")+(failNames.length>10?" 외":"");
-            alert(done);
+            var done2 = "완료! "+imported.length+"개 반영됨.";
+            if (failNames.length) done2 += "\n주소 변환 실패 "+failNames.length+"개: "+failNames.slice(0,10).join(", ")+(failNames.length>10?" 외":"");
+            alert(done2);
           })();
         } catch(err){
           alert("엑셀 읽기 실패: "+err.message);
