@@ -564,15 +564,16 @@
       p.__marker=marker; p.__iw=iw;
       markerObjs.push(marker);
     }
-    // 정보창 버튼 클릭 바인딩
+    // 정보창 버튼 클릭 바인딩 (각 버튼에 직접)
     function bindIwButtons(iwEl, id){
-      iwEl.addEventListener("click", function(ev){
-        var t=ev.target;
-        if (t.closest && t.closest(".iw-close")){ ev.stopPropagation(); window.__closeIW(); return; }
-        if (t.closest && t.closest(".iw-edit")){ ev.stopPropagation(); startEdit(id); return; }
-        if (t.closest && t.closest(".iw-del")){ ev.stopPropagation(); deleteItem(id); return; }
-        if (t.closest && t.closest(".iw-refresh")){ ev.stopPropagation(); window.__refreshDeal(id); return; }
-      });
+      var bClose=iwEl.querySelector(".iw-close");
+      var bEdit =iwEl.querySelector(".iw-edit");
+      var bDel  =iwEl.querySelector(".iw-del");
+      var bRef  =iwEl.querySelector(".iw-refresh");
+      if (bClose) bClose.onclick=function(ev){ ev.stopPropagation(); window.__closeIW(); };
+      if (bEdit)  bEdit.onclick =function(ev){ ev.stopPropagation(); startEdit(id); };
+      if (bDel)   bDel.onclick  =function(ev){ ev.stopPropagation(); deleteItem(id); };
+      if (bRef)   bRef.onclick  =function(ev){ ev.stopPropagation(); window.__refreshDeal(id); };
     }
     // 마커 하나만 다시 그림 (자동값 도착 시)
     function refreshMarker(p){
@@ -649,6 +650,7 @@
     });
     renderFailBtn();
 
+    function findById(id){ for (var i=0;i<all.length;i++){ if (all[i].__id===id) return all[i]; } return null; }
 
     // ===== 수정/삭제 =====
     function deleteItem(id){
