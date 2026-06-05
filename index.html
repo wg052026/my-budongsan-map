@@ -808,9 +808,11 @@
         sub: (kind==="spot"||kind==="school")?document.getElementById("f-spot").value.trim():"",
         note:document.getElementById("f-note").value.trim(),
         group:document.getElementById("f-group").value.trim(),
+        seq: editingId ? ((findById(editingId)||{}).seq) : undefined,
         lat:pendingPos.getLat(), lng:pendingPos.getLng(),
         code:document.getElementById("f-code").value.trim()
       };
+      if (p.seq==null) delete p.seq;
 
       if (editingId){
         // 수정 저장
