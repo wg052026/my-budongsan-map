@@ -100,6 +100,22 @@
     #progText { color:#cfe8db; font-size:13px; margin-top:10px; }
     #progFail { color:#C9982F; font-size:11px; margin-top:8px; line-height:1.5; max-height:80px; overflow-y:auto; }
 
+    #mapSearch { position:absolute; top:12px; left:50%; transform:translateX(-50%); z-index:25;
+      width:min(360px,70%); }
+    #mapSearch input { width:100%; box-sizing:border-box; padding:9px 60px 9px 12px;
+      background:rgba(35,39,47,0.97); border:0.5px solid rgba(255,255,255,0.25); border-radius:8px;
+      color:#e8eaed; font-size:13px; box-shadow:0 2px 8px rgba(0,0,0,0.35); }
+    #mapSearch input::placeholder { color:#9aa0ab; }
+    #mapSearchBtn { position:absolute; top:4px; right:4px; height:calc(100% - 8px); padding:0 12px;
+      background:#3F9E7E; border:none; border-radius:6px; color:#fff; font-size:12px; font-weight:700; cursor:pointer; }
+    #mapSearchResults { margin-top:6px; background:rgba(35,39,47,0.97); border-radius:8px; overflow:hidden;
+      box-shadow:0 2px 8px rgba(0,0,0,0.35); display:none; max-height:260px; overflow-y:auto; }
+    #mapSearchResults .msr-row { padding:9px 12px; border-bottom:0.5px solid rgba(255,255,255,0.08);
+      cursor:pointer; font-size:12px; color:#e8eaed; }
+    #mapSearchResults .msr-row:last-child { border-bottom:none; }
+    #mapSearchResults .msr-row:hover { background:rgba(63,158,126,0.25); }
+    #mapSearchResults .msr-addr { color:#9aa0ab; font-size:11px; margin-top:2px; }
+
     #failBox { display:none; position:absolute; inset:0; z-index:45; background:rgba(0,0,0,0.55);
       align-items:center; justify-content:center; }
     #failBox .inner { width:min(520px,90%); background:#23272f; border:0.5px solid rgba(255,255,255,0.2);
@@ -130,6 +146,12 @@
 </head>
 <body>
   <div id="map"></div>
+
+  <div id="mapSearch">
+    <input id="mapSearchInput" placeholder="🔍 단지명·주소로 위치 찾기" />
+    <button id="mapSearchBtn">검색</button>
+    <div id="mapSearchResults"></div>
+  </div>
 
   <div id="panel">
     <h3>➕ 추가하기</h3>
@@ -756,6 +778,46 @@
     });
     document.getElementById("f-search").addEventListener("keydown", function(e){
       if (e.key==="Enter"){ e.preventDefault(); document.getElementById("searchBtn").click(); }
+    });
+
+    // ===== 상단 위치 검색바 (단지명·주소로 지도 이동) =====
+    function runMapSearch(){
+      var kw=document.getElementById("mapSearchInput").value.trim();
+      var box=document.getElementById("mapSearchResults");
+      if (!kw){ box.style.display="none"; return; }
+      ps.keywordSearch(kw, function(data, status){
+        box.innerHTML="";
+        if (status===kakao.maps.services.Status.OK && data.length){
+          data.slice(0,8).forEach(function(d){
+            var row=document.createElement("div"); row.className="msr-row";
+            row.innerHTML='<div>'+esc(d.place_name)+'</div>'+
+                          '<div class="msr-addr">'+esc(d.road_address_name||d.address_name||"")+'</div>';
+            row.addEventListener("click", function(){
+              var pos=new kakao.maps.LatLng(parseFloat(d.y), parseFloat(d.x));
+              map.setLevel(4); map.panTo(pos);
+              box.style.display="none";
+              document.getElementById("mapSearchInput").value=d.place_name;
+            });
+            box.appendChild(row);
+          });
+          box.style.display="block";
+        } else {
+          // 장소 검색 실패 시 주소로 시도
+          geocoder.addressSearch(kw, function(res, st){
+            if (st===kakao.maps.services.Status.OK && res[0]){
+              var pos=new kakao.maps.LatLng(parseFloat(res[0].y), parseFloat(res[0].x));
+              map.setLevel(4); map.panTo(pos); box.style.display="none";
+            } else {
+              box.innerHTML='<div class="msr-row" style="color:#9aa0ab;">검색 결과가 없습니다.</div>';
+              box.style.display="block";
+            }
+          });
+        }
+      });
+    }
+    document.getElementById("mapSearchBtn").addEventListener("click", runMapSearch);
+    document.getElementById("mapSearchInput").addEventListener("keydown", function(e){
+      if (e.key==="Enter"){ e.preventDefault(); runMapSearch(); }
     });
 
     function placePin(latlng){
