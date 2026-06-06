@@ -452,19 +452,26 @@
     };
     window.__editItem = function(id){ startEdit(id); };
     window.__deleteItem = function(id){ deleteItem(id); };
-    window.__refreshDeal = function(id){
+    window.__dealMonths = function(id, months){
       var rp = findById(id);
-      if (!rp) return;
+      if (!rp || !rp.code) return;
       var url = DEAL_API + "?lawd=" + encodeURIComponent(rp.code) +
-                "&apt=" + encodeURIComponent(rp.name) + "&months=6";
+                "&apt=" + encodeURIComponent(rp.name) + "&months=" + months;
+      // 정보창에 "조회중" 표시
+      if (rp.__iw && rp.__iw.__el){
+        var nm=rp.__iw.__el.querySelector(".iw-name");
+        if(nm) nm.textContent = rp.name + " (조회중…)";
+      }
       fetch(url).then(function(r){return r.json();}).then(function(j){
         var v = (j && j.ok && j.latest)
           ? { amountText:j.latest.amountText, pyeong:j.latest.pyeong, date:j.latest.date, area:j.latest.areaM2 }
           : null;
+        var cache=loadPriceCache(); cache[priceKey(rp)]=v; savePriceCache(cache);
         autoCache[rp.__id]=v; rp.auto=v;
         refreshMarker(rp);
         if (rp.__iw){ rp.__iw.setMap(map); openIW=rp.__iw; }
-      }).catch(function(){ autoCache[rp.__id]=null; rp.auto=null; refreshMarker(rp); });
+        if (!v) alert(months+"개월 내 거래 기록이 없습니다.");
+      }).catch(function(){ alert("조회 실패. 잠시 후 다시 시도하세요."); });
     };
 
     function markerHtml(p, color){
@@ -480,6 +487,12 @@
       var stars = hasStars(p) ? '<div class="iw-stars" style="color:'+color+';">'+starStr(p.score)+'</div>' : '';
       var info = infoLine(p);
       var infoEl = info ? '<div class="iw-info">'+esc(info)+'</div>' : '';
+      var moreBtns = isAutoPrice(p)
+        ? '<div style="display:flex;gap:6px;margin-top:8px;">' +
+            '<button class="iw-m6" onclick="window.__dealMonths(\''+p.__id+'\',6)" style="flex:1;background:#2c3742;border:0.5px solid rgba(255,255,255,0.2);color:#cfe8db;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;">6개월 조회</button>' +
+            '<button class="iw-m12" onclick="window.__dealMonths(\''+p.__id+'\',12)" style="flex:1;background:#2c3742;border:0.5px solid rgba(255,255,255,0.2);color:#cfe8db;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;">12개월 조회</button>' +
+          '</div>'
+        : '';
       var editDel =
         '<div style="display:flex;gap:6px;margin-top:8px;">' +
           '<button class="iw-edit" onclick="window.__editItem(\''+p.__id+'\')" style="flex:1;background:#3a3f49;border:none;color:#e8eaed;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;">✏ 수정</button>' +
@@ -490,7 +503,7 @@
         '<button class="iw-close" aria-label="닫기" onclick="window.__closeIW()">✕</button></div>' +
         stars + infoEl +
         '<div class="iw-note">'+esc(p.note)+'</div>' +
-        editDel + '</div>';
+        moreBtns + editDel + '</div>';
     }
     function renderAll(){
       DBG("renderAll 시작 markerObjs="+markerObjs.length);
@@ -880,10 +893,10 @@
       });
       if (!targets.length){ if(priceOn) btn.textContent="💰 실거래가 (켜짐)"; return; }
 
-      var BATCH = 5;   // 동시에 조회할 개수 (느리면 늘리기)
+      var BATCH = 10;   // 동시에 조회할 개수
       var doneN = 0;
       async function fetchOne(p){
-        var url = DEAL_API + "?lawd=" + encodeURIComponent(p.code) + "&apt=" + encodeURIComponent(p.name) + "&months=6";
+        var url = DEAL_API + "?lawd=" + encodeURIComponent(p.code) + "&apt=" + encodeURIComponent(p.name) + "&months=3";
         try{
           var r=await fetch(url); var j=await r.json();
           var v=(j && j.ok && j.latest) ? { amountText:j.latest.amountText, pyeong:j.latest.pyeong, date:j.latest.date, area:j.latest.areaM2 } : null;
