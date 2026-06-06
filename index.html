@@ -459,7 +459,10 @@
         refreshBtn + editDel + '</div>';
     }
     function renderAll(){
-      markerObjs.forEach(function(o){ o.setMap(null); }); markerObjs=[];
+      // 기존 마커 + 정보창 모두 확실히 제거
+      markerObjs.forEach(function(o){ if(o) o.setMap(null); }); markerObjs=[];
+      if (all && all.length){ all.forEach(function(p){ if(p.__marker) p.__marker.setMap(null); if(p.__iw) p.__iw.setMap(null); }); }
+      window.__closeIW();
       buildAll();
       var hidden = loadHidden();
       all.forEach(function(p){ if (hidden.indexOf(groupOf(p))<0) drawMarker(p); });
@@ -650,28 +653,37 @@
     // 마커 이동 결과를 저장 (해당 항목의 좌표·코드 갱신)
     function saveMarkerMove(p, latlng){
       var lat=latlng.getLat(), lng=latlng.getLng();
-      // 법정동코드 다시 조회
+      // 먼저 좌표를 즉시 저장 + 다시 그리기 (코드는 기존 유지)
+      applyMove(p, lat, lng, p.code||"");
+      // 법정동코드는 비동기로 조회해서, 끝나면 한 번 더 갱신
       geocoder.coord2RegionCode(lng, lat, function(result, status){
-        var code=p.code||"";
         if (status===kakao.maps.services.Status.OK){
           var b=null; for(var i=0;i<result.length;i++){ if(result[i].region_type==="B"){ b=result[i]; break; } }
           if (!b) b=result[0];
-          if (b) code=(b.code||"").substring(0,5);
+          if (b){
+            var code=(b.code||"").substring(0,5);
+            // 좌표는 그대로, 코드만 갱신 (다시 그리진 않음 — 위치 안 바뀌니까)
+            var id=p.__id;
+            if (id && id.indexOf("fix:")===0){
+              if (edits[id] && edits[id]!=="__deleted__"){ edits[id].code=code; saveEdits(edits); }
+            } else {
+              for (var ai=0; ai<added.length; ai++){ if (added[ai].__id===id){ added[ai].code=code; break; } }
+              saveAdded(added);
+            }
+          }
         }
-        applyMove(p, lat, lng, code);
       });
-      // 조회 실패해도 좌표는 즉시 반영되도록(코드는 기존 유지)
     }
     function applyMove(p, lat, lng, code){
       var id=p.__id;
       if (id && id.indexOf("fix:")===0){
         var cur=(edits[id] && edits[id]!=="__deleted__") ? edits[id] : Object.assign({}, findById(id)||{});
-        cur.lat=lat; cur.lng=lng; cur.code=code; cur.__id=id;
+        cur.lat=lat; cur.lng=lng; if(code) cur.code=code; cur.__id=id;
         delete cur.__marker; delete cur.__iw; delete cur.auto;
         edits[id]=cur; saveEdits(edits);
       } else {
         for (var ai=0; ai<added.length; ai++){
-          if (added[ai].__id===id){ added[ai].lat=lat; added[ai].lng=lng; added[ai].code=code; break; }
+          if (added[ai].__id===id){ added[ai].lat=lat; added[ai].lng=lng; if(code) added[ai].code=code; break; }
         }
         saveAdded(added);
       }
