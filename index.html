@@ -404,7 +404,7 @@
 
     var geocoder = new kakao.maps.services.Geocoder();
     var ps = new kakao.maps.services.Places();
-    var openIW=null, markerObjs=[], tempPin=null, pendingPos=null;
+    var openIW=null, markerObjs=[], tempPin=null, tempPinLabel=null, pendingPos=null;
     var editingId=null;
     var autoCache={};   // __id -> 자동 실거래가값 (재렌더에도 유지)
 
@@ -715,7 +715,9 @@
     }
     function resetPanel(){
       editingId=null;
-      if (tempPin){ tempPin.setMap(null); tempPin=null; } pendingPos=null;
+      if (tempPin){ tempPin.setMap(null); tempPin=null; }
+      if (tempPinLabel){ tempPinLabel.setMap(null); tempPinLabel=null; }
+      pendingPos=null;
       ["f-name","f-disp","f-py","f-price","f-land","f-spot","f-note","f-group","f-code","f-search"].forEach(function(id){ document.getElementById(id).value=""; });
       clearCands();
       var h=document.getElementById("pin-hint"); h.textContent="📍 먼저 지도를 클릭해 위치를 찍으세요"; h.classList.remove("on");
@@ -822,12 +824,23 @@
 
     function placePin(latlng){
       if (tempPin) tempPin.setMap(null);
-      var html='<div style="text-align:center;">' +
-        '<div style="background:#888780;color:#fff;font-size:12px;font-weight:700;padding:4px 9px;' +
-        'border-radius:14px;border:1.5px dashed rgba(255,255,255,0.7);">새 위치</div>' +
-        '<div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;' +
-        'border-top:7px solid #888780;margin:0 auto;"></div></div>';
-      tempPin=new kakao.maps.CustomOverlay({position:latlng,content:html,xAnchor:0.5,yAnchor:1}); tempPin.setMap(map);
+      // 드래그 가능한 기본 마커 사용
+      tempPin = new kakao.maps.Marker({ position: latlng, draggable: true });
+      tempPin.setMap(map);
+      // "새 위치 (드래그 가능)" 라벨
+      if (tempPinLabel) tempPinLabel.setMap(null);
+      var html='<div style="text-align:center; transform:translateY(-46px);">' +
+        '<div style="background:#888780;color:#fff;font-size:11px;font-weight:700;padding:3px 8px;' +
+        'border-radius:12px;border:1.5px dashed rgba(255,255,255,0.7); white-space:nowrap;">✋ 드래그로 이동</div></div>';
+      tempPinLabel=new kakao.maps.CustomOverlay({position:latlng,content:html,xAnchor:0.5,yAnchor:1,zIndex:5});
+      tempPinLabel.setMap(map);
+      // 드래그 끝나면 위치·코드 갱신
+      kakao.maps.event.addListener(tempPin, "dragend", function(){
+        var np=tempPin.getPosition();
+        pendingPos=np;
+        if (tempPinLabel) tempPinLabel.setPosition(np);
+        fillRegionCode(np);
+      });
     }
     function fillRegionCode(latlng){
       geocoder.coord2RegionCode(latlng.getLng(), latlng.getLat(), function(result,status){
