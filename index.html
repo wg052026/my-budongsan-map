@@ -1120,8 +1120,8 @@
     function pickCand(d){
       var lat=parseFloat(d.y), lng=parseFloat(d.x);
       pendingPos=new kakao.maps.LatLng(lat,lng);
-      document.getElementById("f-name").value=d.place_name;
-      placePin(pendingPos); fillRegionCode(pendingPos); map.panTo(pendingPos);
+      document.getElementById("f-name").value=d.place_name.replace(/\s*아파트\s*$/,"").trim();
+      fillRegionCode(pendingPos); map.panTo(pendingPos);
       document.getElementById("addBtn").disabled=false;
     }
     function searchNearby(){
@@ -1129,8 +1129,15 @@
       var kind=document.getElementById("f-kind").value;
       var kw = (kind==="school") ? "학교" : "아파트";   // 재건축도 아파트로 검색
       ps.keywordSearch(kw, function(data,status){
-        if (status===kakao.maps.services.Status.OK) showCands(data, "여기 주변 "+kw+" (선택하면 지정):");
-        else showCands([], "주변에 "+kw+"이 없습니다. 검색하거나 수동 찍기를 쓰세요.");
+        if (status===kakao.maps.services.Status.OK && data.length){
+          showCands(data, "여기 주변 "+kw+" (선택하면 지정):");
+          // 맨 위(가장 가까운) 것을 이름칸에 자동 채움
+          var d0=data[0];
+          document.getElementById("f-name").value = d0.place_name.replace(/\s*아파트\s*$/,"").trim();
+          document.getElementById("addBtn").disabled=false;
+        } else {
+          showCands([], "주변에 "+kw+"이 없습니다. 검색하거나 수동 찍기를 쓰세요.");
+        }
       }, { location: pendingPos, radius: 300, sort: kakao.maps.services.SortBy.DISTANCE });
     }
     document.getElementById("searchBtn").addEventListener("click", function(){
