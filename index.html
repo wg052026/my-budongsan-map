@@ -94,6 +94,23 @@
     #exportBox .acts { display:flex; gap:8px; margin-top:10px; }
     #exportBox .acts button { flex:1; border:none; border-radius:6px; padding:8px; font-size:12px; font-weight:700; cursor:pointer; }
 
+    #trendBox { display:none; position:absolute; inset:0; z-index:55; background:rgba(0,0,0,0.6);
+      align-items:center; justify-content:center; }
+    #trendBox .inner { width:min(560px,94%); background:#23272f; border:0.5px solid rgba(255,255,255,0.2);
+      border-radius:12px; padding:16px; }
+    .trend-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+    #trendTitle { color:#f2f3f5; font-size:14px; font-weight:700; }
+    #trendClose { background:#3a3f49; border:none; color:#e8eaed; border-radius:6px; width:26px; height:26px; cursor:pointer; font-size:13px; }
+    .trend-controls { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+    .trend-controls label { color:#9aa0ab; font-size:12px; }
+    #trendPy { background:#1a1d24; color:#e8eaed; border:0.5px solid rgba(255,255,255,0.2); border-radius:6px; padding:5px 8px; font-size:12px; }
+    .tr-range { background:#1a1d24; color:#9aa0ab; border:0.5px solid rgba(255,255,255,0.2); border-radius:6px; padding:5px 9px; font-size:12px; cursor:pointer; }
+    .tr-range.on { background:#3F9E7E; color:#fff; border-color:#3F9E7E; }
+    #trendCount { color:#9aa0ab; font-size:11px; margin-bottom:8px; }
+    #trendChart { width:100%; height:240px; background:#1a1d24; border-radius:8px; }
+    #trendList { max-height:140px; overflow-y:auto; margin-top:10px; font-size:11px; color:#cfe8db; }
+    #trendList .tr-row { display:flex; justify-content:space-between; padding:3px 4px; border-bottom:0.5px solid rgba(255,255,255,0.07); }
+
     #progBox { display:none; position:absolute; inset:0; z-index:50; background:rgba(0,0,0,0.6);
       align-items:center; justify-content:center; }
     #progBox .inner { width:min(420px,86%); background:#23272f; border:0.5px solid rgba(255,255,255,0.2);
@@ -280,6 +297,27 @@
     <div id="gpList"></div>
   </div>
 
+  <div id="trendBox">
+    <div class="inner">
+      <div class="trend-head">
+        <div id="trendTitle">실거래가 추세</div>
+        <button id="trendClose">✕</button>
+      </div>
+      <div class="trend-controls">
+        <div id="trendRange" style="display:flex; gap:4px;">
+          <button class="tr-range on" data-y="5">5년</button>
+          <button class="tr-range" data-y="3">3년</button>
+          <button class="tr-range" data-y="1">1년</button>
+        </div>
+        <label style="margin-left:8px;">평형</label>
+        <select id="trendPy"></select>
+      </div>
+      <div id="trendCount"></div>
+      <div id="trendChart"></div>
+      <div id="trendList"></div>
+    </div>
+  </div>
+
   <div id="progBox">
     <div class="inner">
       <div id="progTitle">주소를 좌표로 변환 중…</div>
@@ -304,6 +342,7 @@
   <script type="text/javascript"
     src="//dapi.kakao.com/v2/maps/sdk.js?appkey=e8e7bcbd62321728c0f6c0d5e0a0b087&autoload=false&libraries=services"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
   <script src="data.js?v=1"></script>
 
   <script>
@@ -459,29 +498,92 @@
     };
     window.__editItem = function(id){ startEdit(id); };
     window.__deleteItem = function(id){ deleteItem(id); };
-    window.__dealMonths = function(id, months){
+    var trendDeals=[];   // 현재 추세창에 로드된 거래 전체
+
+    window.__showTrend = function(id){
       var rp = findById(id);
       if (!rp || !rp.code) return;
+      var box=document.getElementById("trendBox");
+      document.getElementById("trendTitle").textContent = rp.name + " 실거래가 추세 (5년)";
+      document.getElementById("trendPy").innerHTML = "";
+      document.getElementById("trendCount").textContent = "조회 중…";
+      document.getElementById("trendChart").innerHTML = "";
+      document.getElementById("trendList").innerHTML = "";
+      box.style.display="flex";
+
       var url = DEAL_API + "?lawd=" + encodeURIComponent(rp.code) +
-                "&apt=" + encodeURIComponent(rp.name) + "&months=" + months;
-      // 정보창에 "조회중" 표시
-      if (rp.__iw && rp.__iw.__el){
-        var nm=rp.__iw.__el.querySelector(".iw-name");
-        if(nm) nm.textContent = rp.name + " (조회중…)";
-      }
+                "&apt=" + encodeURIComponent(rp.name) + "&months=60";
       fetch(url).then(function(r){return r.json();}).then(function(j){
-        var v = (j && j.ok && j.latest)
-          ? { amountText:j.latest.amountText, pyeong:j.latest.pyeong, date:j.latest.date, area:j.latest.areaM2 }
-          : null;
-        var cache=loadPriceCache(); cache[priceKey(rp)]=v; savePriceCache(cache);
-        autoCache[rp.__id]=v; rp.auto=v;
-        refreshMarker(rp);
-        if (rp.__iw){ rp.__iw.setMap(map); openIW=rp.__iw; }
+        var deals = (j && j.ok && j.deals) ? j.deals : [];
+        trendDeals = deals;
+        if (!deals.length){ document.getElementById("trendCount").textContent="5년 내 거래 기록이 없습니다."; return; }
+        // 평형별 그룹 (pyeong 기준)
+        var pyMap={};
+        deals.forEach(function(d){ var py=d.pyeong||0; if(!pyMap[py]) pyMap[py]=0; pyMap[py]++; });
+        var pys=Object.keys(pyMap).map(Number).sort(function(a,b){return a-b;});
+        var sel=document.getElementById("trendPy");
+        pys.forEach(function(py){
+          var o=document.createElement("option"); o.value=py;
+          o.textContent=py+"평 ("+pyMap[py]+"건)"; sel.appendChild(o);
+        });
+        // 거래 가장 많은 평형을 기본 선택
+        var topPy=pys[0], topN=0;
+        pys.forEach(function(py){ if(pyMap[py]>topN){ topN=pyMap[py]; topPy=py; } });
+        sel.value=topPy;
+        sel.onchange=function(){ drawTrend(parseInt(this.value,10)); };
+        drawTrend(topPy);
       }).catch(function(){
-        // 실패 시 정보창 이름 원복
-        if (rp.__iw && rp.__iw.__el){ var nm2=rp.__iw.__el.querySelector(".iw-name"); if(nm2) nm2.textContent=rp.name; }
+        document.getElementById("trendCount").textContent="조회 실패. 잠시 후 다시 시도하세요.";
       });
     };
+
+    function drawTrend(py){
+      var deals = trendDeals.filter(function(d){ return (d.pyeong||0)===py; });
+      deals.sort(function(a,b){ return a.dateNum - b.dateNum; });   // 시간순
+      document.getElementById("trendCount").textContent = py+"평 · "+deals.length+"건";
+      var chart=document.getElementById("trendChart");
+      var listEl=document.getElementById("trendList");
+      if (!deals.length){ chart.innerHTML=""; listEl.innerHTML=""; return; }
+
+      // 값 범위 (만원)
+      var vals=deals.map(function(d){ return d.amountManwon||0; });
+      var minV=Math.min.apply(null,vals), maxV=Math.max.apply(null,vals);
+      if (minV===maxV){ minV=minV*0.95; maxV=maxV*1.05; }
+      var W=520, H=240, pad=40;
+      var n=deals.length;
+      function x(i){ return pad + (n<=1?0:(i/(n-1))*(W-pad*2)); }
+      function y(v){ return H-pad - ((v-minV)/(maxV-minV))*(H-pad*2); }
+
+      var pts=deals.map(function(d,i){ return x(i)+","+y(d.amountManwon||0); }).join(" ");
+      // y축 눈금 (min, 중간, max)
+      function eok(m){ return (Math.round(m/1000)/10)+"억"; }
+      var svg='<svg viewBox="0 0 '+W+' '+H+'" width="100%" xmlns="http://www.w3.org/2000/svg">';
+      // 가로 격자 + 라벨
+      [0,0.5,1].forEach(function(t){
+        var vy=pad + t*(H-pad*2); var vv=maxV-(t*(maxV-minV));
+        svg+='<line x1="'+pad+'" y1="'+vy+'" x2="'+(W-pad)+'" y2="'+vy+'" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>';
+        svg+='<text x="4" y="'+(vy+4)+'" fill="#9aa0ab" font-size="10">'+eok(vv)+'</text>';
+      });
+      // 추세선
+      svg+='<polyline points="'+pts+'" fill="none" stroke="#3F9E7E" stroke-width="2"/>';
+      // 점
+      deals.forEach(function(d,i){ svg+='<circle cx="'+x(i)+'" cy="'+y(d.amountManwon||0)+'" r="2.5" fill="#cfe8db"/>'; });
+      // x축 양끝 날짜
+      svg+='<text x="'+pad+'" y="'+(H-8)+'" fill="#9aa0ab" font-size="10">'+(deals[0].date||"")+'</text>';
+      svg+='<text x="'+(W-pad)+'" y="'+(H-8)+'" fill="#9aa0ab" font-size="10" text-anchor="end">'+(deals[n-1].date||"")+'</text>';
+      svg+='</svg>';
+      chart.innerHTML=svg;
+
+      // 최근순 목록
+      var rows=deals.slice().reverse().map(function(d){
+        return '<div class="tr-row"><span>'+(d.date||"")+(d.floor?(" · "+d.floor+"층"):"")+'</span><span>'+(d.amountText||eok(d.amountManwon))+'</span></div>';
+      }).join("");
+      listEl.innerHTML=rows;
+    }
+
+    document.getElementById("trendClose").addEventListener("click", function(){
+      document.getElementById("trendBox").style.display="none";
+    });
 
     function markerHtml(p, color){
       var disp = p.disp && p.disp.trim() ? p.disp : p.name;
@@ -497,10 +599,7 @@
       var info = infoLine(p);
       var infoEl = info ? '<div class="iw-info">'+esc(info)+'</div>' : '';
       var moreBtns = isAutoPrice(p)
-        ? '<div style="display:flex;gap:6px;margin-top:8px;">' +
-            '<button class="iw-m6" onclick="window.__dealMonths(\''+p.__id+'\',6)" style="flex:1;background:#2c3742;border:0.5px solid rgba(255,255,255,0.2);color:#cfe8db;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;">6개월 조회</button>' +
-            '<button class="iw-m12" onclick="window.__dealMonths(\''+p.__id+'\',12)" style="flex:1;background:#2c3742;border:0.5px solid rgba(255,255,255,0.2);color:#cfe8db;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;">12개월 조회</button>' +
-          '</div>'
+        ? '<button class="iw-trend" onclick="window.__showTrend(\''+p.__id+'\')" style="width:100%;margin-top:8px;background:#2c3742;border:0.5px solid rgba(255,255,255,0.2);color:#cfe8db;border-radius:6px;padding:7px;font-size:11px;font-weight:700;cursor:pointer;">📈 실거래가 추세</button>'
         : '';
       var editDel =
         '<div style="display:flex;gap:6px;margin-top:8px;">' +
