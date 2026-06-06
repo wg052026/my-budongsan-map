@@ -307,7 +307,17 @@
   var STORE_KEY = "budongsan_added_v2";
   var EDIT_KEY  = "budongsan_edits_v1";   // 고정항목 편집/삭제 오버라이드
   var HIDE_KEY  = "budongsan_hidden_groups_v1";  // 숨긴 그룹 이름들
-  function loadAdded(){ try{ return JSON.parse(localStorage.getItem(STORE_KEY)||"[]"); }catch(e){ return []; } }
+  function loadAdded(){
+    var arr=[];
+    try{ arr = JSON.parse(localStorage.getItem(STORE_KEY)||"[]"); }catch(e){ arr=[]; }
+    // 각 항목에 고유 id 부여 (없는 것만) → 이후 절대 안 바뀜
+    var changed=false;
+    arr.forEach(function(p, i){
+      if (!p.__id){ p.__id = "add_" + Date.now() + "_" + i + "_" + Math.floor(Math.random()*1000000); changed=true; }
+    });
+    if (changed){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(arr)); }catch(e){} }
+    return arr;
+  }
   function saveAdded(a){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(a)); }catch(e){} }
   function loadHidden(){ try{ return JSON.parse(localStorage.getItem(HIDE_KEY)||"[]"); }catch(e){ return []; } }
   function saveHidden(a){ try{ localStorage.setItem(HIDE_KEY, JSON.stringify(a)); }catch(e){} }
@@ -393,7 +403,7 @@
         list.push(merged);
       });
       added.forEach(function(p, i){
-        if (!p.__id) p.__id = "add:" + Date.now() + ":" + i + ":" + Math.floor(Math.random()*100000);
+        if (!p.__id) p.__id = "add_" + i;   // 안전망 (보통 loadAdded에서 이미 부여됨)
         var item = Object.assign({}, p);
         list.push(item);
       });
@@ -693,14 +703,16 @@
     function applyMove(p, lat, lng, code){
       var id=p.__id;
       if (id && id.indexOf("fix:")===0){
-        var cur=(edits[id] && edits[id]!=="__deleted__") ? edits[id] : Object.assign({}, findById(id)||{});
-        cur.lat=lat; cur.lng=lng; if(code) cur.code=code; cur.__id=id;
-        delete cur.__marker; delete cur.__iw; delete cur.auto;
+        var cur=(edits[id] && edits[id]!=="__deleted__") ? Object.assign({}, edits[id]) : Object.assign({}, findById(id)||{});
+        cur.lat=lat; cur.lng=lng; if(code) cur.code=code;
+        delete cur.__id; delete cur.__marker; delete cur.__iw; delete cur.auto;
         edits[id]=cur; saveEdits(edits);
       } else {
+        var found=false;
         for (var ai=0; ai<added.length; ai++){
-          if (added[ai].__id===id){ added[ai].lat=lat; added[ai].lng=lng; if(code) added[ai].code=code; break; }
+          if (added[ai].__id===id){ added[ai].lat=lat; added[ai].lng=lng; if(code) added[ai].code=code; found=true; break; }
         }
+        // 못 찾아도 새로 추가하지 않음 (복사 방지)
         saveAdded(added);
       }
       renderAll();
@@ -817,7 +829,6 @@
         this.style.background="#3F9E7E"; this.style.color="#fff";
         // 이동 모드와 동시에 켜지지 않게
         if (moveMode){ moveMode=false; var mb=document.getElementById("moveModeBtn"); mb.textContent="✋ 이동 모드"; mb.style.background=""; mb.style.color=""; document.getElementById("map").classList.remove("move-mode"); }
-        alert("수동 찍기 모드입니다.\n지도에서 원하는 자리를 클릭하면 그 위치에 핀이 찍힙니다.\n(지하철 호재처럼 건물이 없는 곳에 쓰세요)");
       } else {
         this.textContent="📍 수동 찍기";
         this.style.background=""; this.style.color="";
