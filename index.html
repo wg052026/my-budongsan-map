@@ -1156,6 +1156,15 @@
               map.setLevel(4); map.panTo(pos);
               box.style.display="none";
               document.getElementById("mapSearchInput").value=d.place_name;
+              // 추가하기 폼에만 채우기: 이름·위치·코드 (핀은 안 찍음)
+              pendingPos = pos;
+              var nm = d.place_name.replace(/\s*아파트\s*$/,"").trim();
+              document.getElementById("f-name").value = nm;
+              fillRegionCode(pos);
+              document.getElementById("addBtn").disabled=false;
+              // 패널이 접혀 있으면 펴기
+              var pbody=document.getElementById("panelBody");
+              if (pbody && pbody.style.display==="none"){ pbody.style.display="block"; document.getElementById("panelArrow").textContent="▾"; }
             });
             box.appendChild(row);
           });
