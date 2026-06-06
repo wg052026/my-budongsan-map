@@ -389,8 +389,8 @@
         list.push(merged);
       });
       added.forEach(function(p, i){
+        if (!p.__id) p.__id = "add:" + Date.now() + ":" + i + ":" + Math.floor(Math.random()*100000);
         var item = Object.assign({}, p);
-        item.__id = item.__id || ("add:" + i);
         list.push(item);
       });
       all = list;
@@ -892,11 +892,17 @@
       if (editingId){
         // 수정 저장
         if (editingId.indexOf("fix:")===0){
+          p.__id = editingId;
           edits[editingId] = p;            // 고정항목 오버라이드
           saveEdits(edits);
         } else {
-          var i = parseInt(editingId.split(":")[1],10);
-          added[i] = p; saveAdded(added);  // 추가항목 갱신
+          // 추가항목: __id로 정확히 찾아 갱신 (배열 인덱스가 어긋날 수 있어 split 사용 금지)
+          var found=false;
+          for (var ai=0; ai<added.length; ai++){
+            if (added[ai].__id===editingId){ p.__id=editingId; added[ai]=p; found=true; break; }
+          }
+          if (!found){ p.__id=editingId; added.push(p); }  // 못 찾으면 추가
+          saveAdded(added);
         }
       } else {
         // 신규 추가
