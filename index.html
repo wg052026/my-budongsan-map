@@ -1270,7 +1270,7 @@
           if (pbody){ pbody.style.display="none"; document.getElementById("panelArrow").textContent="▸"; }
           clearCands();
         }
-      }, { location: pendingPos, radius: 100, sort: kakao.maps.services.SortBy.DISTANCE });
+      }, { location: pendingPos, radius: 300, sort: kakao.maps.services.SortBy.DISTANCE });
     }
 
     // 종류별 잡것 거르기
@@ -1285,7 +1285,7 @@
         });
       }
       // 아파트: 관리사무소/상가/충전소/유치원/동(棟) 단위 등 제외
-      var badA=/(관리사무소|공인중개|중개사|부동산|상가|입주자|경비|주차장|정문|후문|충전소|충전|주유소|세차|택배|보관소|커뮤니티|헬스|피트니스|어린이집|유치원|유아|놀이방|경로당|마트|편의점|카페|식당|학원|병원|약국|미용)/;
+      var badA=/(관리사무소|공인중개|중개사|부동산|상가|입주자|경비|주차장|정문|후문|충전소|충전|주유소|세차|택배|보관소|커뮤니티|헬스|피트니스|어린이집|유치원|유아|놀이방|경로당|마트|편의점|카페|식당|학원|병원|약국|미용|ATM|은행|atm)/;
       return data.filter(function(d){
         var n=d.place_name;
         if (badA.test(n)) return false;
@@ -1331,7 +1331,7 @@
         box.innerHTML="";
         if (status===kakao.maps.services.Status.OK && data.length){
           // 잡것(관리사무소/공인중개/부동산/상가 등) 거르기
-          var bad = /(관리사무소|공인중개|중개사|부동산|상가|입주자|경비실|마이뉴|도서관|학원|교회|병원|약국|미용|카페|편의점|마트|주차장|정문|후문|충전소|충전|주유소|세차|택배|보관소|커뮤니티|헬스|피트니스|어린이집|유치원|유아|놀이방|경로당)/;
+          var bad = /(관리사무소|공인중개|중개사|부동산|상가|입주자|경비실|마이뉴|도서관|학원|교회|병원|약국|미용|카페|편의점|마트|주차장|정문|후문|충전소|충전|주유소|세차|택배|보관소|커뮤니티|헬스|피트니스|어린이집|유치원|유아|놀이방|경로당|ATM|은행|atm)/;
           var good = data.filter(function(d){
             if (bad.test(d.place_name)) return false;
             if (/\d+동$/.test(d.place_name.replace(/\s+/g,""))) return false;
@@ -1454,10 +1454,10 @@
       }
       ps.keywordSearch("아파트", function(data,status){
         got.apt = (status===kakao.maps.services.Status.OK && data.length) ? data[0] : null; done();
-      }, { location: pos, radius: 100, sort: kakao.maps.services.SortBy.DISTANCE });
+      }, { location: pos, radius: 300, sort: kakao.maps.services.SortBy.DISTANCE });
       ps.keywordSearch("학교", function(data,status){
         got.school = (status===kakao.maps.services.Status.OK && data.length) ? data[0] : null; done();
-      }, { location: pos, radius: 100, sort: kakao.maps.services.SortBy.DISTANCE });
+      }, { location: pos, radius: 300, sort: kakao.maps.services.SortBy.DISTANCE });
     }
 
     document.getElementById("addBtn").addEventListener("click", function(){
