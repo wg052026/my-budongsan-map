@@ -500,15 +500,20 @@
     window.__deleteItem = function(id){ deleteItem(id); };
     var trendDeals=[];   // 현재 추세창에 로드된 거래 전체
 
+    var trendYears = 5, trendPyVal = null;
+
     window.__showTrend = function(id){
       var rp = findById(id);
       if (!rp || !rp.code) return;
       var box=document.getElementById("trendBox");
-      document.getElementById("trendTitle").textContent = rp.name + " 실거래가 추세 (5년)";
+      document.getElementById("trendTitle").textContent = rp.name + " 실거래가 추세";
       document.getElementById("trendPy").innerHTML = "";
-      document.getElementById("trendCount").textContent = "조회 중…";
+      document.getElementById("trendCount").textContent = "조회 중… (최대 5년치, 처음엔 시간이 걸립니다)";
       document.getElementById("trendChart").innerHTML = "";
       document.getElementById("trendList").innerHTML = "";
+      trendYears = 5; trendPyVal = null;
+      // 기간 버튼 5년으로 초기화 표시
+      document.querySelectorAll("#trendRange .tr-range").forEach(function(b){ b.classList.toggle("on", b.getAttribute("data-y")==="5"); });
       box.style.display="flex";
 
       var url = DEAL_API + "?lawd=" + encodeURIComponent(rp.code) +
@@ -516,73 +521,80 @@
       fetch(url).then(function(r){return r.json();}).then(function(j){
         var deals = (j && j.ok && j.deals) ? j.deals : [];
         trendDeals = deals;
-        if (!deals.length){ document.getElementById("trendCount").textContent="5년 내 거래 기록이 없습니다."; return; }
-        // 평형별 그룹 (pyeong 기준)
+        if (!deals.length){ document.getElementById("trendCount").textContent="거래 기록이 없습니다."; return; }
+        // 평형 드롭다운 (거래 많은 순)
         var pyMap={};
-        deals.forEach(function(d){ var py=d.pyeong||0; if(!pyMap[py]) pyMap[py]=0; pyMap[py]++; });
-        var pys=Object.keys(pyMap).map(Number).sort(function(a,b){return a-b;});
+        deals.forEach(function(d){ var py=d.pyeong||0; if(py>0) pyMap[py]=(pyMap[py]||0)+1; });
+        var pys=Object.keys(pyMap).map(Number).sort(function(a,b){ return pyMap[b]-pyMap[a]; });
         var sel=document.getElementById("trendPy");
+        sel.innerHTML="";
         pys.forEach(function(py){
           var o=document.createElement("option"); o.value=py;
           o.textContent=py+"평 ("+pyMap[py]+"건)"; sel.appendChild(o);
         });
-        // 거래 가장 많은 평형을 기본 선택
-        var topPy=pys[0], topN=0;
-        pys.forEach(function(py){ if(pyMap[py]>topN){ topN=pyMap[py]; topPy=py; } });
-        sel.value=topPy;
-        sel.onchange=function(){ drawTrend(parseInt(this.value,10)); };
-        drawTrend(topPy);
+        trendPyVal = pys.length ? pys[0] : null;
+        sel.value = trendPyVal;
+        sel.onchange=function(){ trendPyVal=parseInt(this.value,10); drawTrend(); };
+        drawTrend();
       }).catch(function(){
         document.getElementById("trendCount").textContent="조회 실패. 잠시 후 다시 시도하세요.";
       });
     };
 
-    function drawTrend(py){
-      var deals = trendDeals.filter(function(d){ return (d.pyeong||0)===py; });
-      deals.sort(function(a,b){ return a.dateNum - b.dateNum; });   // 시간순
-      document.getElementById("trendCount").textContent = py+"평 · "+deals.length+"건";
+    function drawTrend(){
+      var now=new Date(); var cut=new Date(); cut.setFullYear(now.getFullYear()-trendYears);
+      var cutNum = cut.getFullYear()*10000 + (cut.getMonth()+1)*100 + cut.getDate();
+      var deals = trendDeals.filter(function(d){
+        if (d.dateNum < cutNum) return false;
+        if (trendPyVal!=null && (d.pyeong||0)!==trendPyVal) return false;
+        return true;
+      });
+      deals.sort(function(a,b){ return a.dateNum - b.dateNum; });
+      document.getElementById("trendCount").textContent =
+        "최근 "+trendYears+"년 · " + (trendPyVal!=null? trendPyVal+"평 · " : "") + deals.length+"건";
       var chart=document.getElementById("trendChart");
       var listEl=document.getElementById("trendList");
-      if (!deals.length){ chart.innerHTML=""; listEl.innerHTML=""; return; }
+      if (!deals.length){ chart.innerHTML='<div style="color:#9aa0ab;padding:20px;text-align:center;">해당 기간 거래가 없습니다.</div>'; listEl.innerHTML=""; return; }
 
-      // 값 범위 (만원)
       var vals=deals.map(function(d){ return d.amountManwon||0; });
       var minV=Math.min.apply(null,vals), maxV=Math.max.apply(null,vals);
       if (minV===maxV){ minV=minV*0.95; maxV=maxV*1.05; }
       var W=520, H=240, pad=40;
       var n=deals.length;
-      function x(i){ return pad + (n<=1?0:(i/(n-1))*(W-pad*2)); }
+      function x(i){ return pad + (n<=1?(W-pad*2)/2:(i/(n-1))*(W-pad*2)); }
       function y(v){ return H-pad - ((v-minV)/(maxV-minV))*(H-pad*2); }
-
       var pts=deals.map(function(d,i){ return x(i)+","+y(d.amountManwon||0); }).join(" ");
-      // y축 눈금 (min, 중간, max)
       function eok(m){ return (Math.round(m/1000)/10)+"억"; }
       var svg='<svg viewBox="0 0 '+W+' '+H+'" width="100%" xmlns="http://www.w3.org/2000/svg">';
-      // 가로 격자 + 라벨
       [0,0.5,1].forEach(function(t){
         var vy=pad + t*(H-pad*2); var vv=maxV-(t*(maxV-minV));
         svg+='<line x1="'+pad+'" y1="'+vy+'" x2="'+(W-pad)+'" y2="'+vy+'" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>';
         svg+='<text x="4" y="'+(vy+4)+'" fill="#9aa0ab" font-size="10">'+eok(vv)+'</text>';
       });
-      // 추세선
       svg+='<polyline points="'+pts+'" fill="none" stroke="#3F9E7E" stroke-width="2"/>';
-      // 점
       deals.forEach(function(d,i){ svg+='<circle cx="'+x(i)+'" cy="'+y(d.amountManwon||0)+'" r="2.5" fill="#cfe8db"/>'; });
-      // x축 양끝 날짜
       svg+='<text x="'+pad+'" y="'+(H-8)+'" fill="#9aa0ab" font-size="10">'+(deals[0].date||"")+'</text>';
       svg+='<text x="'+(W-pad)+'" y="'+(H-8)+'" fill="#9aa0ab" font-size="10" text-anchor="end">'+(deals[n-1].date||"")+'</text>';
       svg+='</svg>';
       chart.innerHTML=svg;
 
-      // 최근순 목록
-      var rows=deals.slice().reverse().map(function(d){
-        return '<div class="tr-row"><span>'+(d.date||"")+(d.floor?(" · "+d.floor+"층"):"")+'</span><span>'+(d.amountText||eok(d.amountManwon))+'</span></div>';
+      var rows=deals.slice().reverse().slice(0,15).map(function(d){
+        return '<div class="tr-row"><span>'+(d.date||"")+(d.floor?(" · "+d.floor+"층"):"")+'</span><span>'+(d.amountText||eok(d.amountManwon))+' · '+(d.pyeong||"?")+'평</span></div>';
       }).join("");
       listEl.innerHTML=rows;
     }
 
     document.getElementById("trendClose").addEventListener("click", function(){
       document.getElementById("trendBox").style.display="none";
+    });
+    // 기간 버튼 (5/3/1년) — 다시 조회 안 하고 받아둔 데이터에서 거르기만
+    document.querySelectorAll("#trendRange .tr-range").forEach(function(b){
+      b.addEventListener("click", function(){
+        document.querySelectorAll("#trendRange .tr-range").forEach(function(x){ x.classList.remove("on"); });
+        this.classList.add("on");
+        trendYears = parseInt(this.getAttribute("data-y"),10);
+        drawTrend();
+      });
     });
 
     function markerHtml(p, color){
