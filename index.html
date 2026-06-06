@@ -1238,7 +1238,7 @@
             parsed.forEach(function(p){ if(!p.group) p.group=gname; });
           }
 
-          var needGeo = parsed.filter(function(p){ return (p.lat==null||p.lng==null) && p.addr; }).length;
+          var needGeo = parsed.filter(function(p){ return (p.lat==null||p.lng==null) && (p.addr||p.name); }).length;
           var msg = parsed.length+"개를 지도에 넣습니다.";
           if (needGeo) msg += "\n(좌표 없는 "+needGeo+"개는 주소로 자동 변환 — 시간이 좀 걸립니다)";
           if (skipped) msg += "\n(이름·좌표·주소 모두 없는 "+skipped+"개는 건너뜀)";
@@ -1262,8 +1262,8 @@
               var done=0, okc=0;
               for (var i=0;i<parsed.length;i++){
                 var p=parsed[i];
-                if ((p.lat==null||p.lng==null) && p.addr){
-                  var geo=await geocodeOne(p.addr);
+                if ((p.lat==null||p.lng==null) && (p.addr || p.name)){
+                  var geo=await geocodeOne(p.name, p.addr);
                   if (geo){ p.lat=geo.lat; p.lng=geo.lng; if(!p.code) p.code=geo.code; okc++; }
                   else { failList.push({name:p.name, addr:p.addr, group:p.group||"", land:p.land||0, jong:p.jong||"", note:p.note||"", seq:p.seq, score:p.score||0}); }
                   done++;
@@ -1401,26 +1401,52 @@
     });
 
     // 주소 → 좌표·법정동코드 변환 (엑셀 넣기에서 사용)
-    function geocodeOne(addr){
+    // 단지명으로 장소 검색(정확) → 실패 시 주소로 폴백
+    function geocodeOne(name, addr){
       return new Promise(function(resolve){
-        // 주소에서 끝의 (청계동) 같은 법정동 괄호 제거 후 검색
-        var q = addr.replace(/\s*\([^)]*\)\s*$/,"").trim();
-        geocoder.addressSearch(q, function(result, status){
-          if (status===kakao.maps.services.Status.OK && result[0]){
-            var r = result[0];
-            var lat = parseFloat(r.y), lng = parseFloat(r.x);
-            // 법정동코드 5자리
-            geocoder.coord2RegionCode(lng, lat, function(rc, st2){
-              var code = "";
-              if (st2===kakao.maps.services.Status.OK){
-                var b=null; for (var k=0;k<rc.length;k++){ if(rc[k].region_type==="B"){ b=rc[k]; break; } }
-                if (b && b.code) code = String(b.code).substring(0,5);
-              }
-              resolve({lat:lat, lng:lng, code:code});
-            });
-          } else {
-            resolve(null);  // 주소 검색 실패
-          }
+        var addrClean = (addr||"").replace(/\s*\([^)]*\)\s*$/,"").trim();
+        // 주소에서 시/구 추출해 검색어에 붙이면 동명이단지 구분에 도움
+        var region = "";
+        var mm = addrClean.match(/(경기\s*\S+시|서울\S*구|\S+시\s*\S+구|\S+시|\S+군)/);
+        if (mm) region = mm[1];
+
+        function finish(lat, lng){
+          geocoder.coord2RegionCode(lng, lat, function(rc, st2){
+            var code = "";
+            if (st2===kakao.maps.services.Status.OK){
+              var b=null; for (var k=0;k<rc.length;k++){ if(rc[k].region_type==="B"){ b=rc[k]; break; } }
+              if (b && b.code) code = String(b.code).substring(0,5);
+            }
+            resolve({lat:lat, lng:lng, code:code});
+          });
+        }
+
+        // 1) 단지명(+지역)으로 장소 검색 — 실제 단지 위치
+        function tryPlace(query, next){
+          if (!query){ next(); return; }
+          ps.keywordSearch(query, function(data, status){
+            if (status===kakao.maps.services.Status.OK && data && data.length){
+              finish(parseFloat(data[0].y), parseFloat(data[0].x));
+            } else { next(); }
+          });
+        }
+
+        var nm = (name||"").trim();
+        // "동탄역롯데캐슬" 등 — 아파트 붙여서 검색하면 더 정확
+        var q1 = nm ? (region? (region+" "+nm+" 아파트") : (nm+" 아파트")) : "";
+        var q2 = nm ? (region? (region+" "+nm) : nm) : "";
+
+        tryPlace(q1, function(){
+          tryPlace(q2, function(){
+            // 2) 장소 검색 실패 → 주소로 지오코딩 폴백
+            if (addrClean){
+              geocoder.addressSearch(addrClean, function(result, status){
+                if (status===kakao.maps.services.Status.OK && result[0]){
+                  finish(parseFloat(result[0].y), parseFloat(result[0].x));
+                } else { resolve(null); }
+              });
+            } else { resolve(null); }
+          });
         });
       });
     }
