@@ -1183,7 +1183,7 @@
         } else {
           showCands([], "주변에 "+kw+"이 없습니다. 검색하거나 수동 찍기를 쓰세요.");
         }
-      }, { location: pendingPos, radius: 300, sort: kakao.maps.services.SortBy.DISTANCE });
+      }, { location: pendingPos, radius: 100, sort: kakao.maps.services.SortBy.DISTANCE });
     }
 
     // ===== 상단 위치 검색바 (단지명·주소로 지도 이동) =====
