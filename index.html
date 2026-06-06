@@ -432,7 +432,7 @@
 
     function markerHtml(p, color){
       var disp = p.disp && p.disp.trim() ? p.disp : p.name;
-      return '<div class="mk-wrap" data-id="'+p.__id+'" onclick="window.__mkClick(\''+p.__id+'\')">' +
+      return '<div class="mk-wrap" data-id="'+p.__id+'">' +
         '<div class="mk-box" style="background:'+color+';">' +
           '<div class="mk-name">'+esc(disp)+'</div>' +
           '<div class="mk-sub">'+subLineHtml(p)+'</div>' +
@@ -577,14 +577,105 @@
       var iw=new kakao.maps.CustomOverlay({position:pos,content:iwEl,xAnchor:0.5,yAnchor:1.18,clickable:true});
       marker.__onClick=function(){ window.__closeIW(); iw.setMap(map); openIW=iw; map.panTo(pos); };
 
-      // 마커 클릭
-      el.addEventListener("click", function(ev){ ev.stopPropagation(); marker.__onClick(); });
-      // 정보창 내부 버튼 클릭 (위임)
+      // 정보창 내부 버튼 클릭
       bindIwButtons(iwEl, p.__id);
+
+      // ===== 마커 직접 드래그 (누르고 끌면 이동, 그냥 떼면 클릭=정보창) =====
+      enableMarkerDrag(el, marker, p);
 
       marker.__el=el; iw.__el=iwEl;
       p.__marker=marker; p.__iw=iw;
       markerObjs.push(marker);
+    }
+
+    // 마커 엘리먼트에 드래그+클릭 처리
+    function enableMarkerDrag(el, marker, p){
+      var startX=0, startY=0, moved=false, dragging=false;
+      var THRESH=5; // 이만큼 넘게 움직이면 드래그로 간주
+
+      function getXY(ev){
+        if (ev.touches && ev.touches[0]) return {x:ev.touches[0].clientX, y:ev.touches[0].clientY};
+        return {x:ev.clientX, y:ev.clientY};
+      }
+      function onDown(ev){
+        var pt=getXY(ev); startX=pt.x; startY=pt.y; moved=false; dragging=true;
+        map.setDraggable(false);   // 드래그 중 지도 고정
+        document.addEventListener("mousemove", onMove);
+        document.addEventListener("mouseup", onUp);
+        document.addEventListener("touchmove", onMove, {passive:false});
+        document.addEventListener("touchend", onUp);
+        ev.stopPropagation();
+      }
+      function onMove(ev){
+        if (!dragging) return;
+        var pt=getXY(ev);
+        var dx=pt.x-startX, dy=pt.y-startY;
+        if (!moved && (Math.abs(dx)>THRESH || Math.abs(dy)>THRESH)) moved=true;
+        if (moved){
+          if (ev.cancelable) ev.preventDefault();
+          // 화면 좌표 → 지도 좌표
+          var proj=map.getProjection();
+          var containerPt=screenToContainer(pt.x, pt.y);
+          var latlng=proj.coordsFromContainerPoint(containerPt);
+          marker.setPosition(latlng);
+          if (p.__iw) p.__iw.setPosition(latlng);
+        }
+      }
+      function onUp(ev){
+        dragging=false;
+        map.setDraggable(true);
+        document.removeEventListener("mousemove", onMove);
+        document.removeEventListener("mouseup", onUp);
+        document.removeEventListener("touchmove", onMove);
+        document.removeEventListener("touchend", onUp);
+        if (moved){
+          // 이동 완료 → 새 위치로 저장
+          var np=marker.getPosition();
+          saveMarkerMove(p, np);
+        } else {
+          // 안 움직임 = 클릭 → 정보창
+          marker.__onClick();
+        }
+      }
+      el.addEventListener("mousedown", onDown);
+      el.addEventListener("touchstart", onDown, {passive:true});
+    }
+
+    // 화면(clientX/Y) → 지도 컨테이너 좌표
+    function screenToContainer(clientX, clientY){
+      var rect=document.getElementById("map").getBoundingClientRect();
+      return new kakao.maps.Point(clientX-rect.left, clientY-rect.top);
+    }
+
+    // 마커 이동 결과를 저장 (해당 항목의 좌표·코드 갱신)
+    function saveMarkerMove(p, latlng){
+      var lat=latlng.getLat(), lng=latlng.getLng();
+      // 법정동코드 다시 조회
+      geocoder.coord2RegionCode(lng, lat, function(result, status){
+        var code=p.code||"";
+        if (status===kakao.maps.services.Status.OK){
+          var b=null; for(var i=0;i<result.length;i++){ if(result[i].region_type==="B"){ b=result[i]; break; } }
+          if (!b) b=result[0];
+          if (b) code=(b.code||"").substring(0,5);
+        }
+        applyMove(p, lat, lng, code);
+      });
+      // 조회 실패해도 좌표는 즉시 반영되도록(코드는 기존 유지)
+    }
+    function applyMove(p, lat, lng, code){
+      var id=p.__id;
+      if (id && id.indexOf("fix:")===0){
+        var cur=(edits[id] && edits[id]!=="__deleted__") ? edits[id] : Object.assign({}, findById(id)||{});
+        cur.lat=lat; cur.lng=lng; cur.code=code; cur.__id=id;
+        delete cur.__marker; delete cur.__iw; delete cur.auto;
+        edits[id]=cur; saveEdits(edits);
+      } else {
+        for (var ai=0; ai<added.length; ai++){
+          if (added[ai].__id===id){ added[ai].lat=lat; added[ai].lng=lng; added[ai].code=code; break; }
+        }
+        saveAdded(added);
+      }
+      renderAll();
     }
     // 정보창 버튼 클릭 바인딩 (각 버튼에 직접)
     function bindIwButtons(iwEl, id){
