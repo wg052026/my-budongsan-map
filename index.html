@@ -1273,27 +1273,21 @@
       }, { location: pendingPos, radius: 300, sort: kakao.maps.services.SortBy.DISTANCE });
     }
 
-    // 종류별 잡것 거르기
+    // 종류별: "아파트"/"○○학교"로 끝나는 것만 통과 (뒤에 뭐 붙으면 제외)
     function filterNearby(data, kind){
       if (kind==="school"){
-        // 학교만 (행정실/교무실/병설유치원/검색 등 제외, "학교"로 끝나는 것 우선)
-        var bad=/(행정실|교무실|병설|유치원|어린이집|매점|기숙사|운동장|체육관|정문|후문|주차장|도서관|급식|관리실)/;
         return data.filter(function(d){
-          var n=d.place_name;
-          if (bad.test(n)) return false;
-          return /(초등학교|중학교|고등학교|학교)$/.test(n) || /(초|중|고)$/.test(n);
+          var n=d.place_name.replace(/\s+/g,"");
+          return /(초등학교|중학교|고등학교)$/.test(n);
         });
       }
-      // 아파트: 관리사무소/상가/충전소/유치원/동(棟) 단위 등 제외
-      var badA=/(관리사무소|공인중개|중개사|부동산|상가|입주자|경비|주차장|정문|후문|충전소|충전|주유소|세차|택배|보관소|커뮤니티|헬스|피트니스|어린이집|유치원|유아|놀이방|경로당|마트|편의점|카페|식당|학원|병원|약국|미용|ATM|은행|atm)/;
+      // 아파트: 이름이 "아파트"로 끝나는 것만 (게이트/가동/301동/ATM 등 뒤에 붙은 건 제외)
       return data.filter(function(d){
-        var n=d.place_name;
-        if (badA.test(n)) return false;
-        if (/\d+동$/.test(n.replace(/\s+/g,""))) return false;   // "301동" 같은 동 단위 제외
-        return true;
+        var n=d.place_name.replace(/\s+/g,"");
+        return /아파트$/.test(n);
       });
     }
-    // 이름 정리: 아파트는 "○동" 동표기 제거, 학교는 그대로
+    // 이름 정리: 아파트는 끝의 "아파트" 제거, 학교는 그대로
     function cleanName(name, kind){
       var n=name.trim();
       if (kind==="school") return n;
