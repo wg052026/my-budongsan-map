@@ -81,6 +81,10 @@
       border-radius:6px; padding:6px 10px; font-size:11px; cursor:pointer; white-space:nowrap; }
     #settingsMenu { display:flex; flex-direction:column; gap:6px; background:rgba(35,39,47,0.95);
       border:0.5px solid rgba(255,255,255,0.2); border-radius:8px; padding:8px; width:200px; }
+    .seg { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:4px; }
+    .seg-b { flex:1; min-width:40px; background:#1a1d24; color:#9aa0ab; border:0.5px solid rgba(255,255,255,0.2);
+      border-radius:6px; padding:7px 4px; font-size:12px; cursor:pointer; }
+    .seg-b.on { background:#3F9E7E; color:#fff; border-color:#3F9E7E; font-weight:700; }
 
     #exportBox { display:none; position:absolute; inset:0; z-index:40; background:rgba(0,0,0,0.55);
       align-items:center; justify-content:center; }
@@ -150,10 +154,11 @@
     #failBox .acts { display:flex; gap:8px; margin-top:12px; }
     #failBox .acts button { flex:1; border:none; border-radius:6px; padding:8px; font-size:12px; font-weight:700; cursor:pointer; }
 
-    #groupPanel { position:absolute; left:12px; bottom:12px; z-index:20; background:rgba(35,39,47,0.95);
+    #groupPanel { display:none; position:absolute; left:12px; bottom:12px; z-index:20; background:rgba(35,39,47,0.95);
       border:0.5px solid rgba(255,255,255,0.2); border-radius:10px; padding:10px 12px; max-width:230px;
       max-height:45vh; overflow-y:auto; box-shadow:0 2px 10px rgba(0,0,0,0.4); }
-    #groupPanel .gp-head { color:#cfe8db; font-size:12px; font-weight:700; margin-bottom:8px; }
+    #groupPanel .gp-head { color:#cfe8db; font-size:12px; font-weight:700; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; }
+    #groupClose { background:#3a3f49; border:none; color:#e8eaed; border-radius:5px; padding:1px 7px; font-size:11px; cursor:pointer; }
     .gp-row { display:flex; align-items:center; gap:6px; padding:3px 0; }
     .gp-row label { flex:1; display:flex; align-items:center; gap:6px; color:#e8eaed; font-size:12px; cursor:pointer; min-width:0; }
     .gp-row .gp-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -179,41 +184,30 @@
     <div id="panelBody">
     <div id="pin-hint" class="hint">📍 먼저 지도를 클릭해 위치를 찍으세요</div>
 
-    <label>종류 / 점수</label>
-    <div class="row2">
-      <div>
-        <select id="f-kind">
-          <option value="apt">아파트</option>
-          <option value="redev">재건축/재개발</option>
-          <option value="school">학교</option>
-          <option value="spot">지하철·학원가 등 호재</option>
-        </select>
-      </div>
-      <div class="narrow" id="scoreWrap">
-        <select id="f-score">
-          <option value="5">★5</option><option value="4">★4</option>
-          <option value="3">★3</option><option value="2">★2</option>
-          <option value="1">★1</option><option value="0">★0</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- 아파트/학교: 주변 후보 + 이름검색 -->
-    <div id="autoArea">
-      <div class="cands-title" id="candsTitle">핀 주변 후보:</div>
-      <div id="cands"></div>
-      <div class="searchrow">
-        <input id="f-search" placeholder="이름으로 검색" />
-        <button id="searchBtn" type="button">검색</button>
-      </div>
-      <hr class="divider" />
-    </div>
-
     <label>이름 (정보창 제목)</label>
     <input id="f-name" placeholder="예: 래미안퍼스티지" />
 
-    <label>마커 표시명 (길면 줄임 / 비우면 위 이름)</label>
-    <input id="f-disp" placeholder="예: 래미안" />
+    <label>종류</label>
+    <div id="kindBtns" class="seg">
+      <button type="button" class="seg-b on" data-k="apt">아파트</button>
+      <button type="button" class="seg-b" data-k="redev">재건축</button>
+      <button type="button" class="seg-b" data-k="school">학교</button>
+      <button type="button" class="seg-b" data-k="spot">호재</button>
+    </div>
+    <select id="f-kind" style="display:none;"><option value="apt">apt</option><option value="redev">redev</option><option value="school">school</option><option value="spot">spot</option></select>
+
+    <div id="scoreWrap">
+      <label>점수</label>
+      <div id="scoreBtns" class="seg">
+        <button type="button" class="seg-b" data-s="0">0</button>
+        <button type="button" class="seg-b" data-s="1">★1</button>
+        <button type="button" class="seg-b" data-s="2">★2</button>
+        <button type="button" class="seg-b" data-s="3">★3</button>
+        <button type="button" class="seg-b" data-s="4">★4</button>
+        <button type="button" class="seg-b on" data-s="5">★5</button>
+      </div>
+    </div>
+    <select id="f-score" style="display:none;"><option value="5">5</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option><option value="0">0</option></select>
 
     <!-- 아파트: 평/가격/대지지분 -->
     <div id="aptFields">
@@ -247,11 +241,21 @@
     <textarea id="f-note" placeholder="호재 / 학군 / 기타 메모"></textarea>
 
     <label>그룹 (레이어)</label>
-    <input id="f-group" placeholder="예: 용인수원화성평택" list="groupOptions" />
+    <input id="f-group" placeholder="예: 용인수원화성평택" list="groupOptions" autocomplete="off" />
     <datalist id="groupOptions"></datalist>
 
     <input id="f-code" placeholder="법정동코드 (자동)" readonly style="opacity:0.85;" />
     <button id="addBtn" class="btn btn-add" disabled>추가</button>
+
+    <!-- 아파트/학교: 주변 후보 (맨 아래) -->
+    <div id="autoArea">
+      <hr class="divider" />
+      <div class="cands-title" id="candsTitle">여기 주변 아파트:</div>
+      <div id="cands"></div>
+    </div>
+    <!-- 숨김: 제거된 표시명/검색 입력 (코드 호환용) -->
+    <input id="f-disp" type="hidden" />
+    <input id="f-search" type="hidden" />
     </div>
   </div>
 
@@ -261,6 +265,7 @@
     <button id="settingsBtn">⚙ 설정</button>
     <button id="failBtn" style="display:none; background:#5a3a3a; border-color:rgba(240,214,214,0.3); color:#f0d6d6;">⚠ 실패 0</button>
     <div id="settingsMenu" style="display:none;">
+      <button id="layerBtn">🗂 레이어 편집</button>
       <button id="xlsxOutBtn">⬇ 엑셀로 빼기</button>
       <button id="xlsxInBtn">⬆ 엑셀로 넣기</button>
       <input type="file" id="xlsxFile" accept=".xlsx,.xls" style="display:none;" />
@@ -293,7 +298,7 @@
   </div>
 
   <div id="groupPanel">
-    <div class="gp-head">레이어 (그룹)</div>
+    <div class="gp-head">레이어 (그룹)<button id="groupClose">✕</button></div>
     <div id="gpList"></div>
   </div>
 
@@ -998,6 +1003,17 @@
       this.style.color = show ? "#fff" : "";
     });
 
+    // ===== 레이어 편집 열기/닫기 =====
+    document.getElementById("layerBtn").addEventListener("click", function(){
+      var gp=document.getElementById("groupPanel");
+      var show = (gp.style.display==="none" || !gp.style.display);
+      gp.style.display = show ? "block" : "none";
+      if (show) renderGroupPanel();
+    });
+    document.getElementById("groupClose").addEventListener("click", function(){
+      document.getElementById("groupPanel").style.display="none";
+    });
+
     // ===== 디버그 로그 보기/복사/지우기 =====
     document.getElementById("dbgToggle").addEventListener("click", function(){
       var w=document.getElementById("dbgWrap");
@@ -1061,6 +1077,7 @@
       document.getElementById("f-name").value = p.name||"";
       document.getElementById("f-disp").value = p.disp||"";
       if (p.kind!=="spot" && p.kind!=="school") document.getElementById("f-score").value = String(p.score||0);
+      syncSegButtons();
       document.getElementById("f-py").value = p.py||"";
       document.getElementById("f-price").value = p.price||"";
       document.getElementById("f-land").value = (p.land&&parseFloat(p.land)>0)?p.land:"";
@@ -1082,6 +1099,8 @@
       if (tempPinLabel){ tempPinLabel.setMap(null); tempPinLabel=null; }
       pendingPos=null;
       ["f-name","f-disp","f-py","f-price","f-land","f-spot","f-note","f-group","f-code","f-search"].forEach(function(id){ document.getElementById(id).value=""; });
+      document.getElementById("f-score").value="5";
+      if (typeof syncSegButtons==="function") syncSegButtons();
       clearCands();
       var h=document.getElementById("pin-hint"); h.textContent="📍 먼저 지도를 클릭해 위치를 찍으세요"; h.classList.remove("on");
       var b=document.getElementById("addBtn"); b.textContent="추가"; b.disabled=true;
@@ -1101,6 +1120,32 @@
       if (pendingPos && isAuto(this.value)) searchNearby(); else clearCands();
     });
     syncKindUI();
+
+    // 종류 버튼 → 숨은 select 갱신 + change 발생
+    document.querySelectorAll("#kindBtns .seg-b").forEach(function(b){
+      b.addEventListener("click", function(){
+        document.querySelectorAll("#kindBtns .seg-b").forEach(function(x){ x.classList.remove("on"); });
+        this.classList.add("on");
+        var sel=document.getElementById("f-kind");
+        sel.value=this.getAttribute("data-k");
+        sel.dispatchEvent(new Event("change"));
+      });
+    });
+    // 점수 버튼 → 숨은 select 갱신
+    document.querySelectorAll("#scoreBtns .seg-b").forEach(function(b){
+      b.addEventListener("click", function(){
+        document.querySelectorAll("#scoreBtns .seg-b").forEach(function(x){ x.classList.remove("on"); });
+        this.classList.add("on");
+        document.getElementById("f-score").value=this.getAttribute("data-s");
+      });
+    });
+    // 종류/점수 버튼을 현재 select 값에 맞추기 (수정 모드 진입 시 사용)
+    function syncSegButtons(){
+      var k=document.getElementById("f-kind").value;
+      document.querySelectorAll("#kindBtns .seg-b").forEach(function(x){ x.classList.toggle("on", x.getAttribute("data-k")===k); });
+      var s=document.getElementById("f-score").value;
+      document.querySelectorAll("#scoreBtns .seg-b").forEach(function(x){ x.classList.toggle("on", x.getAttribute("data-s")===String(s)); });
+    }
 
     function clearCands(){ var c=document.getElementById("cands"); c.innerHTML=""; c.classList.remove("show"); }
     function showCands(list, title){
@@ -1140,17 +1185,6 @@
         }
       }, { location: pendingPos, radius: 300, sort: kakao.maps.services.SortBy.DISTANCE });
     }
-    document.getElementById("searchBtn").addEventListener("click", function(){
-      var kw=document.getElementById("f-search").value.trim();
-      if (!kw){ alert("검색할 이름을 입력하세요."); return; }
-      ps.keywordSearch(kw, function(data,status){
-        if (status===kakao.maps.services.Status.OK) showCands(data, "검색 결과 (선택하면 위치 지정):");
-        else { showCands([],""); alert("검색 결과가 없습니다. 직접 입력하세요."); }
-      });
-    });
-    document.getElementById("f-search").addEventListener("keydown", function(e){
-      if (e.key==="Enter"){ e.preventDefault(); document.getElementById("searchBtn").click(); }
-    });
 
     // ===== 상단 위치 검색바 (단지명·주소로 지도 이동) =====
     // 폼에 단지 정보만 채움 (목록·검색칸 안 건드림) — 자동 채움용
@@ -1252,6 +1286,10 @@
     kakao.maps.event.addListener(map, "click", function(mouseEvent){
       if (moveMode) return;   // 이동 모드에선 지도 클릭 무시
       window.__closeIW();
+      if (typeof refreshGroupOptions==="function") refreshGroupOptions();
+      // 추가 패널 펴기
+      var pbody=document.getElementById("panelBody");
+      if (pbody && pbody.style.display==="none"){ pbody.style.display="block"; document.getElementById("panelArrow").textContent="▾"; }
       var kind=document.getElementById("f-kind").value;
       if (pinMode || kind==="spot"){
         // 수동 찍기: 그 자리에 파란 핀 + 위치 지정 (건물 검색 안 함)
@@ -1495,6 +1533,7 @@
             else { added = imported; }
             saveAdded(added);
             saveFails(failList);   // 실패 목록 저장 → 우상단 버튼으로 확인
+            renderFailBtn();       // 버튼 먼저 갱신 (renderAll 에러와 무관하게)
             renderAll();
             renderFailBtn();
             if (failList.length) alert("변환 실패 "+failList.length+"개는 우상단 '⚠ 실패' 버튼에서 확인하세요.");
@@ -1614,10 +1653,14 @@
     function geocodeOne(name, addr){
       return new Promise(function(resolve){
         var addrClean = (addr||"").replace(/\s*\([^)]*\)\s*$/,"").trim();
-        // 주소에서 시/구 추출해 검색어에 붙이면 동명이단지 구분에 도움
+        // 주소에서 시/구 추출
         var region = "";
         var mm = addrClean.match(/(경기\s*\S+시|서울\S*구|\S+시\s*\S+구|\S+시|\S+군)/);
         if (mm) region = mm[1];
+        // 검증용: 주소의 "시" 또는 "구" 핵심 토큰 (예: 화성시, 강남구)
+        var keyTok = "";
+        var km = addrClean.match(/(\S+시|\S+군|\S+구)/);
+        if (km) keyTok = km[1];
 
         function finish(lat, lng){
           geocoder.coord2RegionCode(lng, lat, function(rc, st2){
@@ -1630,24 +1673,33 @@
           });
         }
 
-        // 1) 단지명(+지역)으로 장소 검색 — 실제 단지 위치
+        // 검색 결과가 주소의 시/군/구와 같은 지역인지 검증
+        function regionOK(d){
+          if (!keyTok) return true;   // 주소가 없으면 검증 못 함 → 통과
+          var a = (d.road_address_name||d.address_name||"");
+          return a.indexOf(keyTok) >= 0;
+        }
+
         function tryPlace(query, next){
           if (!query){ next(); return; }
           ps.keywordSearch(query, function(data, status){
             if (status===kakao.maps.services.Status.OK && data && data.length){
-              finish(parseFloat(data[0].y), parseFloat(data[0].x));
-            } else { next(); }
+              // 지역이 맞는 첫 결과 선택
+              var hit=null;
+              for (var i=0;i<data.length;i++){ if (regionOK(data[i])){ hit=data[i]; break; } }
+              if (hit){ finish(parseFloat(hit.y), parseFloat(hit.x)); return; }
+            }
+            next();
           });
         }
 
         var nm = (name||"").trim();
-        // "동탄역롯데캐슬" 등 — 아파트 붙여서 검색하면 더 정확
         var q1 = nm ? (region? (region+" "+nm+" 아파트") : (nm+" 아파트")) : "";
         var q2 = nm ? (region? (region+" "+nm) : nm) : "";
 
         tryPlace(q1, function(){
           tryPlace(q2, function(){
-            // 2) 장소 검색 실패 → 주소로 지오코딩 폴백
+            // 장소 검색 실패/지역 불일치 → 주소로 지오코딩 폴백
             if (addrClean){
               geocoder.addressSearch(addrClean, function(result, status){
                 if (status===kakao.maps.services.Status.OK && result[0]){
