@@ -176,6 +176,10 @@
     .lg-in { background:#1a1d24; color:#e8eaed; border:0.5px solid rgba(255,255,255,0.25); border-radius:5px; font-size:13px; padding:4px 6px; }
     .lg-score { width:46px; text-align:center; } .lg-land { width:50px; } .lg-note { width:100%; box-sizing:border-box; }
     .lg-rowdel { background:none; border:none; cursor:pointer; font-size:15px; color:#f0a0a0; }
+    .lg-toolbar { display:flex; gap:8px; margin:6px 0 4px; }
+    .lg-toolbar button { background:#2c3742; border:0.5px solid rgba(255,255,255,0.2); color:#e8eaed; border-radius:6px; padding:4px 10px; font-size:12px; cursor:pointer; }
+    .lg-toolbar .lg-sel-del { background:#5a3a3a; color:#f0d6d6; }
+    .lg-arrow { color:#9aa0ab; font-size:13px; margin-left:2px; }
     .gp-row { display:flex; align-items:center; gap:6px; padding:3px 0; }
     .gp-row label { flex:1; display:flex; align-items:center; gap:6px; color:#e8eaed; font-size:12px; cursor:pointer; min-width:0; }
     .gp-row .gp-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -734,36 +738,68 @@
       order.forEach(function(g){
         var gWrap=document.createElement("div"); gWrap.className="lg-group";
         var visible = hidden.indexOf(g)<0;
-        // 큰그룹 헤더: 눈 / 이름 / 개수 / 펼침 / 이름변경 / 삭제
+        // 큰그룹 헤더: 눈 / 이름(펼침) / 개수 / 이름변경 / 그룹삭제
         var head=document.createElement("div"); head.className="lg-ghead";
         head.innerHTML =
           '<button class="lg-eye" data-g="'+esc(g)+'" title="보기/숨김">'+(visible?"👁":"🙈")+'</button>' +
-          '<span class="lg-gname" data-g="'+esc(g)+'">▸ '+esc(g)+'</span>' +
+          '<span class="lg-gname" data-g="'+esc(g)+'">'+esc(g)+'</span>' +
           '<span class="lg-cnt">'+tree[g].cnt+'</span>' +
+          '<span class="lg-arrow">▸</span>' +
           '<button class="lg-ren" data-g="'+esc(g)+'" title="이름변경/합치기">✎</button>' +
           '<button class="lg-del" data-g="'+esc(g)+'" title="그룹 전체 삭제">🗑</button>';
         gWrap.appendChild(head);
 
         // 펼침 영역 (작은그룹 + 단지표)
         var body=document.createElement("div"); body.className="lg-gbody"; body.style.display="none";
+        var arrow=head.querySelector(".lg-arrow");
         tree[g].subOrder.forEach(function(sg){
           var items=tree[g].subs[sg];
           var subT=document.createElement("div"); subT.className="lg-subtitle"; subT.textContent="• "+sg+" ("+items.length+")";
           body.appendChild(subT);
+          // 전체선택/해제/삭제 툴바
+          var toolbar=document.createElement("div"); toolbar.className="lg-toolbar";
+          toolbar.innerHTML=
+            '<button class="lg-sel-all">전체선택</button>'+
+            '<button class="lg-sel-none">선택해제</button>'+
+            '<button class="lg-sel-del">선택삭제</button>';
+          body.appendChild(toolbar);
           var tbl=document.createElement("table"); tbl.className="lg-table";
-          tbl.innerHTML='<thead><tr><th>이름</th><th>점수</th><th>대지</th><th>메모</th><th></th></tr></thead>';
+          tbl.innerHTML='<thead><tr><th style="width:24px;"><input type="checkbox" class="lg-chk-all"></th><th>이름</th><th>점수</th><th>대지</th><th>메모</th><th></th></tr></thead>';
           var tb=document.createElement("tbody");
           items.forEach(function(p){ tb.appendChild(rowForItem(p)); });
           tbl.appendChild(tb); body.appendChild(tbl);
+
+          // 전체선택
+          toolbar.querySelector(".lg-sel-all").addEventListener("click", function(){
+            tbl.querySelectorAll("tbody .lg-chk").forEach(function(c){ c.checked=true; });
+            tbl.querySelector(".lg-chk-all").checked=true;
+          });
+          // 선택해제
+          toolbar.querySelector(".lg-sel-none").addEventListener("click", function(){
+            tbl.querySelectorAll(".lg-chk, .lg-chk-all").forEach(function(c){ c.checked=false; });
+          });
+          // 선택삭제
+          toolbar.querySelector(".lg-sel-del").addEventListener("click", function(){
+            var checked=tbl.querySelectorAll("tbody .lg-chk:checked");
+            if (!checked.length){ alert("선택된 항목이 없습니다."); return; }
+            if (!confirm(checked.length+"개를 삭제할까요?")) return;
+            checked.forEach(function(c){ deleteItemSilent(c.getAttribute("data-id")); });
+            renderAll(); document.getElementById("groupPanel").style.display="block"; renderGroupPanel();
+          });
+          // 헤더 체크박스: 전체선택/해제
+          tbl.querySelector(".lg-chk-all").addEventListener("change", function(){
+            var v=this.checked;
+            tbl.querySelectorAll("tbody .lg-chk").forEach(function(c){ c.checked=v; });
+          });
         });
         gWrap.appendChild(body);
         listEl.appendChild(gWrap);
 
-        // 헤더 클릭 → 펼침/접힘
+        // 이름(펼침) 클릭
         head.querySelector(".lg-gname").addEventListener("click", function(){
           var open = body.style.display==="none";
           body.style.display = open ? "block" : "none";
-          this.textContent = (open?"▾ ":"▸ ")+g;
+          arrow.textContent = open ? "▾" : "▸";
         });
       });
 
@@ -816,6 +852,10 @@
     function rowForItem(p){
       var tr=document.createElement("tr");
       var isApt=(p.kind==="apt"||p.kind==="redev");
+      // 체크박스
+      var tdChk=document.createElement("td");
+      var chk=document.createElement("input"); chk.type="checkbox"; chk.className="lg-chk"; chk.setAttribute("data-id",p.__id);
+      tdChk.appendChild(chk); tr.appendChild(tdChk);
       // 이름 (클릭하면 지도 이동)
       var tdName=document.createElement("td"); tdName.className="lg-c-name"; tdName.textContent=p.name||"(이름없음)";
       tdName.title="지도에서 보기"; tdName.style.cursor="pointer";
