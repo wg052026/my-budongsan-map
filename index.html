@@ -246,7 +246,7 @@
     <button id="addBtn" class="btn btn-add" disabled>추가</button>
 
     <!-- 핀 주소 + 주변 후보 (맨 아래) -->
-    <div id="autoArea">
+    <div id="autoArea" style="display:none;">
       <hr class="divider" />
       <div id="pin-hint" class="hint">📍 지도를 클릭해 위치를 찍으세요</div>
       <div class="cands-title" id="candsTitle">여기 주변 아파트:</div>
@@ -1104,7 +1104,9 @@
     // ===== 패널 종류별 UI =====
     function syncKindUI(){
       var kind=document.getElementById("f-kind").value;
-      document.getElementById("autoArea").style.display = isAuto(kind) ? "block" : "none";
+      // autoArea는 여기서 켜지 않음 — 주변 검색 결과가 있을 때 showCands가 켬.
+      // 자동검색 안 하는 종류(호재 등)면 숨김.
+      if (!isAuto(kind)) document.getElementById("autoArea").style.display = "none";
       document.getElementById("aptFields").style.display = (kind==="apt") ? "block" : "none";
       document.getElementById("stageField").style.display = (kind==="redev") ? "block" : "none";
       document.getElementById("spotField").style.display = (kind==="spot"||kind==="school") ? "block" : "none";
@@ -1142,12 +1144,14 @@
       document.querySelectorAll("#scoreBtns .seg-b").forEach(function(x){ x.classList.toggle("on", x.getAttribute("data-s")===String(s)); });
     }
 
-    function clearCands(){ var c=document.getElementById("cands"); c.innerHTML=""; c.classList.remove("show"); }
+    function clearCands(){ var c=document.getElementById("cands"); c.innerHTML=""; c.classList.remove("show"); var a=document.getElementById("autoArea"); if(a) a.style.display="none"; }
     function showCands(list, title){
       var c=document.getElementById("cands");
+      var area=document.getElementById("autoArea");
       document.getElementById("candsTitle").textContent=title;
       c.innerHTML="";
-      if (!list.length){ c.classList.remove("show"); return; }
+      if (!list.length){ c.classList.remove("show"); if(area) area.style.display="none"; return; }
+      if(area) area.style.display="block";
       list.slice(0,8).forEach(function(d){
         var div=document.createElement("div"); div.className="cand";
         div.innerHTML='<div class="cn">'+esc(d.place_name)+'</div>'+
