@@ -1284,9 +1284,14 @@
           return /(초등학교|중학교|고등학교|학교)$/.test(n) || /(초|중|고)$/.test(n);
         });
       }
-      // 아파트: 관리사무소/상가/공인중개 등 제외
-      var badA=/(관리사무소|공인중개|중개사|부동산|상가|입주자|경비|주차장|정문|후문)/;
-      return data.filter(function(d){ return !badA.test(d.place_name); });
+      // 아파트: 관리사무소/상가/충전소/유치원/동(棟) 단위 등 제외
+      var badA=/(관리사무소|공인중개|중개사|부동산|상가|입주자|경비|주차장|정문|후문|충전소|충전|주유소|세차|택배|보관소|커뮤니티|헬스|피트니스|어린이집|유치원|유아|놀이방|경로당|마트|편의점|카페|식당|학원|병원|약국|미용)/;
+      return data.filter(function(d){
+        var n=d.place_name;
+        if (badA.test(n)) return false;
+        if (/\d+동$/.test(n.replace(/\s+/g,""))) return false;   // "301동" 같은 동 단위 제외
+        return true;
+      });
     }
     // 이름 정리: 아파트는 "○동" 동표기 제거, 학교는 그대로
     function cleanName(name, kind){
@@ -1326,8 +1331,12 @@
         box.innerHTML="";
         if (status===kakao.maps.services.Status.OK && data.length){
           // 잡것(관리사무소/공인중개/부동산/상가 등) 거르기
-          var bad = /(관리사무소|공인중개|중개사|부동산|상가|입주자|경비실|마이뉴|도서관|학원|교회|병원|약국|미용|카페|편의점|마트|주차장|정문|후문)/;
-          var good = data.filter(function(d){ return !bad.test(d.place_name); });
+          var bad = /(관리사무소|공인중개|중개사|부동산|상가|입주자|경비실|마이뉴|도서관|학원|교회|병원|약국|미용|카페|편의점|마트|주차장|정문|후문|충전소|충전|주유소|세차|택배|보관소|커뮤니티|헬스|피트니스|어린이집|유치원|유아|놀이방|경로당)/;
+          var good = data.filter(function(d){
+            if (bad.test(d.place_name)) return false;
+            if (/\d+동$/.test(d.place_name.replace(/\s+/g,""))) return false;
+            return true;
+          });
           if (!good.length) good = data;  // 다 걸러지면 원본 사용
           // 입력어 포함하는 것 우선 정렬
           var q = kw.replace(/\s+/g,"");
