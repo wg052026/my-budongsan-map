@@ -174,7 +174,7 @@
     .lg-table td { padding:5px 6px; border-bottom:0.5px solid rgba(255,255,255,0.07); }
     .lg-c-name { color:#cfe8db; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .lg-in { background:#1a1d24; color:#e8eaed; border:0.5px solid rgba(255,255,255,0.25); border-radius:5px; font-size:13px; padding:4px 6px; }
-    .lg-score { width:46px; text-align:center; } .lg-land { width:50px; } .lg-note { width:100%; box-sizing:border-box; }
+    .lg-score { width:46px; text-align:center; } .lg-land { width:50px; } .lg-grp { width:70px; } .lg-note { width:100%; box-sizing:border-box; }
     .lg-rowdel { background:none; border:none; cursor:pointer; font-size:15px; color:#f0a0a0; }
     .lg-toolbar { display:flex; gap:8px; margin:6px 0 4px; }
     .lg-toolbar button { background:#2c3742; border:0.5px solid rgba(255,255,255,0.2); color:#e8eaed; border-radius:6px; padding:4px 10px; font-size:12px; cursor:pointer; }
@@ -738,13 +738,14 @@
       order.forEach(function(g){
         var gWrap=document.createElement("div"); gWrap.className="lg-group";
         var visible = hidden.indexOf(g)<0;
-        // 큰그룹 헤더: 눈 / 이름(펼침) / 개수 / 이름변경 / 그룹삭제
+        // 큰그룹 헤더: 체크 / 이름(펼침) / 개수 / 화살표 / 눈 / 이름변경 / 그룹삭제
         var head=document.createElement("div"); head.className="lg-ghead";
         head.innerHTML =
-          '<button class="lg-eye" data-g="'+esc(g)+'" title="보기/숨김">'+(visible?"👁":"🙈")+'</button>' +
+          '<input type="checkbox" class="lg-g-chk" data-g="'+esc(g)+'" style="margin-right:4px;">' +
           '<span class="lg-gname" data-g="'+esc(g)+'">'+esc(g)+'</span>' +
           '<span class="lg-cnt">'+tree[g].cnt+'</span>' +
           '<span class="lg-arrow">▸</span>' +
+          '<button class="lg-eye" data-g="'+esc(g)+'" title="보기/숨김">'+(visible?"👁":"👁\u0336")+'</button>' +
           '<button class="lg-ren" data-g="'+esc(g)+'" title="이름변경/합치기">✎</button>' +
           '<button class="lg-del" data-g="'+esc(g)+'" title="그룹 전체 삭제">🗑</button>';
         gWrap.appendChild(head);
@@ -764,7 +765,7 @@
             '<button class="lg-sel-del">선택삭제</button>';
           body.appendChild(toolbar);
           var tbl=document.createElement("table"); tbl.className="lg-table";
-          tbl.innerHTML='<thead><tr><th style="width:24px;"><input type="checkbox" class="lg-chk-all"></th><th>이름</th><th>점수</th><th>대지</th><th>메모</th><th></th></tr></thead>';
+          tbl.innerHTML='<thead><tr><th style="width:24px;"><input type="checkbox" class="lg-chk-all"></th><th>이름</th><th>점수</th><th>대지</th><th>큰그룹</th><th>소그룹</th><th>메모</th><th></th></tr></thead>';
           var tb=document.createElement("tbody");
           items.forEach(function(p){ tb.appendChild(rowForItem(p)); });
           tbl.appendChild(tb); body.appendChild(tbl);
@@ -803,14 +804,24 @@
         });
       });
 
-      // 눈 아이콘: 보기/숨김
+      // 눈 아이콘: 보기/숨김 (비활성=👁에 취소선)
       listEl.querySelectorAll(".lg-eye").forEach(function(btn){
         btn.addEventListener("click", function(){
           var g=this.getAttribute("data-g");
           var h=loadHidden(); var idx=h.indexOf(g);
-          if (idx>=0) h.splice(idx,1); else h.push(g);
+          if (idx>=0){ h.splice(idx,1); this.textContent="👁"; }
+          else { h.push(g); this.textContent="👁\u0336"; }
           saveHidden(h); renderAll();
-          document.getElementById("groupPanel").style.display="block"; renderGroupPanel();
+          document.getElementById("groupPanel").style.display="block";
+        });
+      });
+      // 그룹 헤더 체크박스 → 하위 단지 전체 선택/해제
+      listEl.querySelectorAll(".lg-g-chk").forEach(function(cb){
+        cb.addEventListener("change", function(){
+          var g=this.getAttribute("data-g"); var v=this.checked;
+          // 이 그룹의 모든 .lg-chk 선택
+          var wrap=this.closest(".lg-group");
+          if (wrap) wrap.querySelectorAll(".lg-chk").forEach(function(c){ c.checked=v; });
         });
       });
       // 그룹 삭제
@@ -891,6 +902,16 @@
         tdLand.appendChild(inL);
       } else { tdLand.textContent="-"; }
       tr.appendChild(tdLand);
+      // 큰그룹
+      var tdGrp=document.createElement("td");
+      var inG=document.createElement("input"); inG.className="lg-in lg-grp"; inG.value=p.group||""; inG.placeholder="큰그룹"; inG.setAttribute("list","groupOptions");
+      inG.addEventListener("change", function(){ applyFields(p.__id,{group:this.value.trim()}); renderAll(); });
+      tdGrp.appendChild(inG); tr.appendChild(tdGrp);
+      // 소그룹
+      var tdSg=document.createElement("td");
+      var inSg=document.createElement("input"); inSg.className="lg-in lg-grp"; inSg.value=p.subgroup||""; inSg.placeholder="소그룹"; inSg.setAttribute("list","subgroupOptions");
+      inSg.addEventListener("change", function(){ applyFields(p.__id,{subgroup:this.value.trim()}); });
+      tdSg.appendChild(inSg); tr.appendChild(tdSg);
       // 메모
       var tdNote=document.createElement("td");
       var inN=document.createElement("input"); inN.className="lg-in lg-note"; inN.value=p.note||""; inN.placeholder="메모";
