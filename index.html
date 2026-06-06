@@ -420,18 +420,25 @@
   // 색채 — 나중에 조절. 점수 색(차분 톤) / 호재·학교 회색
   function scoreColor(p){
     if (p.kind === "spot") return "#888780";
-    if (p.kind === "school"){
-      if (p.score === 1) return "#2C6BB3";   // 1등 - 진파랑
-      if (p.score === 2) return "#5E86B0";   // 2등 - 중간파랑
-      return "#8AA0B8";                       // 3등 - 흐린파랑
-    }
+    if (p.kind === "school") return "#2C6BB3";   // 학교는 파랑 (투명도로 등수 구분)
     if (p.score >= 6) return "#D4AF37";  // 대장 - 금색
-    if (p.score === 5) return "#2E8B57";  // ★5 - 진초록
-    if (p.score === 4) return "#6FB23F";  // ★4 - 연두
-    if (p.score === 3) return "#C9982F";  // ★3 - 주황
-    if (p.score === 2) return "#B07A4A";  // ★2 - 흙갈색
-    if (p.score === 1) return "#8E8169";  // ★1 - 흐린 회갈색
-    return "#7A7A78";                     // 점수없음 - 회색
+    return "#2E8B57";                     // 아파트는 초록 (투명도로 점수 구분)
+  }
+  // 낮을수록 흐리게 (눈에 덜 띄게)
+  function scoreOpacity(p){
+    if (p.kind === "spot") return 1;
+    if (p.kind === "school"){
+      if (p.score === 1) return 1;
+      if (p.score === 2) return 0.5;
+      return 0.28;   // 3등
+    }
+    if (p.score >= 6) return 1;     // 대장
+    if (p.score === 5) return 0.95;
+    if (p.score === 4) return 0.7;
+    if (p.score === 3) return 0.5;
+    if (p.score === 2) return 0.32;
+    if (p.score === 1) return 0.2;
+    return 0.13;                    // 점수없음
   }
   // 대지지분 색 — 클수록 진한 초록(좋음), 작을수록 연한 회색(나쁨)
   function landColor(p){
@@ -634,7 +641,8 @@
     function markerHtml(p, color){
       var disp = p.disp && p.disp.trim() ? p.disp : p.name;
       var crown = (p.score>=6 && p.kind!=="spot" && p.kind!=="school") ? "👑 " : "";
-      return '<div class="mk-wrap" data-id="'+p.__id+'" style="user-select:none; -webkit-user-select:none;">' +
+      var op = scoreOpacity(p);
+      return '<div class="mk-wrap" data-id="'+p.__id+'" style="user-select:none; -webkit-user-select:none; opacity:'+op+';">' +
         '<div class="mk-box" style="background:'+color+';">' +
           '<div class="mk-name">'+crown+esc(disp)+'</div>' +
           '<div class="mk-sub">'+subLineHtml(p)+'</div>' +
