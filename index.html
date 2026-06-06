@@ -237,6 +237,7 @@
   <div id="topright">
     <button id="moveModeBtn">✋ 이동 모드</button>
     <button id="pinModeBtn">📍 수동 찍기</button>
+    <button id="priceBtn">💰 실거래가 갱신</button>
     <button id="xlsxOutBtn">⬇ 엑셀로 빼기</button>
     <button id="xlsxInBtn">⬆ 엑셀로 넣기</button>
     <input type="file" id="xlsxFile" accept=".xlsx,.xls" style="display:none;" />
@@ -332,6 +333,10 @@
   var FAIL_KEY = "budongsan_fails_v1";   // 마지막 변환 실패 목록
   function loadFails(){ try{ return JSON.parse(localStorage.getItem(FAIL_KEY)||"[]"); }catch(e){ return []; } }
   function saveFails(a){ try{ localStorage.setItem(FAIL_KEY, JSON.stringify(a)); }catch(e){} }
+  var PRICE_KEY = "budongsan_price_cache_v1";   // 실거래가 캐시 (코드+이름 → 값)
+  function loadPriceCache(){ try{ return JSON.parse(localStorage.getItem(PRICE_KEY)||"{}"); }catch(e){ return {}; } }
+  function savePriceCache(o){ try{ localStorage.setItem(PRICE_KEY, JSON.stringify(o)); }catch(e){} }
+  function priceKey(p){ return (p.code||"")+"|"+(p.name||""); }
   function groupOf(p){ return (p && p.group && String(p.group).trim()) ? String(p.group).trim() : "기타"; }
   function DBG(msg){
     try{
@@ -475,9 +480,6 @@
       var stars = hasStars(p) ? '<div class="iw-stars" style="color:'+color+';">'+starStr(p.score)+'</div>' : '';
       var info = infoLine(p);
       var infoEl = info ? '<div class="iw-info">'+esc(info)+'</div>' : '';
-      var refreshBtn = isAutoPrice(p)
-        ? '<button class="iw-refresh" onclick="window.__refreshDeal(\''+p.__id+'\')" style="margin-top:8px;width:100%;background:#2c3742;border:0.5px solid rgba(255,255,255,0.2);color:#cfe8db;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;">↻ 실거래가 갱신</button>'
-        : '';
       var editDel =
         '<div style="display:flex;gap:6px;margin-top:8px;">' +
           '<button class="iw-edit" onclick="window.__editItem(\''+p.__id+'\')" style="flex:1;background:#3a3f49;border:none;color:#e8eaed;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;">✏ 수정</button>' +
@@ -488,7 +490,7 @@
         '<button class="iw-close" aria-label="닫기" onclick="window.__closeIW()">✕</button></div>' +
         stars + infoEl +
         '<div class="iw-note">'+esc(p.note)+'</div>' +
-        refreshBtn + editDel + '</div>';
+        editDel + '</div>';
     }
     function renderAll(){
       DBG("renderAll 시작 markerObjs="+markerObjs.length);
@@ -761,20 +763,13 @@
       else if (p.__iw){ p.__iw.setContent(iwHtml(p, color)); }
     }
     // 자동 실거래가 조회 — 평·가격 비운 아파트만 (결과는 id 캐시에 보관)
+    // 실거래가: 자동 호출 안 함. 캐시에 있으면 그 값만 마커에 반영 (한도 절약)
     function autoFetchPrices(){
-      if (!DEAL_API || DEAL_API.indexOf("script.google")<0) return;
+      var cache = loadPriceCache();
       all.forEach(function(p){
         if (!isAutoPrice(p)) return;
-        if (!p.code) return;
-        if (autoCache[p.__id] !== undefined){ p.auto = autoCache[p.__id]; refreshMarker(p); return; }
-        var url = DEAL_API + "?lawd=" + encodeURIComponent(p.code) +
-                  "&apt=" + encodeURIComponent(p.name) + "&months=3";
-        fetch(url).then(function(r){ return r.json(); }).then(function(j){
-          var v = (j && j.ok && j.latest)
-            ? { amountText:j.latest.amountText, pyeong:j.latest.pyeong, date:j.latest.date, area:j.latest.areaM2 }
-            : null;
-          autoCache[p.__id]=v; p.auto=v; refreshMarker(p);
-        }).catch(function(){ autoCache[p.__id]=null; p.auto=null; refreshMarker(p); });
+        var k = priceKey(p);
+        if (cache[k] !== undefined){ p.auto = cache[k]; autoCache[p.__id]=cache[k]; refreshMarker(p); }
       });
     }
     renderAll();
@@ -860,6 +855,39 @@
     });
 
     function findById(id){ for (var i=0;i<all.length;i++){ if (all[i].__id===id) return all[i]; } return null; }
+
+    // ===== 실거래가 갱신 (화면에 보이는 단지만) =====
+    document.getElementById("priceBtn").addEventListener("click", async function(){
+      var btn=this;
+      if (!DEAL_API || DEAL_API.indexOf("script.google")<0){ alert("실거래가 서버가 설정되지 않았습니다."); return; }
+      var bounds = map.getBounds();
+      var cache = loadPriceCache();
+      // 화면 안 + 아파트(자동조회 대상) + 캐시 없는 것만
+      var targets = all.filter(function(p){
+        if (!isAutoPrice(p) || !p.code) return false;
+        if (!bounds.contain(new kakao.maps.LatLng(p.lat, p.lng))) return false;
+        return cache[priceKey(p)]===undefined;   // 이미 조회한 건 건너뜀
+      });
+      if (!targets.length){ alert("화면 안에 새로 조회할 단지가 없습니다.\n(이미 조회했거나, 보이는 아파트가 없음)\n지도를 옮긴 뒤 다시 눌러보세요."); return; }
+
+      btn.disabled=true; var orig=btn.textContent;
+      var ok=0, fail=0;
+      for (var i=0;i<targets.length;i++){
+        var p=targets[i];
+        btn.textContent="💰 갱신 "+(i+1)+"/"+targets.length;
+        var url = DEAL_API + "?lawd=" + encodeURIComponent(p.code) + "&apt=" + encodeURIComponent(p.name) + "&months=6";
+        try{
+          var r=await fetch(url); var j=await r.json();
+          var v=(j && j.ok && j.latest) ? { amountText:j.latest.amountText, pyeong:j.latest.pyeong, date:j.latest.date, area:j.latest.areaM2 } : null;
+          cache[priceKey(p)]=v; autoCache[p.__id]=v; p.auto=v; refreshMarker(p);
+          if (v) ok++; else fail++;
+        }catch(e){ fail++; }
+        await new Promise(function(res){ setTimeout(res,100); });
+      }
+      savePriceCache(cache);
+      btn.disabled=false; btn.textContent=orig;
+      alert("실거래가 갱신 완료\n조회 "+targets.length+"개 · 거래있음 "+ok+" · 거래없음 "+fail);
+    });
 
     // ===== 수정/삭제 =====
     function deleteItem(id){
@@ -1286,9 +1314,7 @@
             saveFails(failList);   // 실패 목록 저장 → 우상단 버튼으로 확인
             renderAll();
             renderFailBtn();
-            var done2 = "완료! "+imported.length+"개 반영됨.";
-            if (failList.length) done2 += "\n변환 실패 "+failList.length+"개는 우상단 '⚠ 실패' 버튼에서 확인하세요.";
-            alert(done2);
+            if (failList.length) alert("변환 실패 "+failList.length+"개는 우상단 '⚠ 실패' 버튼에서 확인하세요.");
           })();
         } catch(err){
           alert("엑셀 읽기 실패: "+err.message);
