@@ -880,18 +880,24 @@
       });
       if (!targets.length){ if(priceOn) btn.textContent="💰 실거래가 (켜짐)"; return; }
 
-      for (var i=0;i<targets.length;i++){
-        if (!priceOn || myRun!==priceRunId) return;   // 껐거나 화면 바뀌면 즉시 중단
-        var p=targets[i];
-        btn.textContent="💰 갱신중 "+(i+1)+"/"+targets.length;
+      var BATCH = 5;   // 동시에 조회할 개수 (느리면 늘리기)
+      var doneN = 0;
+      async function fetchOne(p){
         var url = DEAL_API + "?lawd=" + encodeURIComponent(p.code) + "&apt=" + encodeURIComponent(p.name) + "&months=6";
         try{
           var r=await fetch(url); var j=await r.json();
           var v=(j && j.ok && j.latest) ? { amountText:j.latest.amountText, pyeong:j.latest.pyeong, date:j.latest.date, area:j.latest.areaM2 } : null;
           cache[priceKey(p)]=v; autoCache[p.__id]=v; p.auto=v; refreshMarker(p);
-          savePriceCache(cache);
         }catch(e){}
-        await new Promise(function(res){ setTimeout(res,100); });
+        doneN++;
+        btn.textContent="💰 갱신중 "+doneN+"/"+targets.length;
+      }
+      // BATCH개씩 묶어 병렬 조회
+      for (var i=0; i<targets.length; i+=BATCH){
+        if (!priceOn || myRun!==priceRunId) return;   // 껐거나 화면 바뀌면 중단
+        var chunk = targets.slice(i, i+BATCH);
+        await Promise.all(chunk.map(fetchOne));
+        savePriceCache(cache);
       }
       if (priceOn && myRun===priceRunId) btn.textContent="💰 실거래가 (켜짐)";
     }
