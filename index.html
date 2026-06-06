@@ -271,12 +271,12 @@
     <datalist id="groupOptions"></datalist>
 
     <input id="f-code" type="hidden" />
+    <div id="pin-hint" class="hint">📍 지도를 클릭해 위치를 찍으세요</div>
     <button id="addBtn" class="btn btn-add" disabled>추가</button>
 
-    <!-- 핀 주소 + 주변 후보 (맨 아래) -->
+    <!-- 주변 후보 (맨 아래) -->
     <div id="autoArea" style="display:none;">
       <hr class="divider" />
-      <div id="pin-hint" class="hint">📍 지도를 클릭해 위치를 찍으세요</div>
       <div class="cands-title" id="candsTitle">여기 주변 아파트:</div>
       <div id="cands"></div>
     </div>
@@ -457,7 +457,7 @@
   function pad2(n){ n=Math.round(parseFloat(n)||0); return (n<10?"0":"")+n; }
   function starStr(n){ if(n>=6) return "👑 대장"; var s=""; for(var i=0;i<5;i++) s+=(i<n?"★":"☆"); return s; }
   function esc(t){ return String(t==null?"":t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
-  function isAuto(kind){ return kind==="apt"; }
+  function isAuto(kind){ return kind==="apt" || kind==="school"; }
   function hasStars(p){ return !(p.kind==="spot" || p.kind==="school"); }
 
   // 아파트가 자동조회 대상인지 (평·실거래가 둘 다 비어있으면 자동)
@@ -1379,14 +1379,14 @@
         placePin(pendingPos); fillRegionCode(pendingPos);
         document.getElementById("addBtn").disabled=false;
         clearCands();
-      } else if (kind==="apt"){
-        // 아파트: 주변 아파트 검색 → 목록 (핀 안 찍음)
+      } else if (kind==="apt" || kind==="school"){
+        // 아파트/학교: 주변 검색 → 목록 + 맨 위 이름 자동 채움
         pendingPos = mouseEvent.latLng;
         fillRegionCode(pendingPos);
         searchNearby();
         document.getElementById("addBtn").disabled=false;
       } else {
-        // 학교/재건축/기타: 위치만 잡고 주변 검색 안 함
+        // 재건축/기타: 위치만 잡고 주변 검색 안 함
         pendingPos = mouseEvent.latLng;
         fillRegionCode(pendingPos);
         clearCands();
