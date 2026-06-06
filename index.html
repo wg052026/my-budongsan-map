@@ -957,21 +957,14 @@
 
     function placePin(latlng){
       if (tempPin) tempPin.setMap(null);
-      // 드래그 가능한 기본 마커 사용
+      if (tempPinLabel){ tempPinLabel.setMap(null); tempPinLabel=null; }
+      // 위치 표시용 핀 (드래그로 미세조정 가능)
       tempPin = new kakao.maps.Marker({ position: latlng, draggable: true, zIndex: 100 });
       tempPin.setMap(map);
-      // "드래그로 이동" 라벨 — 핀을 가리지 않게 위로 띄우고, 마우스 이벤트는 통과시킴
-      if (tempPinLabel) tempPinLabel.setMap(null);
-      var html='<div style="pointer-events:none; text-align:center; transform:translateY(-58px);">' +
-        '<div style="display:inline-block; background:#888780;color:#fff;font-size:11px;font-weight:700;padding:3px 8px;' +
-        'border-radius:12px;border:1.5px dashed rgba(255,255,255,0.7); white-space:nowrap;">✋ 핀을 끌어서 이동</div></div>';
-      tempPinLabel=new kakao.maps.CustomOverlay({position:latlng,content:html,xAnchor:0.5,yAnchor:1,zIndex:4,clickable:false});
-      tempPinLabel.setMap(map);
       // 드래그 끝나면 위치·코드 갱신
       kakao.maps.event.addListener(tempPin, "dragend", function(){
         var np=tempPin.getPosition();
         pendingPos=np;
-        if (tempPinLabel) tempPinLabel.setPosition(np);
         fillRegionCode(np);
       });
     }
