@@ -236,6 +236,7 @@
 
   <div id="topright">
     <button id="moveModeBtn">✋ 이동 모드</button>
+    <button id="pinModeBtn">📍 수동 찍기</button>
     <button id="xlsxOutBtn">⬇ 엑셀로 빼기</button>
     <button id="xlsxInBtn">⬆ 엑셀로 넣기</button>
     <input type="file" id="xlsxFile" accept=".xlsx,.xls" style="display:none;" />
@@ -409,6 +410,7 @@
     var ps = new kakao.maps.services.Places();
     var openIW=null, markerObjs=[], tempPin=null, tempPinLabel=null, pendingPos=null;
     var moveMode=false;
+    var pinMode=false;
     var editingId=null;
     var autoCache={};   // __id -> 자동 실거래가값 (재렌더에도 유지)
 
@@ -798,10 +800,27 @@
         this.style.background="#3F9E7E"; this.style.color="#fff";
         mapEl.classList.add("move-mode");
         window.__closeIW();
+        // 수동 찍기와 동시에 켜지지 않게
+        if (pinMode){ pinMode=false; var pb=document.getElementById("pinModeBtn"); pb.textContent="📍 수동 찍기"; pb.style.background=""; pb.style.color=""; }
       } else {
         this.textContent="✋ 이동 모드";
         this.style.background=""; this.style.color="";
         mapEl.classList.remove("move-mode");
+      }
+    });
+
+    // ===== 수동 찍기 토글 =====
+    document.getElementById("pinModeBtn").addEventListener("click", function(){
+      pinMode = !pinMode;
+      if (pinMode){
+        this.textContent="📍 수동 찍기 (켜짐)";
+        this.style.background="#3F9E7E"; this.style.color="#fff";
+        // 이동 모드와 동시에 켜지지 않게
+        if (moveMode){ moveMode=false; var mb=document.getElementById("moveModeBtn"); mb.textContent="✋ 이동 모드"; mb.style.background=""; mb.style.color=""; document.getElementById("map").classList.remove("move-mode"); }
+        alert("수동 찍기 모드입니다.\n지도에서 원하는 자리를 클릭하면 그 위치에 핀이 찍힙니다.\n(지하철 호재처럼 건물이 없는 곳에 쓰세요)");
+      } else {
+        this.textContent="📍 수동 찍기";
+        this.style.background=""; this.style.color="";
       }
     });
 
@@ -897,11 +916,11 @@
     function searchNearby(){
       if (!pendingPos) return;
       var kind=document.getElementById("f-kind").value;
-      var kw = (kind==="school") ? "학교" : "아파트";
+      var kw = (kind==="school") ? "학교" : "아파트";   // 재건축도 아파트로 검색
       ps.keywordSearch(kw, function(data,status){
-        if (status===kakao.maps.services.Status.OK) showCands(data, "핀 주변 "+kw+" (없으면 검색/직접입력):");
-        else showCands([], "");
-      }, { location: pendingPos, radius: 500, sort: kakao.maps.services.SortBy.DISTANCE });
+        if (status===kakao.maps.services.Status.OK) showCands(data, "여기 주변 "+kw+" (선택하면 지정):");
+        else showCands([], "주변에 "+kw+"이 없습니다. 검색하거나 수동 찍기를 쓰세요.");
+      }, { location: pendingPos, radius: 300, sort: kakao.maps.services.SortBy.DISTANCE });
     }
     document.getElementById("searchBtn").addEventListener("click", function(){
       var kw=document.getElementById("f-search").value.trim();
@@ -985,11 +1004,27 @@
     }
 
     kakao.maps.event.addListener(map, "click", function(mouseEvent){
+      if (moveMode) return;   // 이동 모드에선 지도 클릭 무시
       window.__closeIW();
-      pendingPos = mouseEvent.latLng;
-      placePin(pendingPos); fillRegionCode(pendingPos);
-      document.getElementById("addBtn").disabled=false;
-      if (isAuto(document.getElementById("f-kind").value)) searchNearby();
+      var kind=document.getElementById("f-kind").value;
+      if (pinMode || kind==="spot"){
+        // 수동 찍기: 그 자리에 파란 핀 + 위치 지정 (건물 검색 안 함)
+        pendingPos = mouseEvent.latLng;
+        placePin(pendingPos); fillRegionCode(pendingPos);
+        document.getElementById("addBtn").disabled=false;
+        clearCands();
+      } else if (kind==="apt" || kind==="school" || kind==="redev"){
+        // 건물 클릭: 그 주변 같은 종류 건물 검색 → 목록에서 선택 (핀 안 찍음)
+        pendingPos = mouseEvent.latLng;
+        fillRegionCode(pendingPos);
+        searchNearby();
+        document.getElementById("addBtn").disabled=false;
+      } else {
+        // 기타: 그냥 위치만
+        pendingPos = mouseEvent.latLng;
+        placePin(pendingPos); fillRegionCode(pendingPos);
+        document.getElementById("addBtn").disabled=false;
+      }
     });
 
     document.getElementById("addBtn").addEventListener("click", function(){
