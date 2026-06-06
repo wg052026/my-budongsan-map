@@ -19,7 +19,11 @@
     #map { width:100%; height:100vh; }
 
     /* ===== 마커 (2칸 고정폭) ===== */
-    .mk-wrap { text-align:center; cursor:pointer; }
+    .mk-wrap { text-align:center; cursor:pointer; position:relative; }
+    .mk-drag { position:absolute; top:-9px; right:-9px; width:22px; height:22px; line-height:22px;
+      background:#2c3742; color:#cfe8db; border:1.5px solid rgba(255,255,255,0.5); border-radius:50%;
+      font-size:12px; cursor:grab; z-index:3; box-shadow:0 1px 4px rgba(0,0,0,0.5); }
+    .mk-drag:active { cursor:grabbing; background:#3F9E7E; color:#fff; }
     .mk-box { width:116px; border:1.5px solid rgba(255,255,255,0.4); border-radius:9px;
       overflow:hidden; box-shadow:0 1px 6px rgba(0,0,0,0.55); }
     .mk-name { color:#fff; font-size:12px; font-weight:700; padding:3px 8px 2px;
@@ -432,7 +436,8 @@
 
     function markerHtml(p, color){
       var disp = p.disp && p.disp.trim() ? p.disp : p.name;
-      return '<div class="mk-wrap" data-id="'+p.__id+'">' +
+      return '<div class="mk-wrap" data-id="'+p.__id+'" style="user-select:none; -webkit-user-select:none;">' +
+        '<div class="mk-drag" title="끌어서 이동">✥</div>' +
         '<div class="mk-box" style="background:'+color+';">' +
           '<div class="mk-name">'+esc(disp)+'</div>' +
           '<div class="mk-sub">'+subLineHtml(p)+'</div>' +
@@ -601,13 +606,16 @@
         return {x:ev.clientX, y:ev.clientY};
       }
       function onDown(ev){
+        // 이동 핸들(mk-drag)에서 시작한 경우만 드래그
+        var onHandle = ev.target && ev.target.closest && ev.target.closest(".mk-drag");
+        if (!onHandle) return;   // 핸들 아니면 드래그 안 함 (클릭은 따로 처리)
         var pt=getXY(ev); startX=pt.x; startY=pt.y; moved=false; dragging=true;
         map.setDraggable(false);   // 드래그 중 지도 고정
         document.addEventListener("mousemove", onMove);
         document.addEventListener("mouseup", onUp);
         document.addEventListener("touchmove", onMove, {passive:false});
         document.addEventListener("touchend", onUp);
-        ev.stopPropagation();
+        ev.stopPropagation(); ev.preventDefault();
       }
       function onMove(ev){
         if (!dragging) return;
@@ -635,13 +643,16 @@
           // 이동 완료 → 새 위치로 저장
           var np=marker.getPosition();
           saveMarkerMove(p, np);
-        } else {
-          // 안 움직임 = 클릭 → 정보창
-          marker.__onClick();
         }
+        // 핸들에서 안 움직였으면 아무것도 안 함 (정보창은 이름 클릭으로)
       }
       el.addEventListener("mousedown", onDown);
-      el.addEventListener("touchstart", onDown, {passive:true});
+      el.addEventListener("touchstart", onDown, {passive:false});
+      // 이름/박스 클릭 → 정보창 (핸들 클릭은 제외)
+      el.addEventListener("click", function(ev){
+        if (ev.target && ev.target.closest && ev.target.closest(".mk-drag")) return;
+        ev.stopPropagation(); marker.__onClick();
+      });
     }
 
     // 화면(clientX/Y) → 지도 컨테이너 좌표
