@@ -656,10 +656,7 @@
         if (counts[g]===undefined){ counts[g]=0; order.push(g); }
         counts[g]++;
       });
-      if (!order.length){ panel.style.display="none"; return; }
-      // 그룹이 "기타" 하나뿐이면 패널 숨김(굳이 필요없음)
-      if (order.length===1 && order[0]==="기타"){ panel.style.display="none"; return; }
-      panel.style.display="block";
+      // display는 건드리지 않음 (레이어 편집 버튼으로만 열고 닫음)
       var hidden=loadHidden();
       listEl.innerHTML="";
       order.forEach(function(g){
