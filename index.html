@@ -203,9 +203,10 @@
         <button type="button" class="seg-b" data-s="3">★3</button>
         <button type="button" class="seg-b" data-s="4">★4</button>
         <button type="button" class="seg-b on" data-s="5">★5</button>
+        <button type="button" class="seg-b" data-s="6">👑</button>
       </div>
     </div>
-    <select id="f-score" style="display:none;"><option value="5">5</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option><option value="0">0</option></select>
+    <select id="f-score" style="display:none;"><option value="6">6</option><option value="5">5</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option><option value="0">0</option></select>
 
     <!-- 아파트: 평/가격/대지지분 -->
     <div id="aptFields">
@@ -220,13 +221,30 @@
     <!-- 재건축: 단계 -->
     <div id="stageField" style="display:none;">
       <label>진행 단계</label>
-      <select id="f-stage">
+      <div id="stageBtns" class="seg">
+        <button type="button" class="seg-b on" data-st="조합전">조합전</button>
+        <button type="button" class="seg-b" data-st="조합">조합</button>
+        <button type="button" class="seg-b" data-st="사시">사시</button>
+        <button type="button" class="seg-b" data-st="관처">관처</button>
+        <button type="button" class="seg-b" data-st="관처후">관처후</button>
+      </div>
+      <select id="f-stage" style="display:none;">
         <option value="조합전">조합전</option>
         <option value="조합">조합</option>
         <option value="사시">사시</option>
         <option value="관처">관처</option>
         <option value="관처후">관처후</option>
       </select>
+    </div>
+
+    <!-- 학교: 등수 -->
+    <div id="rankField" style="display:none;">
+      <label>학교 순위</label>
+      <div id="rankBtns" class="seg">
+        <button type="button" class="seg-b on" data-r="1">1등</button>
+        <button type="button" class="seg-b" data-r="2">2등</button>
+        <button type="button" class="seg-b" data-r="3">3등</button>
+      </div>
     </div>
 
     <!-- 호재: 자유 텍스트 -->
@@ -401,10 +419,19 @@
 
   // 색채 — 나중에 조절. 점수 색(차분 톤) / 호재·학교 회색
   function scoreColor(p){
-    if (p.kind === "spot" || p.kind === "school") return "#888780";
-    if (p.score >= 4) return "#3F9E7E";
-    if (p.score === 3) return "#C9982F";
-    return "#B85C52";
+    if (p.kind === "spot") return "#888780";
+    if (p.kind === "school"){
+      if (p.score === 1) return "#2C6BB3";   // 1등 - 진파랑
+      if (p.score === 2) return "#5E86B0";   // 2등 - 중간파랑
+      return "#8AA0B8";                       // 3등 - 흐린파랑
+    }
+    if (p.score >= 6) return "#D4AF37";  // 대장 - 금색
+    if (p.score === 5) return "#2E8B57";  // ★5 - 진초록
+    if (p.score === 4) return "#6FB23F";  // ★4 - 연두
+    if (p.score === 3) return "#C9982F";  // ★3 - 주황
+    if (p.score === 2) return "#B07A4A";  // ★2 - 흙갈색
+    if (p.score === 1) return "#8E8169";  // ★1 - 흐린 회갈색
+    return "#7A7A78";                     // 점수없음 - 회색
   }
   // 대지지분 색 — 클수록 진한 초록(좋음), 작을수록 연한 회색(나쁨)
   function landColor(p){
@@ -415,9 +442,9 @@
     return "#9AA39E";
   }
   function pad2(n){ n=Math.round(parseFloat(n)||0); return (n<10?"0":"")+n; }
-  function starStr(n){ var s=""; for(var i=0;i<5;i++) s+=(i<n?"★":"☆"); return s; }
+  function starStr(n){ if(n>=6) return "👑 대장"; var s=""; for(var i=0;i<5;i++) s+=(i<n?"★":"☆"); return s; }
   function esc(t){ return String(t==null?"":t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
-  function isAuto(kind){ return kind==="apt" || kind==="school"; }
+  function isAuto(kind){ return kind==="apt"; }
   function hasStars(p){ return !(p.kind==="spot" || p.kind==="school"); }
 
   // 아파트가 자동조회 대상인지 (평·실거래가 둘 다 비어있으면 자동)
@@ -440,6 +467,9 @@
       return "<span style=\"color:#fff;\">"+left+"</span>"+landTxt+jongTxt;
     } else if (p.kind==="redev"){
       return "<span style=\"color:#fff;\">"+esc(p.stage)+"</span>";
+    } else if (p.kind==="school"){
+      var r = p.score>=1 ? (p.score+"등") : "";
+      return "<span style=\"color:#fff;\">"+esc(r)+"</span>";
     } else {
       return "<span style=\"color:#fff;\">"+esc(p.sub)+"</span>";
     }
@@ -603,9 +633,10 @@
 
     function markerHtml(p, color){
       var disp = p.disp && p.disp.trim() ? p.disp : p.name;
+      var crown = (p.score>=6 && p.kind!=="spot" && p.kind!=="school") ? "👑 " : "";
       return '<div class="mk-wrap" data-id="'+p.__id+'" style="user-select:none; -webkit-user-select:none;">' +
         '<div class="mk-box" style="background:'+color+';">' +
-          '<div class="mk-name">'+esc(disp)+'</div>' +
+          '<div class="mk-name">'+crown+esc(disp)+'</div>' +
           '<div class="mk-sub">'+subLineHtml(p)+'</div>' +
         '</div>' +
         '<div class="mk-tail" style="border-top:7px solid '+color+';"></div></div>';
@@ -1071,12 +1102,12 @@
       syncKindUI();
       document.getElementById("f-name").value = p.name||"";
       document.getElementById("f-disp").value = p.disp||"";
-      if (p.kind!=="spot" && p.kind!=="school") document.getElementById("f-score").value = String(p.score||0);
-      syncSegButtons();
+      if (p.kind!=="spot") document.getElementById("f-score").value = String(p.score||(p.kind==="school"?1:0));
       document.getElementById("f-py").value = p.py||"";
       document.getElementById("f-price").value = p.price||"";
       document.getElementById("f-land").value = (p.land&&parseFloat(p.land)>0)?p.land:"";
       if (p.kind==="redev") document.getElementById("f-stage").value = p.stage||"조합전";
+      syncSegButtons();
       document.getElementById("f-spot").value = p.sub||"";
       document.getElementById("f-note").value = p.note||"";
       document.getElementById("f-group").value = p.group||"";
@@ -1104,12 +1135,11 @@
     // ===== 패널 종류별 UI =====
     function syncKindUI(){
       var kind=document.getElementById("f-kind").value;
-      // autoArea는 여기서 켜지 않음 — 주변 검색 결과가 있을 때 showCands가 켬.
-      // 자동검색 안 하는 종류(호재 등)면 숨김.
       if (!isAuto(kind)) document.getElementById("autoArea").style.display = "none";
       document.getElementById("aptFields").style.display = (kind==="apt") ? "block" : "none";
       document.getElementById("stageField").style.display = (kind==="redev") ? "block" : "none";
-      document.getElementById("spotField").style.display = (kind==="spot"||kind==="school") ? "block" : "none";
+      document.getElementById("rankField").style.display = (kind==="school") ? "block" : "none";
+      document.getElementById("spotField").style.display = (kind==="spot") ? "block" : "none";
       document.getElementById("scoreWrap").style.display = (kind==="spot"||kind==="school") ? "none" : "block";
     }
     document.getElementById("f-kind").addEventListener("change", function(){
@@ -1136,12 +1166,31 @@
         document.getElementById("f-score").value=this.getAttribute("data-s");
       });
     });
-    // 종류/점수 버튼을 현재 select 값에 맞추기 (수정 모드 진입 시 사용)
+    // 진행 단계 버튼
+    document.querySelectorAll("#stageBtns .seg-b").forEach(function(b){
+      b.addEventListener("click", function(){
+        document.querySelectorAll("#stageBtns .seg-b").forEach(function(x){ x.classList.remove("on"); });
+        this.classList.add("on");
+        document.getElementById("f-stage").value=this.getAttribute("data-st");
+      });
+    });
+    // 학교 등수 버튼 → score에 등수 저장
+    document.querySelectorAll("#rankBtns .seg-b").forEach(function(b){
+      b.addEventListener("click", function(){
+        document.querySelectorAll("#rankBtns .seg-b").forEach(function(x){ x.classList.remove("on"); });
+        this.classList.add("on");
+        document.getElementById("f-score").value=this.getAttribute("data-r");
+      });
+    });
+    // 종류/점수/단계/등수 버튼을 현재 값에 맞추기
     function syncSegButtons(){
       var k=document.getElementById("f-kind").value;
       document.querySelectorAll("#kindBtns .seg-b").forEach(function(x){ x.classList.toggle("on", x.getAttribute("data-k")===k); });
       var s=document.getElementById("f-score").value;
       document.querySelectorAll("#scoreBtns .seg-b").forEach(function(x){ x.classList.toggle("on", x.getAttribute("data-s")===String(s)); });
+      var st=document.getElementById("f-stage").value;
+      document.querySelectorAll("#stageBtns .seg-b").forEach(function(x){ x.classList.toggle("on", x.getAttribute("data-st")===st); });
+      document.querySelectorAll("#rankBtns .seg-b").forEach(function(x){ x.classList.toggle("on", x.getAttribute("data-r")===String(s)); });
     }
 
     function clearCands(){ var c=document.getElementById("cands"); c.innerHTML=""; c.classList.remove("show"); var a=document.getElementById("autoArea"); if(a) a.style.display="none"; }
@@ -1299,16 +1348,17 @@
         placePin(pendingPos); fillRegionCode(pendingPos);
         document.getElementById("addBtn").disabled=false;
         clearCands();
-      } else if (kind==="apt" || kind==="school" || kind==="redev"){
-        // 건물 클릭: 그 주변 같은 종류 건물 검색 → 목록에서 선택 (핀 안 찍음)
+      } else if (kind==="apt"){
+        // 아파트: 주변 아파트 검색 → 목록 (핀 안 찍음)
         pendingPos = mouseEvent.latLng;
         fillRegionCode(pendingPos);
         searchNearby();
         document.getElementById("addBtn").disabled=false;
       } else {
-        // 기타: 그냥 위치만
+        // 학교/재건축/기타: 위치만 잡고 주변 검색 안 함
         pendingPos = mouseEvent.latLng;
-        placePin(pendingPos); fillRegionCode(pendingPos);
+        fillRegionCode(pendingPos);
+        clearCands();
         document.getElementById("addBtn").disabled=false;
       }
     });
