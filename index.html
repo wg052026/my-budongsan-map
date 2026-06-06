@@ -1052,6 +1052,9 @@
       if (!p) return;
       window.__closeIW();
       editingId = id;
+      // 접힌 패널 펴기
+      var pbody=document.getElementById("panelBody");
+      if (pbody && pbody.style.display==="none"){ pbody.style.display="block"; document.getElementById("panelArrow").textContent="▾"; }
       // 패널에 값 채우기
       document.getElementById("f-kind").value = p.kind;
       syncKindUI();
@@ -1068,8 +1071,8 @@
       refreshGroupOptions();
       document.getElementById("f-code").value = p.code||"";
       pendingPos = new kakao.maps.LatLng(p.lat, p.lng);
-      placePin(pendingPos); map.panTo(pendingPos);
-      var h=document.getElementById("pin-hint"); h.textContent="✏ 수정 중: "+p.name+" (위치 바꾸려면 지도 클릭)"; h.classList.add("on");
+      map.panTo(pendingPos);
+      var h=document.getElementById("pin-hint"); h.textContent="✏ 수정 중: "+p.name+" (위치는 이동 모드로 변경)"; h.classList.add("on");
       var b=document.getElementById("addBtn"); b.textContent="수정 저장"; b.disabled=false;
       document.getElementById("panel").scrollTop=0;
     }
