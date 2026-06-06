@@ -1036,6 +1036,9 @@
       } else {
         this.textContent="📍 수동 찍기";
         this.style.background=""; this.style.color="";
+        // 끄면 임시 핀 제거
+        if (tempPin){ tempPin.setMap(null); tempPin=null; }
+        if (tempPinLabel){ tempPinLabel.setMap(null); tempPinLabel=null; }
       }
     });
 
