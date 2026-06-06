@@ -157,25 +157,25 @@
     #failBox .acts { display:flex; gap:8px; margin-top:12px; }
     #failBox .acts button { flex:1; border:none; border-radius:6px; padding:8px; font-size:12px; font-weight:700; cursor:pointer; }
 
-    #groupPanel { display:none; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:45; background:rgba(35,39,47,0.98);
-      border:0.5px solid rgba(255,255,255,0.2); border-radius:12px; padding:16px 18px; width:min(460px,92%);
-      max-height:70vh; overflow-y:auto; box-shadow:0 4px 24px rgba(0,0,0,0.6); }
-    #groupPanel .gp-head { color:#f2f3f5; font-size:15px; font-weight:700; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; }
-    #groupClose { background:#3a3f49; border:none; color:#e8eaed; border-radius:6px; padding:3px 10px; font-size:13px; cursor:pointer; }
-    .lg-group { border-bottom:0.5px solid rgba(255,255,255,0.1); padding:4px 0; }
-    .lg-ghead { display:flex; align-items:center; gap:6px; }
-    .lg-eye, .lg-ren, .lg-del { background:none; border:none; cursor:pointer; font-size:13px; padding:2px 4px; }
-    .lg-gname { flex:1; color:#e8eaed; font-size:13px; font-weight:700; cursor:pointer; }
-    .lg-cnt { color:#9aa0ab; font-size:11px; }
-    .lg-gbody { margin:6px 0 4px; }
-    .lg-subtitle { color:#9fe7c8; font-size:11px; margin:6px 0 3px; }
-    .lg-table { width:100%; border-collapse:collapse; font-size:11px; }
-    .lg-table th { color:#9aa0ab; font-weight:600; text-align:left; padding:2px 3px; border-bottom:0.5px solid rgba(255,255,255,0.12); }
-    .lg-table td { padding:2px 3px; border-bottom:0.5px solid rgba(255,255,255,0.06); }
-    .lg-c-name { color:#cfe8db; max-width:90px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .lg-in { background:#1a1d24; color:#e8eaed; border:0.5px solid rgba(255,255,255,0.2); border-radius:4px; font-size:11px; padding:2px 4px; }
-    .lg-land { width:38px; } .lg-note { width:100%; box-sizing:border-box; }
-    .lg-rowdel { background:none; border:none; cursor:pointer; font-size:12px; }
+    #groupPanel { display:none; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:45; background:rgba(28,31,38,0.99);
+      border:0.5px solid rgba(255,255,255,0.2); border-radius:12px; padding:16px 18px; width:94%; height:90%;
+      overflow-y:auto; box-shadow:0 4px 24px rgba(0,0,0,0.6); }
+    #groupPanel .gp-head { color:#f2f3f5; font-size:16px; font-weight:700; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; }
+    #groupClose { background:#3a3f49; border:none; color:#e8eaed; border-radius:6px; padding:4px 12px; font-size:14px; cursor:pointer; }
+    .lg-group { border-bottom:0.5px solid rgba(255,255,255,0.12); padding:8px 0; }
+    .lg-ghead { display:flex; align-items:center; gap:8px; }
+    .lg-eye, .lg-ren, .lg-del { background:none; border:none; cursor:pointer; font-size:16px; padding:3px 6px; color:#e8eaed; filter:grayscale(0); }
+    .lg-gname { flex:1; color:#fff; font-size:15px; font-weight:700; cursor:pointer; }
+    .lg-cnt { color:#9aa0ab; font-size:13px; margin-right:4px; }
+    .lg-gbody { margin:8px 0 6px; }
+    .lg-subtitle { color:#9fe7c8; font-size:13px; margin:10px 0 5px; font-weight:700; }
+    .lg-table { width:100%; border-collapse:collapse; font-size:13px; }
+    .lg-table th { color:#9aa0ab; font-weight:600; text-align:left; padding:5px 6px; border-bottom:0.5px solid rgba(255,255,255,0.15); }
+    .lg-table td { padding:5px 6px; border-bottom:0.5px solid rgba(255,255,255,0.07); }
+    .lg-c-name { color:#cfe8db; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .lg-in { background:#1a1d24; color:#e8eaed; border:0.5px solid rgba(255,255,255,0.25); border-radius:5px; font-size:13px; padding:4px 6px; }
+    .lg-score { width:46px; text-align:center; } .lg-land { width:50px; } .lg-note { width:100%; box-sizing:border-box; }
+    .lg-rowdel { background:none; border:none; cursor:pointer; font-size:15px; color:#f0a0a0; }
     .gp-row { display:flex; align-items:center; gap:6px; padding:3px 0; }
     .gp-row label { flex:1; display:flex; align-items:center; gap:6px; color:#e8eaed; font-size:12px; cursor:pointer; min-width:0; }
     .gp-row .gp-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -280,9 +280,13 @@
     <label>메모 (클릭 시 표시)</label>
     <textarea id="f-note" placeholder="호재 / 학군 / 기타 메모"></textarea>
 
-    <label>그룹 (레이어)</label>
-    <input id="f-group" placeholder="예: 용인수원화성평택" list="groupOptions" autocomplete="off" />
+    <label>큰그룹 (레이어)</label>
+    <input id="f-group" placeholder="예: 화성" list="groupOptions" autocomplete="off" />
     <datalist id="groupOptions"></datalist>
+
+    <label>작은그룹 (선택)</label>
+    <input id="f-subgroup" placeholder="예: 동탄 (비우면 소그룹 없음)" list="subgroupOptions" autocomplete="off" />
+    <datalist id="subgroupOptions"></datalist>
 
     <input id="f-code" type="hidden" />
     <div id="pin-hint" class="hint">📍 지도를 클릭해 위치를 찍으세요</div>
@@ -821,16 +825,23 @@
         if (p.__marker && p.__marker.__onClick) p.__marker.__onClick();
       });
       tr.appendChild(tdName);
-      // 점수 (아파트/재건축=1~5/대장, 학교=1~3등)
+      // 점수: 숫자 직접 입력 (아파트/재건축 0~6, 학교 1~3, 6=대장)
       var tdScore=document.createElement("td");
-      var selS=document.createElement("select"); selS.className="lg-in";
-      var opts = (p.kind==="school") ? [["1","1등"],["2","2등"],["3","3등"]]
-               : (p.kind==="spot") ? [["0","-"]]
-               : [["0","-"],["1","★1"],["2","★2"],["3","★3"],["4","★4"],["5","★5"],["6","👑"]];
-      opts.forEach(function(o){ var op=document.createElement("option"); op.value=o[0]; op.textContent=o[1]; selS.appendChild(op); });
-      selS.value=String(p.score||0);
-      selS.addEventListener("change", function(){ applyFields(p.__id,{score:parseInt(this.value,10)}); renderAll(); });
-      tdScore.appendChild(selS); tr.appendChild(tdScore);
+      if (p.kind==="spot"){ tdScore.textContent="-"; }
+      else {
+        var inS=document.createElement("input"); inS.className="lg-in lg-score";
+        inS.inputMode="numeric"; inS.value=String(p.score||0);
+        inS.title = (p.kind==="school") ? "등수 1~3" : "0~5, 6=대장(👑)";
+        inS.addEventListener("change", function(){
+          var v=parseInt(this.value,10); if(isNaN(v)) v=0;
+          var max=(p.kind==="school")?3:6;
+          if(v<0)v=0; if(v>max)v=max;
+          this.value=v;
+          applyFields(p.__id,{score:v}); renderAll();
+        });
+        tdScore.appendChild(inS);
+      }
+      tr.appendChild(tdScore);
       // 대지지분 (아파트만)
       var tdLand=document.createElement("td");
       if (p.kind==="apt"){
@@ -869,6 +880,12 @@
       var seen={}, html="";
       all.forEach(function(p){ var g=groupOf(p); if(g!=="기타" && !seen[g]){ seen[g]=1; html+='<option value="'+esc(g)+'">'; } });
       dl.innerHTML=html;
+      var dl2=document.getElementById("subgroupOptions");
+      if (dl2){
+        var seen2={}, html2="";
+        all.forEach(function(p){ var sg=(p.subgroup||"").trim(); if(sg && !seen2[sg]){ seen2[sg]=1; html2+='<option value="'+esc(sg)+'">'; } });
+        dl2.innerHTML=html2;
+      }
     }
     function drawMarker(p){
       var color=scoreColor(p), pos=new kakao.maps.LatLng(p.lat,p.lng);
@@ -1230,6 +1247,7 @@
       document.getElementById("f-spottype").value = p.spottype||"지하철";
       document.getElementById("f-note").value = p.note||"";
       document.getElementById("f-group").value = p.group||"";
+      document.getElementById("f-subgroup").value = p.subgroup||"";
       refreshGroupOptions();
       document.getElementById("f-code").value = p.code||"";
       pendingPos = new kakao.maps.LatLng(p.lat, p.lng);
@@ -1243,7 +1261,7 @@
       if (tempPin){ tempPin.setMap(null); tempPin=null; }
       if (tempPinLabel){ tempPinLabel.setMap(null); tempPinLabel=null; }
       pendingPos=null;
-      ["f-name","f-disp","f-py","f-price","f-land","f-spot","f-note","f-group","f-code","f-search"].forEach(function(id){ document.getElementById(id).value=""; });
+      ["f-name","f-disp","f-py","f-price","f-land","f-spot","f-note","f-group","f-subgroup","f-code","f-search"].forEach(function(id){ document.getElementById(id).value=""; });
       document.getElementById("f-score").value="5";
       if (typeof syncSegButtons==="function") syncSegButtons();
       clearCands();
@@ -1570,6 +1588,7 @@
         spottype: kind==="spot"?document.getElementById("f-spottype").value:"",
         note:document.getElementById("f-note").value.trim(),
         group:document.getElementById("f-group").value.trim(),
+        subgroup:document.getElementById("f-subgroup").value.trim(),
         seq: editingId ? ((findById(editingId)||{}).seq) : undefined,
         lat:pendingPos.getLat(), lng:pendingPos.getLng(),
         code:document.getElementById("f-code").value.trim()
@@ -1628,7 +1647,7 @@
             "평": p.py||"", "실거래가": p.price||"",
             "대지지분": (p.land&&parseFloat(p.land)>0)?parseFloat(p.land):"",
             "종(용도)": p.jong||"", "단계": p.stage||"", "호재내용": p.sub||"",
-            "메모": p.note||"", "그룹": p.group||"",
+            "메모": p.note||"", "그룹": p.group||"", "작은그룹": p.subgroup||"",
             "위도": p.lat!=null?Number(p.lat).toFixed(6):"",
             "경도": p.lng!=null?Number(p.lng).toFixed(6):"",
             "법정동코드": p.code||"", "주소": ""
@@ -1641,7 +1660,7 @@
             "평": "", "실거래가": "",
             "대지지분": (f.land&&parseFloat(f.land)>0)?parseFloat(f.land):"",
             "종(용도)": f.jong||"", "단계": "", "호재내용": "",
-            "메모": f.note||"", "그룹": f.group||"",
+            "메모": f.note||"", "그룹": f.group||"", "작은그룹": f.subgroup||"",
             "위도": "", "경도": "", "법정동코드": "",
             "주소": f.addr||""   // 실패분은 주소를 넣어둬야 좌표 다시 찾을 수 있음
           };
@@ -1711,7 +1730,8 @@
               stage: String(pick(r,["단계","stage"])||"").trim(),
               sub: String(pick(r,["호재내용","sub"])||"").trim(),
               note: String(pick(r,["메모","note"])||"").trim(),
-              group: String(pick(r,["그룹","레이어","group","layer"])||"").trim(),
+              group: String(pick(r,["그룹","레이어","group","layer","큰그룹"])||"").trim(),
+              subgroup: String(pick(r,["작은그룹","소그룹","하위그룹","subgroup"])||"").trim(),
               seq: isNaN(seqRaw)?seqCounter:seqRaw,
               lat: isNaN(lat)?null:lat, lng: isNaN(lng)?null:lng,
               code: String(pick(r,["법정동코드","code"])||"").trim()
@@ -1809,7 +1829,7 @@
       return all.map(function(p){
         return '  { kind:'+q(p.kind)+', name:'+q(p.name)+', disp:'+q(p.disp)+', score:'+(p.score||0)+',\n' +
                '    py:'+q(p.py)+', price:'+q(p.price)+', land:'+(parseFloat(p.land)||0)+', jong:'+q(p.jong||"")+', stage:'+q(p.stage)+', sub:'+q(p.sub)+', spottype:'+q(p.spottype||"")+',\n' +
-               '    note:'+q(p.note)+', group:'+q(p.group||"")+', seq:'+(p.seq!=null?p.seq:0)+', lat:'+Number(p.lat).toFixed(6)+', lng:'+Number(p.lng).toFixed(6)+', code:'+q(p.code)+' },';
+               '    note:'+q(p.note)+', group:'+q(p.group||"")+', subgroup:'+q(p.subgroup||"")+', seq:'+(p.seq!=null?p.seq:0)+', lat:'+Number(p.lat).toFixed(6)+', lng:'+Number(p.lng).toFixed(6)+', code:'+q(p.code)+' },';
       }).join("\n");
     }
 
