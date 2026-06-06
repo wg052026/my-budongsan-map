@@ -1244,28 +1244,57 @@
     function pickCand(d){
       var lat=parseFloat(d.y), lng=parseFloat(d.x);
       pendingPos=new kakao.maps.LatLng(lat,lng);
-      document.getElementById("f-name").value=d.place_name.replace(/\s*아파트\s*$/,"").trim();
+      var kind=document.getElementById("f-kind").value;
+      document.getElementById("f-name").value=cleanName(d.place_name, kind);
       fillRegionCode(pendingPos); map.panTo(pendingPos);
       document.getElementById("addBtn").disabled=false;
     }
     function searchNearby(){
       if (!pendingPos) return;
       var kind=document.getElementById("f-kind").value;
-      var kw = (kind==="school") ? "학교" : "아파트";   // 재건축도 아파트로 검색
+      var kw = (kind==="school") ? "학교" : "아파트";
       ps.keywordSearch(kw, function(data,status){
         if (status===kakao.maps.services.Status.OK && data.length){
-          showCands(data, "여기 주변 "+kw+" (선택하면 지정):");
+          var list = filterNearby(data, kind);
+          if (!list.length){
+            var pbody0=document.getElementById("panelBody");
+            if (pbody0){ pbody0.style.display="none"; document.getElementById("panelArrow").textContent="▸"; }
+            clearCands(); return;
+          }
+          showCands(list, "여기 주변 "+kw+" (선택하면 지정):");
           // 맨 위(가장 가까운) 것을 이름칸에 자동 채움
-          var d0=data[0];
-          document.getElementById("f-name").value = d0.place_name.replace(/\s*아파트\s*$/,"").trim();
+          document.getElementById("f-name").value = cleanName(list[0].place_name, kind);
           document.getElementById("addBtn").disabled=false;
         } else {
-          // 주변에 아파트 없음 → 단지 정보 패널 접기
           var pbody=document.getElementById("panelBody");
           if (pbody){ pbody.style.display="none"; document.getElementById("panelArrow").textContent="▸"; }
           clearCands();
         }
       }, { location: pendingPos, radius: 100, sort: kakao.maps.services.SortBy.DISTANCE });
+    }
+
+    // 종류별 잡것 거르기
+    function filterNearby(data, kind){
+      if (kind==="school"){
+        // 학교만 (행정실/교무실/병설유치원/검색 등 제외, "학교"로 끝나는 것 우선)
+        var bad=/(행정실|교무실|병설|유치원|어린이집|매점|기숙사|운동장|체육관|정문|후문|주차장|도서관|급식|관리실)/;
+        return data.filter(function(d){
+          var n=d.place_name;
+          if (bad.test(n)) return false;
+          return /(초등학교|중학교|고등학교|학교)$/.test(n) || /(초|중|고)$/.test(n);
+        });
+      }
+      // 아파트: 관리사무소/상가/공인중개 등 제외
+      var badA=/(관리사무소|공인중개|중개사|부동산|상가|입주자|경비|주차장|정문|후문)/;
+      return data.filter(function(d){ return !badA.test(d.place_name); });
+    }
+    // 이름 정리: 아파트는 "○동" 동표기 제거, 학교는 그대로
+    function cleanName(name, kind){
+      var n=name.trim();
+      if (kind==="school") return n;
+      n = n.replace(/\s*\d+동\s*$/,"");      // 끝의 "101동" 제거
+      n = n.replace(/\s*아파트\s*$/,"");     // 끝의 "아파트" 제거
+      return n.trim();
     }
 
     // ===== 상단 위치 검색바 (단지명·주소로 지도 이동) =====
@@ -1379,20 +1408,48 @@
         placePin(pendingPos); fillRegionCode(pendingPos);
         document.getElementById("addBtn").disabled=false;
         clearCands();
-      } else if (kind==="apt" || kind==="school"){
-        // 아파트/학교: 주변 검색 → 목록 + 맨 위 이름 자동 채움
-        pendingPos = mouseEvent.latLng;
-        fillRegionCode(pendingPos);
-        searchNearby();
-        document.getElementById("addBtn").disabled=false;
-      } else {
-        // 재건축/기타: 위치만 잡고 주변 검색 안 함
+      } else if (kind==="redev"){
+        // 재건축: 자동전환 없이 위치만 (이름 직접 입력)
         pendingPos = mouseEvent.latLng;
         fillRegionCode(pendingPos);
         clearCands();
         document.getElementById("addBtn").disabled=false;
+      } else {
+        // 아파트/학교: 주변에서 아파트·학교 둘 다 찾아 더 가까운 종류로 자동 설정
+        pendingPos = mouseEvent.latLng;
+        fillRegionCode(pendingPos);
+        document.getElementById("addBtn").disabled=false;
+        autoDetectKind(pendingPos);
       }
     });
+
+    // 클릭 지점 주변에서 아파트·학교 중 더 가까운 종류로 자동 설정
+    function autoDetectKind(pos){
+      var got={};
+      function done(){
+        if (got.apt===undefined || got.school===undefined) return;   // 둘 다 응답 대기
+        var aptD = got.apt ? parseFloat(got.apt.distance) : Infinity;
+        var schD = got.school ? parseFloat(got.school.distance) : Infinity;
+        if (aptD===Infinity && schD===Infinity){
+          // 둘 다 없음 → 현재 종류 유지, 빈 결과 메시지
+          showCands([], "여기 주변 아파트:");
+          return;
+        }
+        var pick = (schD < aptD) ? "school" : "apt";
+        // 종류 버튼/select 동기화
+        var sel=document.getElementById("f-kind"); sel.value=pick;
+        document.querySelectorAll("#kindBtns .seg-b").forEach(function(x){ x.classList.toggle("on", x.getAttribute("data-k")===pick); });
+        syncKindUI();
+        // 해당 종류로 주변 목록 표시 + 이름 자동 채움
+        searchNearby();
+      }
+      ps.keywordSearch("아파트", function(data,status){
+        got.apt = (status===kakao.maps.services.Status.OK && data.length) ? data[0] : null; done();
+      }, { location: pos, radius: 100, sort: kakao.maps.services.SortBy.DISTANCE });
+      ps.keywordSearch("학교", function(data,status){
+        got.school = (status===kakao.maps.services.Status.OK && data.length) ? data[0] : null; done();
+      }, { location: pos, radius: 100, sort: kakao.maps.services.SortBy.DISTANCE });
+    }
 
     document.getElementById("addBtn").addEventListener("click", function(){
       if (!pendingPos){ alert("먼저 지도를 클릭해 위치를 찍으세요."); return; }
@@ -1613,14 +1670,28 @@
             var imported = parsed.filter(function(p){ return p.lat!=null && p.lng!=null; })
                                  .map(function(p){ var o=Object.assign({},p); delete o.addr; return o; });
             if (!imported.length && !failList.length){ alert("좌표를 확정한 항목이 없습니다."); return; }
-            if (append){ imported.forEach(function(p){ added.push(p); }); }
-            else { added = imported; }
+            if (append){
+              // 같은 이름+그룹이면 덮어쓰기, 없으면 추가
+              var dup=0, add=0;
+              imported.forEach(function(p){
+                var key=(p.name||"").trim()+"|"+((p.group||"").trim());
+                var idx=-1;
+                for (var i=0;i<added.length;i++){
+                  if (((added[i].name||"").trim()+"|"+((added[i].group||"").trim()))===key){ idx=i; break; }
+                }
+                if (idx>=0){ var oldId=added[idx].__id; p.__id=oldId; added[idx]=p; dup++; }
+                else { added.push(p); add++; }
+              });
+              window.__lastImportMsg = "새로 추가 "+add+"개 · 덮어쓰기 "+dup+"개";
+            }
+            else { added = imported; window.__lastImportMsg=""; }
             saveAdded(added);
             saveFails(failList);   // 실패 목록 저장 → 우상단 버튼으로 확인
             renderFailBtn();       // 버튼 먼저 갱신 (renderAll 에러와 무관하게)
             renderAll();
             renderFailBtn();
             if (failList.length) alert("변환 실패 "+failList.length+"개는 우상단 '⚠ 실패' 버튼에서 확인하세요.");
+            else if (window.__lastImportMsg) alert("완료: "+window.__lastImportMsg);
           })();
         } catch(err){
           alert("엑셀 읽기 실패: "+err.message);
