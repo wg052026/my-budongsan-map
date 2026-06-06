@@ -79,6 +79,8 @@
     #topright { position:absolute; top:12px; right:12px; z-index:20; display:flex; flex-direction:column; gap:6px; }
     #topright button { background:#23272f; border:0.5px solid rgba(255,255,255,0.2); color:#e8eaed;
       border-radius:6px; padding:6px 10px; font-size:11px; cursor:pointer; white-space:nowrap; }
+    #settingsMenu { display:flex; flex-direction:column; gap:6px; background:rgba(35,39,47,0.95);
+      border:0.5px solid rgba(255,255,255,0.2); border-radius:8px; padding:8px; width:200px; }
 
     #exportBox { display:none; position:absolute; inset:0; z-index:40; background:rgba(0,0,0,0.55);
       align-items:center; justify-content:center; }
@@ -156,7 +158,8 @@
   </div>
 
   <div id="panel">
-    <h3>➕ 추가하기</h3>
+    <h3 id="panelToggle" style="cursor:pointer; user-select:none;">➕ 추가하기 <span id="panelArrow" style="float:right;">▾</span></h3>
+    <div id="panelBody">
     <div id="pin-hint" class="hint">📍 먼저 지도를 클릭해 위치를 찍으세요</div>
 
     <label>종류 / 점수</label>
@@ -232,19 +235,31 @@
 
     <input id="f-code" placeholder="법정동코드 (자동)" readonly style="opacity:0.85;" />
     <button id="addBtn" class="btn btn-add" disabled>추가</button>
+    </div>
   </div>
 
   <div id="topright">
     <button id="moveModeBtn">✋ 이동 모드</button>
     <button id="pinModeBtn">📍 수동 찍기</button>
-    <button id="priceBtn">💰 실거래가 갱신</button>
-    <button id="xlsxOutBtn">⬇ 엑셀로 빼기</button>
-    <button id="xlsxInBtn">⬆ 엑셀로 넣기</button>
-    <input type="file" id="xlsxFile" accept=".xlsx,.xls" style="display:none;" />
-    <button id="exportBtn">⟱ 코드 내보내기</button>
-    <button id="saveGhBtn">💾 GitHub에 저장</button>
-    <button id="clearBtn">🗑 내 추가분 비우기</button>
+    <button id="settingsBtn">⚙ 설정</button>
     <button id="failBtn" style="display:none; background:#5a3a3a; border-color:rgba(240,214,214,0.3); color:#f0d6d6;">⚠ 실패 0</button>
+    <div id="settingsMenu" style="display:none;">
+      <button id="xlsxOutBtn">⬇ 엑셀로 빼기</button>
+      <button id="xlsxInBtn">⬆ 엑셀로 넣기</button>
+      <input type="file" id="xlsxFile" accept=".xlsx,.xls" style="display:none;" />
+      <button id="exportBtn">⟱ 코드 내보내기</button>
+      <button id="saveGhBtn">💾 GitHub에 저장</button>
+      <button id="clearBtn">🗑 내 추가분 비우기</button>
+      <div style="border-top:0.5px solid rgba(255,255,255,0.15); margin:6px 0 4px;"></div>
+      <button id="dbgToggle" style="background:#2c3742;color:#cfe8db;">🐞 디버그 로그 보기</button>
+      <div id="dbgWrap" style="display:none; margin-top:4px;">
+        <div style="display:flex; gap:6px; margin-bottom:4px;">
+          <button id="dbgCopy" style="flex:1; background:#3F9E7E; color:#fff;">복사</button>
+          <button id="dbgClear" style="flex:1; background:#3a3f49; color:#e8eaed;">지우기</button>
+        </div>
+        <textarea id="dbgBody" readonly style="width:100%; box-sizing:border-box; height:160px; background:#0a0c10; color:#9fe7c8; font-family:monospace; font-size:11px; line-height:1.5; border:0.5px solid rgba(255,255,255,0.2); border-radius:6px; padding:6px; resize:vertical;"></textarea>
+      </div>
+    </div>
   </div>
 
   <div id="failBox">
@@ -263,14 +278,6 @@
   <div id="groupPanel">
     <div class="gp-head">레이어 (그룹)</div>
     <div id="gpList"></div>
-  </div>
-
-  <div id="debugLog" style="position:absolute; right:8px; bottom:8px; z-index:60; width:320px; max-height:40vh; overflow-y:auto; background:rgba(10,12,16,0.92); color:#9fe7c8; font-family:monospace; font-size:11px; line-height:1.5; padding:8px 10px; border-radius:8px; border:0.5px solid rgba(255,255,255,0.2);">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-      <b style="color:#cfe8db;">디버그 로그</b>
-      <button onclick="document.getElementById('dbgBody').innerHTML='';" style="background:#3a3f49;border:none;color:#e8eaed;border-radius:4px;padding:1px 6px;font-size:10px;cursor:pointer;">지우기</button>
-    </div>
-    <div id="dbgBody"></div>
   </div>
 
   <div id="progBox">
@@ -341,7 +348,7 @@
   function DBG(msg){
     try{
       var b=document.getElementById("dbgBody");
-      if(b){ var d=document.createElement("div"); d.textContent="› "+msg; b.appendChild(d); b.parentNode.scrollTop=b.parentNode.scrollHeight; }
+      if(b){ b.value += "› "+msg+"\n"; b.scrollTop=b.scrollHeight; }
       console.log("[DBG] "+msg);
     }catch(e){}
   }
@@ -871,68 +878,46 @@
 
     function findById(id){ for (var i=0;i<all.length;i++){ if (all[i].__id===id) return all[i]; } return null; }
 
-    // ===== 실거래가 갱신 토글 (켜면 레벨4 이하에서 보이는 곳 자동 조회) =====
-    var priceOn=false, priceBusy=false, priceRunId=0;
-    var PRICE_ZOOM = 4;   // 이 레벨 이하(확대)일 때만 자동 조회
-
-    async function fetchVisiblePrices(){
-      if (!priceOn) return;
-      if (!DEAL_API || DEAL_API.indexOf("script.google")<0) return;
-      var btn=document.getElementById("priceBtn");
-      // 너무 축소된 상태면 조회 안 함
-      if (map.getLevel() > PRICE_ZOOM){
-        btn.textContent="💰 더 확대하세요";
-        return;
-      }
-      // 새 조회 시작 → 이전 조회는 이 id가 달라지면서 자동 중단
-      var myRun = ++priceRunId;
-      var bounds = map.getBounds();
-      var cache = loadPriceCache();
-      var targets = all.filter(function(p){
-        if (!isAutoPrice(p) || !p.code) return false;
-        if (!bounds.contain(new kakao.maps.LatLng(p.lat, p.lng))) return false;
-        return cache[priceKey(p)]===undefined;
-      });
-      if (!targets.length){ if(priceOn) btn.textContent="💰 실거래가 (켜짐)"; return; }
-
-      var BATCH = 10;   // 동시에 조회할 개수
-      var doneN = 0;
-      async function fetchOne(p){
-        var url = DEAL_API + "?lawd=" + encodeURIComponent(p.code) + "&apt=" + encodeURIComponent(p.name) + "&months=3";
-        try{
-          var r=await fetch(url); var j=await r.json();
-          var v=(j && j.ok && j.latest) ? { amountText:j.latest.amountText, pyeong:j.latest.pyeong, date:j.latest.date, area:j.latest.areaM2 } : null;
-          cache[priceKey(p)]=v; autoCache[p.__id]=v; p.auto=v; refreshMarker(p);
-        }catch(e){}
-        doneN++;
-        btn.textContent="💰 갱신중 "+doneN+"/"+targets.length;
-      }
-      // BATCH개씩 묶어 병렬 조회
-      for (var i=0; i<targets.length; i+=BATCH){
-        if (!priceOn || myRun!==priceRunId) return;   // 껐거나 화면 바뀌면 중단
-        var chunk = targets.slice(i, i+BATCH);
-        await Promise.all(chunk.map(fetchOne));
-        savePriceCache(cache);
-      }
-      if (priceOn && myRun===priceRunId) btn.textContent="💰 실거래가 (켜짐)";
-    }
-
-    document.getElementById("priceBtn").addEventListener("click", function(){
-      priceOn = !priceOn;
-      if (priceOn){
-        this.style.background="#3F9E7E"; this.style.color="#fff";
-        if (map.getLevel() > PRICE_ZOOM) this.textContent="💰 더 확대하세요";
-        else { this.textContent="💰 실거래가 (켜짐)"; fetchVisiblePrices(); }
-      } else {
-        priceRunId++;   // 진행 중 조회 중단
-        this.textContent="💰 실거래가 갱신";
-        this.style.background=""; this.style.color="";
-      }
+    // ===== 설정 메뉴 토글 =====
+    document.getElementById("settingsBtn").addEventListener("click", function(){
+      var m=document.getElementById("settingsMenu");
+      var show = (m.style.display==="none" || !m.style.display);
+      m.style.display = show ? "flex" : "none";
+      this.style.background = show ? "#3F9E7E" : "";
+      this.style.color = show ? "#fff" : "";
     });
 
-    // 지도 이동/확대 끝나면: 켜져 있고 레벨4 이하면 보이는 곳 조회 (이전 조회는 중단됨)
-    kakao.maps.event.addListener(map, "idle", function(){
-      if (priceOn) fetchVisiblePrices();
+    // ===== 디버그 로그 보기/복사/지우기 =====
+    document.getElementById("dbgToggle").addEventListener("click", function(){
+      var w=document.getElementById("dbgWrap");
+      var show = (w.style.display==="none" || !w.style.display);
+      w.style.display = show ? "block" : "none";
+      this.textContent = show ? "🐞 디버그 로그 숨기기" : "🐞 디버그 로그 보기";
+    });
+    document.getElementById("dbgCopy").addEventListener("click", function(){
+      var b=document.getElementById("dbgBody"); b.select();
+      try{ document.execCommand("copy"); }catch(e){}
+      var orig=this.textContent; this.textContent="복사됨 ✓";
+      var self=this; setTimeout(function(){ self.textContent=orig; }, 1500);
+    });
+    document.getElementById("dbgClear").addEventListener("click", function(){
+      document.getElementById("dbgBody").value="";
+    });
+
+    // ===== 왼쪽 추가 패널 접기/펴기 =====
+    document.getElementById("panelToggle").addEventListener("click", function(){
+      var body=document.getElementById("panelBody");
+      var arrow=document.getElementById("panelArrow");
+      var show=(body.style.display==="none");
+      body.style.display = show ? "block" : "none";
+      arrow.textContent = show ? "▾" : "▸";
+    });
+
+    // ===== 단축키: Alt+1 이동 모드, Alt+2 수동 찍기 =====
+    document.addEventListener("keydown", function(e){
+      if (!e.altKey) return;
+      if (e.key==="1"){ e.preventDefault(); document.getElementById("moveModeBtn").click(); }
+      else if (e.key==="2"){ e.preventDefault(); document.getElementById("pinModeBtn").click(); }
     });
 
     // ===== 수정/삭제 =====
