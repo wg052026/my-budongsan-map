@@ -825,14 +825,14 @@
     function placePin(latlng){
       if (tempPin) tempPin.setMap(null);
       // 드래그 가능한 기본 마커 사용
-      tempPin = new kakao.maps.Marker({ position: latlng, draggable: true });
+      tempPin = new kakao.maps.Marker({ position: latlng, draggable: true, zIndex: 100 });
       tempPin.setMap(map);
-      // "새 위치 (드래그 가능)" 라벨
+      // "드래그로 이동" 라벨 — 핀을 가리지 않게 위로 띄우고, 마우스 이벤트는 통과시킴
       if (tempPinLabel) tempPinLabel.setMap(null);
-      var html='<div style="text-align:center; transform:translateY(-46px);">' +
-        '<div style="background:#888780;color:#fff;font-size:11px;font-weight:700;padding:3px 8px;' +
-        'border-radius:12px;border:1.5px dashed rgba(255,255,255,0.7); white-space:nowrap;">✋ 드래그로 이동</div></div>';
-      tempPinLabel=new kakao.maps.CustomOverlay({position:latlng,content:html,xAnchor:0.5,yAnchor:1,zIndex:5});
+      var html='<div style="pointer-events:none; text-align:center; transform:translateY(-58px);">' +
+        '<div style="display:inline-block; background:#888780;color:#fff;font-size:11px;font-weight:700;padding:3px 8px;' +
+        'border-radius:12px;border:1.5px dashed rgba(255,255,255,0.7); white-space:nowrap;">✋ 핀을 끌어서 이동</div></div>';
+      tempPinLabel=new kakao.maps.CustomOverlay({position:latlng,content:html,xAnchor:0.5,yAnchor:1,zIndex:4,clickable:false});
       tempPinLabel.setMap(map);
       // 드래그 끝나면 위치·코드 갱신
       kakao.maps.event.addListener(tempPin, "dragend", function(){
@@ -896,12 +896,12 @@
           edits[editingId] = p;            // 고정항목 오버라이드
           saveEdits(edits);
         } else {
-          // 추가항목: __id로 정확히 찾아 갱신 (배열 인덱스가 어긋날 수 있어 split 사용 금지)
+          // 추가항목: __id로 정확히 찾아 갱신
           var found=false;
           for (var ai=0; ai<added.length; ai++){
             if (added[ai].__id===editingId){ p.__id=editingId; added[ai]=p; found=true; break; }
           }
-          if (!found){ p.__id=editingId; added.push(p); }  // 못 찾으면 추가
+          if (!found){ p.__id=editingId; added.push(p); }
           saveAdded(added);
         }
       } else {
