@@ -1150,8 +1150,8 @@
       var area=document.getElementById("autoArea");
       document.getElementById("candsTitle").textContent=title;
       c.innerHTML="";
-      if (!list.length){ c.classList.remove("show"); if(area) area.style.display="none"; return; }
-      if(area) area.style.display="block";
+      if(area) area.style.display="block";   // 메시지는 항상 보이게
+      if (!list.length){ c.classList.remove("show"); return; }
       list.slice(0,8).forEach(function(d){
         var div=document.createElement("div"); div.className="cand";
         div.innerHTML='<div class="cn">'+esc(d.place_name)+'</div>'+
@@ -1180,7 +1180,10 @@
           document.getElementById("f-name").value = d0.place_name.replace(/\s*아파트\s*$/,"").trim();
           document.getElementById("addBtn").disabled=false;
         } else {
-          showCands([], "주변에 "+kw+"이 없습니다. 검색하거나 수동 찍기를 쓰세요.");
+          // 주변에 아파트 없음 → 단지 정보 패널 접기
+          var pbody=document.getElementById("panelBody");
+          if (pbody){ pbody.style.display="none"; document.getElementById("panelArrow").textContent="▸"; }
+          clearCands();
         }
       }, { location: pendingPos, radius: 100, sort: kakao.maps.services.SortBy.DISTANCE });
     }
