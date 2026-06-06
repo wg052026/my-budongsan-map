@@ -856,37 +856,62 @@
 
     function findById(id){ for (var i=0;i<all.length;i++){ if (all[i].__id===id) return all[i]; } return null; }
 
-    // ===== 실거래가 갱신 (화면에 보이는 단지만) =====
-    document.getElementById("priceBtn").addEventListener("click", async function(){
-      var btn=this;
-      if (!DEAL_API || DEAL_API.indexOf("script.google")<0){ alert("실거래가 서버가 설정되지 않았습니다."); return; }
+    // ===== 실거래가 갱신 토글 (켜면 레벨4 이하에서 보이는 곳 자동 조회) =====
+    var priceOn=false, priceBusy=false, priceRunId=0;
+    var PRICE_ZOOM = 4;   // 이 레벨 이하(확대)일 때만 자동 조회
+
+    async function fetchVisiblePrices(){
+      if (!priceOn) return;
+      if (!DEAL_API || DEAL_API.indexOf("script.google")<0) return;
+      var btn=document.getElementById("priceBtn");
+      // 너무 축소된 상태면 조회 안 함
+      if (map.getLevel() > PRICE_ZOOM){
+        btn.textContent="💰 더 확대하세요";
+        return;
+      }
+      // 새 조회 시작 → 이전 조회는 이 id가 달라지면서 자동 중단
+      var myRun = ++priceRunId;
       var bounds = map.getBounds();
       var cache = loadPriceCache();
-      // 화면 안 + 아파트(자동조회 대상) + 캐시 없는 것만
       var targets = all.filter(function(p){
         if (!isAutoPrice(p) || !p.code) return false;
         if (!bounds.contain(new kakao.maps.LatLng(p.lat, p.lng))) return false;
-        return cache[priceKey(p)]===undefined;   // 이미 조회한 건 건너뜀
+        return cache[priceKey(p)]===undefined;
       });
-      if (!targets.length){ alert("화면 안에 새로 조회할 단지가 없습니다.\n(이미 조회했거나, 보이는 아파트가 없음)\n지도를 옮긴 뒤 다시 눌러보세요."); return; }
+      if (!targets.length){ if(priceOn) btn.textContent="💰 실거래가 (켜짐)"; return; }
 
-      btn.disabled=true; var orig=btn.textContent;
-      var ok=0, fail=0;
       for (var i=0;i<targets.length;i++){
+        if (!priceOn || myRun!==priceRunId) return;   // 껐거나 화면 바뀌면 즉시 중단
         var p=targets[i];
-        btn.textContent="💰 갱신 "+(i+1)+"/"+targets.length;
+        btn.textContent="💰 갱신중 "+(i+1)+"/"+targets.length;
         var url = DEAL_API + "?lawd=" + encodeURIComponent(p.code) + "&apt=" + encodeURIComponent(p.name) + "&months=6";
         try{
           var r=await fetch(url); var j=await r.json();
           var v=(j && j.ok && j.latest) ? { amountText:j.latest.amountText, pyeong:j.latest.pyeong, date:j.latest.date, area:j.latest.areaM2 } : null;
           cache[priceKey(p)]=v; autoCache[p.__id]=v; p.auto=v; refreshMarker(p);
-          if (v) ok++; else fail++;
-        }catch(e){ fail++; }
+          savePriceCache(cache);
+        }catch(e){}
         await new Promise(function(res){ setTimeout(res,100); });
       }
-      savePriceCache(cache);
-      btn.disabled=false; btn.textContent=orig;
-      alert("실거래가 갱신 완료\n조회 "+targets.length+"개 · 거래있음 "+ok+" · 거래없음 "+fail);
+      if (priceOn && myRun===priceRunId) btn.textContent="💰 실거래가 (켜짐)";
+    }
+
+    document.getElementById("priceBtn").addEventListener("click", function(){
+      priceOn = !priceOn;
+      if (priceOn){
+        this.style.background="#3F9E7E"; this.style.color="#fff";
+        if (map.getLevel() > PRICE_ZOOM) this.textContent="💰 더 확대하세요";
+        else { this.textContent="💰 실거래가 (켜짐)"; fetchVisiblePrices(); }
+      } else {
+        priceRunId++;   // 진행 중 조회 중단
+        this.textContent="💰 실거래가 갱신";
+        this.style.background=""; this.style.color="";
+      }
+    });
+
+    // 지도 이동/확대 끝나면: 켜져 있고 레벨4 이하면 보이는 곳 조회 (이전 조회는 중단됨)
+    kakao.maps.event.addListener(map, "idle", function(){
+      if (priceOn) fetchVisiblePrices();
     });
 
     // ===== 수정/삭제 =====
