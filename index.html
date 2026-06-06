@@ -1143,19 +1143,24 @@
     });
 
     // ===== 상단 위치 검색바 (단지명·주소로 지도 이동) =====
-    // 검색 결과를 추가 폼에 채우는 공통 함수
-    function applySearchPick(d){
+    // 폼에 단지 정보만 채움 (목록·검색칸 안 건드림) — 자동 채움용
+    function autoFillFromPick(d){
+      if (!d) return;
       var pos=new kakao.maps.LatLng(parseFloat(d.y), parseFloat(d.x));
-      map.setLevel(4); map.panTo(pos);
-      document.getElementById("mapSearchResults").style.display="none";
       var nm = d.place_name.replace(/\s*아파트\s*$/,"").trim();
-      document.getElementById("mapSearchInput").value = nm;
       pendingPos = pos;
       document.getElementById("f-name").value = nm;
       fillRegionCode(pos);
       document.getElementById("addBtn").disabled=false;
       var pbody=document.getElementById("panelBody");
       if (pbody && pbody.style.display==="none"){ pbody.style.display="block"; document.getElementById("panelArrow").textContent="▾"; }
+    }
+    // 목록에서 클릭 시 — 지도 이동 + 폼 채움 + 목록 닫음 (검색칸은 그대로 둠)
+    function applySearchPick(d){
+      var pos=new kakao.maps.LatLng(parseFloat(d.y), parseFloat(d.x));
+      map.setLevel(4); map.panTo(pos);
+      document.getElementById("mapSearchResults").style.display="none";
+      autoFillFromPick(d);
     }
 
     function runMapSearch(){
@@ -1166,21 +1171,18 @@
         box.innerHTML="";
         if (status===kakao.maps.services.Status.OK && data.length){
           // 잡것(관리사무소/공인중개/부동산/상가 등) 거르기
-          var bad = /(관리사무소|공인중개|중개사|부동산|상가|입주자|경비실|마이뉴|도서관|학원|교회|병원|약국|미용|카페|편의점|마트)/;
+          var bad = /(관리사무소|공인중개|중개사|부동산|상가|입주자|경비실|마이뉴|도서관|학원|교회|병원|약국|미용|카페|편의점|마트|주차장|정문|후문)/;
           var good = data.filter(function(d){ return !bad.test(d.place_name); });
-          // 입력어(공백제거)를 포함하는 것 우선
+          if (!good.length) good = data;  // 다 걸러지면 원본 사용
+          // 입력어 포함하는 것 우선 정렬
           var q = kw.replace(/\s+/g,"");
-          var exact = good.filter(function(d){ return d.place_name.replace(/\s+/g,"").indexOf(q)>=0; });
-          var pick = exact.length ? exact : good;
-
-          if (pick.length===1 || (pick.length>=1 && exact.length>=1)){
-            // 딱 맞는 게 있으면 맨 위 하나 자동 선택
-            applySearchPick(pick[0]);
-            return;
-          }
-          // 애매하면 목록 표시 (거른 결과 기준)
-          var show = pick.length ? pick : data;
-          show.slice(0,8).forEach(function(d){
+          good.sort(function(a,b){
+            var am=a.place_name.replace(/\s+/g,"").indexOf(q)>=0?0:1;
+            var bm=b.place_name.replace(/\s+/g,"").indexOf(q)>=0?0:1;
+            return am-bm;
+          });
+          // 목록 표시 (클릭하면 그걸로 채움)
+          good.slice(0,8).forEach(function(d){
             var row=document.createElement("div"); row.className="msr-row";
             row.innerHTML='<div>'+esc(d.place_name)+'</div>'+
                           '<div class="msr-addr">'+esc(d.road_address_name||d.address_name||"")+'</div>';
@@ -1188,6 +1190,8 @@
             box.appendChild(row);
           });
           box.style.display="block";
+          // 맨 위 것을 추가 폼에 자동 채움 (목록은 그대로 두고)
+          autoFillFromPick(good[0]);
         } else {
           geocoder.addressSearch(kw, function(res, st){
             if (st===kakao.maps.services.Status.OK && res[0]){
