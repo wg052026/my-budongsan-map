@@ -470,8 +470,10 @@
         autoCache[rp.__id]=v; rp.auto=v;
         refreshMarker(rp);
         if (rp.__iw){ rp.__iw.setMap(map); openIW=rp.__iw; }
-        if (!v) alert(months+"개월 내 거래 기록이 없습니다.");
-      }).catch(function(){ alert("조회 실패. 잠시 후 다시 시도하세요."); });
+      }).catch(function(){
+        // 실패 시 정보창 이름 원복
+        if (rp.__iw && rp.__iw.__el){ var nm2=rp.__iw.__el.querySelector(".iw-name"); if(nm2) nm2.textContent=rp.name; }
+      });
     };
 
     function markerHtml(p, color){
