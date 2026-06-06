@@ -264,6 +264,14 @@
     <div id="gpList"></div>
   </div>
 
+  <div id="debugLog" style="position:absolute; right:8px; bottom:8px; z-index:60; width:320px; max-height:40vh; overflow-y:auto; background:rgba(10,12,16,0.92); color:#9fe7c8; font-family:monospace; font-size:11px; line-height:1.5; padding:8px 10px; border-radius:8px; border:0.5px solid rgba(255,255,255,0.2);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+      <b style="color:#cfe8db;">디버그 로그</b>
+      <button onclick="document.getElementById('dbgBody').innerHTML='';" style="background:#3a3f49;border:none;color:#e8eaed;border-radius:4px;padding:1px 6px;font-size:10px;cursor:pointer;">지우기</button>
+    </div>
+    <div id="dbgBody"></div>
+  </div>
+
   <div id="progBox">
     <div class="inner">
       <div id="progTitle">주소를 좌표로 변환 중…</div>
@@ -325,6 +333,13 @@
   function loadFails(){ try{ return JSON.parse(localStorage.getItem(FAIL_KEY)||"[]"); }catch(e){ return []; } }
   function saveFails(a){ try{ localStorage.setItem(FAIL_KEY, JSON.stringify(a)); }catch(e){} }
   function groupOf(p){ return (p && p.group && String(p.group).trim()) ? String(p.group).trim() : "기타"; }
+  function DBG(msg){
+    try{
+      var b=document.getElementById("dbgBody");
+      if(b){ var d=document.createElement("div"); d.textContent="› "+msg; b.appendChild(d); b.parentNode.scrollTop=b.parentNode.scrollHeight; }
+      console.log("[DBG] "+msg);
+    }catch(e){}
+  }
   // edits: { "fix:3": {필드...}, "fix:5": "__deleted__", ... }
   function loadEdits(){ try{ return JSON.parse(localStorage.getItem(EDIT_KEY)||"{}"); }catch(e){ return {}; } }
   function saveEdits(o){ try{ localStorage.setItem(EDIT_KEY, JSON.stringify(o)); }catch(e){} }
@@ -408,6 +423,7 @@
         list.push(item);
       });
       all = list;
+      DBG("buildAll: fix="+places.length+" add="+added.length+" 합="+list.length);
       return all;
     }
     buildAll();
@@ -475,13 +491,16 @@
         refreshBtn + editDel + '</div>';
     }
     function renderAll(){
+      DBG("renderAll 시작 markerObjs="+markerObjs.length);
       // 기존 마커 + 정보창 모두 확실히 제거
       markerObjs.forEach(function(o){ if(o) o.setMap(null); }); markerObjs=[];
       if (all && all.length){ all.forEach(function(p){ if(p.__marker) p.__marker.setMap(null); if(p.__iw) p.__iw.setMap(null); }); }
       window.__closeIW();
       buildAll();
       var hidden = loadHidden();
-      all.forEach(function(p){ if (hidden.indexOf(groupOf(p))<0) drawMarker(p); });
+      var drawn=0;
+      all.forEach(function(p){ if (hidden.indexOf(groupOf(p))<0){ drawMarker(p); drawn++; } });
+      DBG("renderAll 끝 all="+all.length+" 그림="+drawn);
       autoFetchPrices();
       renderGroupPanel();
     }
@@ -659,7 +678,10 @@
         document.removeEventListener("mouseup", onUp);
         document.removeEventListener("touchmove", onMove);
         document.removeEventListener("touchend", onUp);
-        if (moved){ saveMarkerMove(p, marker.getPosition()); }
+        if (moved){
+          DBG("드래그끝 id="+p.__id+" added총="+added.length+" 이id수="+added.filter(function(x){return x.__id===p.__id;}).length);
+          saveMarkerMove(p, marker.getPosition());
+        }
       }
       el.addEventListener("mousedown", onDown);
       el.addEventListener("touchstart", onDown, {passive:false});
@@ -702,17 +724,19 @@
     }
     function applyMove(p, lat, lng, code){
       var id=p.__id;
+      DBG("applyMove id="+id+" 분기="+(id&&id.indexOf("fix:")===0?"fix":"add"));
       if (id && id.indexOf("fix:")===0){
         var cur=(edits[id] && edits[id]!=="__deleted__") ? Object.assign({}, edits[id]) : Object.assign({}, findById(id)||{});
         cur.lat=lat; cur.lng=lng; if(code) cur.code=code;
         delete cur.__id; delete cur.__marker; delete cur.__iw; delete cur.auto;
         edits[id]=cur; saveEdits(edits);
+        DBG("  fix저장 edits["+id+"] 설정");
       } else {
         var found=false;
         for (var ai=0; ai<added.length; ai++){
           if (added[ai].__id===id){ added[ai].lat=lat; added[ai].lng=lng; if(code) added[ai].code=code; found=true; break; }
         }
-        // 못 찾아도 새로 추가하지 않음 (복사 방지)
+        DBG("  add저장 found="+found+" added총="+added.length);
         saveAdded(added);
       }
       renderAll();
