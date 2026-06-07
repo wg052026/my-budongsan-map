@@ -488,6 +488,7 @@
 
   // localStorage에서 커스텀 트리 순서 불러오기 (없으면 기본값)
   var LAYER_ORDER_KEY = "budongsan_layer_order_v1";
+  var pendingSelectKeys = []; // 이동 후 선택 복원용
   // 커스텀 순서: { "서울": ["동북권","서북권",...], "경기": [...], ... }
   function loadLayerOrder(){ try{ return JSON.parse(localStorage.getItem(LAYER_ORDER_KEY)||"null"); }catch(e){ return null; } }
   function saveLayerOrder(o){ try{ localStorage.setItem(LAYER_ORDER_KEY, JSON.stringify(o)); }catch(e){} }
@@ -859,6 +860,10 @@
       var openBigs={};
       listEl.querySelectorAll('.gp-mid-list.open').forEach(function(el){ openBigs[el.id]=true; });
 
+      // 이동 후 선택 복원할 키 목록
+      var restoreKeys = pendingSelectKeys.slice();
+      pendingSelectKeys = [];
+
       LAYER_TREE = buildLayerTree();
 
       // 중분류별 단지 수 집계
@@ -898,10 +903,8 @@
 
       // 토글 생성 헬퍼
       function makeToggle(hideKey, checked, onChange){
-        var lbl=document.createElement("label");
-        lbl.style.cssText="position:relative;display:inline-block;width:34px;height:18px;flex-shrink:0;";
+        var lbl=document.createElement("label"); lbl.className="gp-toggle";
         var inp=document.createElement("input"); inp.type="checkbox"; inp.checked=checked;
-        inp.style.cssText="opacity:0;width:0;height:0;position:absolute;";
         var span=document.createElement("span"); span.className="slider";
         lbl.appendChild(inp); lbl.appendChild(span);
         inp.addEventListener("change", function(e){
@@ -935,19 +938,28 @@
       function moveSel(dir){
         var keys=getCheckedKeys();
         if(!keys.length){ alert("이동할 항목을 선택하세요."); return; }
-        // 전체 flat (단지 없는 중분류도 포함해서 순서 관리)
+
+        // flat 리스트 구성 (현재 LAYER_TREE 기준)
         var flat=[];
         LAYER_TREE.forEach(function(sec){
           sec.mids.forEach(function(m){
             flat.push({big:sec.big, mid:m.mid, key:sec.big+"::"+m.mid});
           });
         });
-        Object.keys(ungrouped).forEach(function(g){
+        // 기타 그룹
+        var ungKeys2=Object.keys(ungrouped);
+        ungKeys2.forEach(function(g){
           flat.push({big:"__기타", mid:g, key:"__ung__"+g});
         });
 
-        // 선택된 항목 하나씩 이동 (여러 개면 순서대로)
-        keys.forEach(function(k){
+        // 선택 키 중 flat에 있는 것만
+        var validKeys=keys.filter(function(k){
+          return findIdx(flat,k)>=0;
+        });
+        if(!validKeys.length) return;
+
+        // 이동
+        validKeys.forEach(function(k){
           var idx=findIdx(flat, k);
           if(idx<0) return;
           var target;
@@ -971,6 +983,9 @@
           }
         });
         saveLayerOrder(newOrder);
+
+        // 선택 상태 기억 후 renderAll
+        pendingSelectKeys = validKeys.slice();
         renderAll();
       }
 
@@ -1065,8 +1080,7 @@
             if(checked){if(idx>=0)h.splice(idx,1);}else{if(idx<0)h.push(k);}
           });
           saveHidden(h); renderAll();
-        });
-        bigTog.querySelector('.slider').style.cssText="position:absolute;inset:0;border-radius:18px;cursor:pointer;transition:background 0.2s;"+((!bigAllHidden)?"background:#3F9E7E;":"background:#3a3f49;");
+        });inset:0;border-radius:18px;cursor:pointer;transition:background 0.2s;"+((!bigAllHidden)?"background:#3F9E7E;":"background:#3a3f49;");
 
         bigRow.appendChild(bigCb); bigRow.appendChild(arrow); bigRow.appendChild(lbl);
         bigRow.appendChild(cnt); bigRow.appendChild(renBtn); bigRow.appendChild(delBtn); bigRow.appendChild(bigTog);
@@ -1154,9 +1168,7 @@
             var h=loadHidden(); var idx=h.indexOf(k);
             if(chk){if(idx>=0)h.splice(idx,1);}else{if(idx<0)h.push(k);}
             saveHidden(h); renderAll();
-          });
-          var sliderEl=midTog.querySelector('.slider');
-          sliderEl.style.cssText="position:absolute;inset:0;border-radius:18px;cursor:pointer;transition:background 0.2s;"+(checked?"background:#3F9E7E;":"background:#3a3f49;");
+          });inset:0;border-radius:18px;cursor:pointer;transition:background 0.2s;"+(checked?"background:#3F9E7E;":"background:#3a3f49;");
 
           row.appendChild(midCb); row.appendChild(nameSp); row.appendChild(cntSp);
           row.appendChild(mRen); row.appendChild(mDel); row.appendChild(midTog);
@@ -1191,8 +1203,7 @@
             if(checked){if(idx>=0)h.splice(idx,1);}else{if(idx<0)h.push(hk);}
           });
           saveHidden(h); renderAll();
-        });
-        etcTog.querySelector('.slider').style.cssText="position:absolute;inset:0;border-radius:18px;cursor:pointer;transition:background 0.2s;"+(!etcAllHidden?"background:#3F9E7E;":"background:#3a3f49;");
+        });inset:0;border-radius:18px;cursor:pointer;transition:background 0.2s;"+(!etcAllHidden?"background:#3F9E7E;":"background:#3a3f49;");
 
         etcRow.appendChild(etcCb); etcRow.appendChild(etcArrow); etcRow.appendChild(etcLbl);
         etcRow.appendChild(etcCnt); etcRow.appendChild(etcTog);
@@ -1261,8 +1272,7 @@
             var h=loadHidden(); var idx=h.indexOf(hk);
             if(chk){if(idx>=0)h.splice(idx,1);}else{if(idx<0)h.push(hk);}
             saveHidden(h); renderAll();
-          });
-          ungTog.querySelector('.slider').style.cssText="position:absolute;inset:0;border-radius:18px;cursor:pointer;transition:background 0.2s;"+(checked?"background:#3F9E7E;":"background:#3a3f49;");
+          });inset:0;border-radius:18px;cursor:pointer;transition:background 0.2s;"+(checked?"background:#3F9E7E;":"background:#3a3f49;");
 
           row.appendChild(ungCb); row.appendChild(nameSp); row.appendChild(cntSp);
           row.appendChild(uRen); row.appendChild(uDel); row.appendChild(ungTog);
@@ -1271,6 +1281,14 @@
 
         etcEl.appendChild(etcRow); etcEl.appendChild(etcMidList);
         listEl.appendChild(etcEl);
+      }
+
+      // 이동 후 선택 복원
+      if(restoreKeys.length){
+        restoreKeys.forEach(function(k){
+          var cb=listEl.querySelector('[data-selkey="'+k+'"]');
+          if(cb) cb.checked=true;
+        });
       }
     }
     // 수정 패널의 그룹 자동완성(datalist) 갱신
