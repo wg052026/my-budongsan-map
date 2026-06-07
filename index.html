@@ -171,6 +171,22 @@
     .gp-row .gp-ren { background:#3a3f49; border:none; color:#cfe8db; border-radius:5px;
       padding:2px 6px; font-size:11px; cursor:pointer; flex-shrink:0; }
     .gp-row input[type=checkbox] { accent-color:#3F9E7E; }
+
+    /* ===== 레이어 트리 ===== */
+    .gp-section { margin-bottom:4px; }
+    .gp-big { display:flex; align-items:center; gap:6px; padding:5px 4px;
+      background:#1a1d24; border-radius:7px; cursor:pointer; user-select:none; }
+    .gp-big-arrow { color:#9aa0ab; font-size:11px; width:12px; text-align:center; flex-shrink:0; }
+    .gp-big-label { flex:1; font-size:13px; font-weight:700; color:#f2f3f5; }
+    .gp-big-cnt { color:#9aa0ab; font-size:11px; flex-shrink:0; }
+    .gp-big input[type=checkbox] { accent-color:#3F9E7E; flex-shrink:0; }
+    .gp-mid-list { padding-left:10px; margin-top:3px; display:none; }
+    .gp-mid-list.open { display:block; }
+    .gp-mid { display:flex; align-items:center; gap:6px; padding:4px 4px; border-radius:6px; }
+    .gp-mid label { flex:1; display:flex; align-items:center; gap:6px; color:#e8eaed; font-size:12px; cursor:pointer; min-width:0; }
+    .gp-mid .gp-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .gp-mid .gp-cnt { color:#9aa0ab; font-size:11px; flex-shrink:0; }
+    .gp-mid input[type=checkbox] { accent-color:#3F9E7E; }
   </style>
 </head>
 <body>
@@ -416,6 +432,57 @@
   function savePriceCache(o){ try{ localStorage.setItem(PRICE_KEY, JSON.stringify(o)); }catch(e){} }
   function priceKey(p){ return (p.code||"")+"|"+(p.name||""); }
   function groupOf(p){ return (p && p.group && String(p.group).trim()) ? String(p.group).trim() : "기타"; }
+
+  // ===== 대분류·중분류 매핑 =====
+  var LAYER_TREE = [
+    { big:"서울", mids:[
+      { mid:"동북권", keys:["노원구","도봉구","강북구","성북구","중랑구","동대문구","광진구"] },
+      { mid:"서북권", keys:["은평구","서대문구","마포구","종로구","중구"] },
+      { mid:"동남권", keys:["강남구","서초구","송파구","강동구","성동구","용산구"] },
+      { mid:"서남권", keys:["강서구","양천구","영등포구","구로구","금천구","동작구","관악구"] }
+    ]},
+    { big:"경기", mids:[
+      { mid:"수원화성평택",         keys:["수원시","화성시","평택시"] },
+      { mid:"하남성남용인",         keys:["하남시","성남시","용인시"] },
+      { mid:"의정부남양주구리",     keys:["의정부시","남양주시","구리시"] },
+      { mid:"부천광명시흥안산안양의왕군포", keys:["부천시","광명시","시흥시","안산시","안양시","의왕시","군포시"] },
+      { mid:"고양파주김포인천",     keys:["고양시","파주시","김포시","인천"] }
+    ]},
+    { big:"지방", mids:[
+      { mid:"울산창원", keys:["울산","창원시"] },
+      { mid:"부산",     keys:["부산"] },
+      { mid:"광주",     keys:["광주"] },
+      { mid:"대구",     keys:["대구"] },
+      { mid:"천안아산", keys:["천안시","아산시"] },
+      { mid:"대전",     keys:["대전"] }
+    ]}
+  ];
+  // group값(구명 등) → 중분류
+  function groupMid(g){
+    for (var i=0;i<LAYER_TREE.length;i++){
+      var sec=LAYER_TREE[i];
+      for (var j=0;j<sec.mids.length;j++){
+        var m=sec.mids[j];
+        for (var k=0;k<m.keys.length;k++){
+          if (g.indexOf(m.keys[k])>=0) return m.mid;
+        }
+      }
+    }
+    return null;
+  }
+  // group값 → 대분류
+  function groupBig(g){
+    for (var i=0;i<LAYER_TREE.length;i++){
+      var sec=LAYER_TREE[i];
+      for (var j=0;j<sec.mids.length;j++){
+        var m=sec.mids[j];
+        for (var k=0;k<m.keys.length;k++){
+          if (g.indexOf(m.keys[k])>=0) return sec.big;
+        }
+      }
+    }
+    return null;
+  }
   function DBG(msg){
     try{
       var b=document.getElementById("dbgBody");
@@ -689,83 +756,165 @@
       buildAll();
       var hidden = loadHidden();
       var drawn=0;
-      all.forEach(function(p){ if (hidden.indexOf(groupOf(p))<0){ drawMarker(p); drawn++; } });
+      all.forEach(function(p){
+        var g=groupOf(p);
+        var mid=groupMid(g);
+        var hideKey = mid ? mid : ("__ung__"+g);
+        if (hidden.indexOf(hideKey)<0){ drawMarker(p); drawn++; }
+      });
       DBG("renderAll 끝 all="+all.length+" 그림="+drawn);
       autoFetchPrices();
       renderGroupPanel();
     }
 
-    // 그룹(레이어) 편집: 큰그룹 ▸ 작은그룹 ▸ 단지표(인라인 편집)
-    // 그룹(레이어) 패널: 그룹별 개수 + 표시/숨김 체크박스 + 삭제버튼
+    // ===== 레이어 패널: 대분류 > 중분류 트리 =====
     function renderGroupPanel(){
       var panel=document.getElementById("groupPanel");
       var listEl=document.getElementById("gpList");
       if (!panel||!listEl) return;
-      var counts={}, order=[];
+
+      // 중분류별 단지 수 집계 + 매핑 안 된 것 따로
+      var midCounts={}, ungrouped={};
       all.forEach(function(p){
         var g=groupOf(p);
-        if (counts[g]===undefined){ counts[g]=0; order.push(g); }
-        counts[g]++;
+        var mid=groupMid(g);
+        if (mid){
+          midCounts[mid]=(midCounts[mid]||0)+1;
+        } else {
+          ungrouped[g]=(ungrouped[g]||0)+1;
+        }
       });
-      var hidden=loadHidden();
+
+      var hidden=loadHidden(); // 숨김은 중분류명 단위로 저장
       listEl.innerHTML="";
-      order.forEach(function(g){
-        var row=document.createElement("div"); row.className="gp-row";
-        var checked = hidden.indexOf(g)<0;
-        row.innerHTML =
-          '<label><input type="checkbox" '+(checked?"checked":"")+' data-g="'+esc(g)+'">' +
-            '<span class="gp-name">'+esc(g)+'</span>' +
-            '<span class="gp-cnt">'+counts[g]+'</span>' +
-          '</label>' +
-          '<button class="gp-ren" data-g="'+esc(g)+'" title="이름변경/합치기">✎</button>' +
-          '<button class="gp-del" data-g="'+esc(g)+'">🗑</button>';
-        listEl.appendChild(row);
+
+      // 대분류 섹션 렌더
+      LAYER_TREE.forEach(function(sec){
+        var bigTotal=0;
+        sec.mids.forEach(function(m){ bigTotal+=(midCounts[m.mid]||0); });
+        if (!bigTotal) return; // 단지 없는 대분류는 숨김
+
+        // 대분류 행
+        var secEl=document.createElement("div"); secEl.className="gp-section";
+
+        // 대분류 체크박스 상태: 소속 중분류 중 하나라도 보이면 체크
+        var bigAllHidden = sec.mids.every(function(m){ return !midCounts[m.mid] || hidden.indexOf(m.mid)>=0; });
+        var bigChecked = !bigAllHidden;
+
+        secEl.innerHTML =
+          '<div class="gp-big" data-big="'+esc(sec.big)+'">' +
+            '<span class="gp-big-arrow">▶</span>' +
+            '<input type="checkbox" '+(bigChecked?"checked":"")+'  data-big-cb="'+esc(sec.big)+'" style="flex-shrink:0;">' +
+            '<span class="gp-big-label">'+esc(sec.big)+'</span>' +
+            '<span class="gp-big-cnt">'+bigTotal+'</span>' +
+          '</div>' +
+          '<div class="gp-mid-list" id="gp-mid-'+esc(sec.big)+'"></div>';
+        listEl.appendChild(secEl);
+
+        var midListEl=secEl.querySelector('.gp-mid-list');
+
+        // 중분류 행
+        sec.mids.forEach(function(m){
+          if (!midCounts[m.mid]) return; // 단지 없는 중분류 숨김
+          var checked=hidden.indexOf(m.mid)<0;
+          var row=document.createElement("div"); row.className="gp-mid";
+          row.innerHTML=
+            '<label>' +
+              '<input type="checkbox" '+(checked?"checked":"")+'  data-mid="'+esc(m.mid)+'">' +
+              '<span class="gp-name">'+esc(m.mid)+'</span>' +
+              '<span class="gp-cnt">'+midCounts[m.mid]+'</span>' +
+            '</label>';
+          midListEl.appendChild(row);
+        });
       });
-      listEl.querySelectorAll('input[type=checkbox]').forEach(function(cb){
+
+      // 매핑 안 된 그룹(기타) 섹션
+      var ungKeys=Object.keys(ungrouped);
+      if (ungKeys.length){
+        var etcEl=document.createElement("div"); etcEl.className="gp-section";
+        var etcAllHidden=ungKeys.every(function(g){ return hidden.indexOf("__ung__"+g)>=0; });
+        etcEl.innerHTML=
+          '<div class="gp-big" data-big="__기타">' +
+            '<span class="gp-big-arrow">▶</span>' +
+            '<input type="checkbox" '+(!etcAllHidden?"checked":"")+'  data-big-cb="__기타" style="flex-shrink:0;">' +
+            '<span class="gp-big-label">기타</span>' +
+            '<span class="gp-big-cnt">'+ungKeys.reduce(function(s,g){return s+ungrouped[g];},0)+'</span>' +
+          '</div>' +
+          '<div class="gp-mid-list" id="gp-mid-__기타"></div>';
+        listEl.appendChild(etcEl);
+        var etcMidList=etcEl.querySelector('.gp-mid-list');
+        ungKeys.forEach(function(g){
+          var hKey="__ung__"+g;
+          var checked=hidden.indexOf(hKey)<0;
+          var row=document.createElement("div"); row.className="gp-mid";
+          row.innerHTML=
+            '<label>' +
+              '<input type="checkbox" '+(checked?"checked":"")+'  data-ung="'+esc(g)+'">' +
+              '<span class="gp-name">'+esc(g)+'</span>' +
+              '<span class="gp-cnt">'+ungrouped[g]+'</span>' +
+            '</label>';
+          etcMidList.appendChild(row);
+        });
+      }
+
+      // 대분류 클릭 → 중분류 펼치기/접기
+      listEl.querySelectorAll('.gp-big').forEach(function(bigRow){
+        bigRow.addEventListener("click", function(e){
+          if (e.target.tagName==="INPUT") return; // 체크박스 클릭은 따로 처리
+          var big=this.getAttribute("data-big");
+          var midList=document.getElementById("gp-mid-"+big);
+          if (!midList) return;
+          var isOpen=midList.classList.contains("open");
+          midList.classList.toggle("open",!isOpen);
+          this.querySelector('.gp-big-arrow').textContent=isOpen?"▶":"▼";
+        });
+      });
+
+      // 대분류 체크박스 → 소속 중분류 전체 on/off
+      listEl.querySelectorAll('[data-big-cb]').forEach(function(cb){
         cb.addEventListener("change", function(){
-          var g=this.getAttribute("data-g");
-          var h=loadHidden(); var idx=h.indexOf(g);
-          if (this.checked){ if(idx>=0) h.splice(idx,1); }
-          else { if(idx<0) h.push(g); }
+          var big=this.getAttribute("data-big-cb");
+          var h=loadHidden();
+          if (big==="__기타"){
+            ungKeys.forEach(function(g){
+              var hKey="__ung__"+g;
+              var idx=h.indexOf(hKey);
+              if (cb.checked){ if(idx>=0) h.splice(idx,1); }
+              else { if(idx<0) h.push(hKey); }
+            });
+          } else {
+            var sec=LAYER_TREE.filter(function(s){return s.big===big;})[0];
+            if (!sec) return;
+            sec.mids.forEach(function(m){
+              var idx=h.indexOf(m.mid);
+              if (cb.checked){ if(idx>=0) h.splice(idx,1); }
+              else { if(idx<0) h.push(m.mid); }
+            });
+          }
           saveHidden(h); renderAll();
         });
       });
-      listEl.querySelectorAll('.gp-del').forEach(function(btn){
-        btn.addEventListener("click", function(){
-          var g=this.getAttribute("data-g");
-          if (!confirm('"'+g+'" 그룹의 '+counts[g]+'개를 모두 삭제할까요?')) return;
-          added = added.filter(function(p){ return groupOf(p)!==g; });
-          saveAdded(added);
-          all.forEach(function(p){
-            if (groupOf(p)===g && p.__id && p.__id.indexOf("fix:")===0){
-              edits[p.__id]="__deleted__";
-            }
-          });
-          saveEdits(edits);
-          var h=loadHidden(); var i=h.indexOf(g); if(i>=0){ h.splice(i,1); saveHidden(h); }
-          renderAll();
+
+      // 중분류 체크박스
+      listEl.querySelectorAll('[data-mid]').forEach(function(cb){
+        cb.addEventListener("change", function(){
+          var mid=this.getAttribute("data-mid");
+          var h=loadHidden(); var idx=h.indexOf(mid);
+          if (this.checked){ if(idx>=0) h.splice(idx,1); }
+          else { if(idx<0) h.push(mid); }
+          saveHidden(h); renderAll();
         });
       });
-      listEl.querySelectorAll('.gp-ren').forEach(function(btn){
-        btn.addEventListener("click", function(){
-          var g=this.getAttribute("data-g");
-          var nv=prompt('"'+g+'" 그룹의 새 이름을 입력하세요.\n(이미 있는 그룹 이름을 적으면 그 그룹과 합쳐집니다)', g);
-          if (nv===null) return;
-          nv=String(nv).trim();
-          if (!nv || nv===g) return;
-          added.forEach(function(p){ if (groupOf(p)===g) p.group=nv; });
-          saveAdded(added);
-          all.forEach(function(p){
-            if (groupOf(p)===g && p.__id && p.__id.indexOf("fix:")===0){
-              var cur = (edits[p.__id] && edits[p.__id]!=="__deleted__") ? edits[p.__id] : Object.assign({}, p);
-              cur.group=nv; delete cur.__id; delete cur.__marker; delete cur.__iw; delete cur.auto;
-              edits[p.__id]=cur;
-            }
-          });
-          saveEdits(edits);
-          var h=loadHidden(); var oi=h.indexOf(g);
-          if (oi>=0){ h.splice(oi,1); if(h.indexOf(nv)<0) h.push(nv); saveHidden(h); }
-          renderAll();
+
+      // 기타 개별 체크박스
+      listEl.querySelectorAll('[data-ung]').forEach(function(cb){
+        cb.addEventListener("change", function(){
+          var g=this.getAttribute("data-ung");
+          var hKey="__ung__"+g;
+          var h=loadHidden(); var idx=h.indexOf(hKey);
+          if (this.checked){ if(idx>=0) h.splice(idx,1); }
+          else { if(idx<0) h.push(hKey); }
+          saveHidden(h); renderAll();
         });
       });
     }
