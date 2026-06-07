@@ -2134,7 +2134,7 @@
               name: name,
               addr: addr,
               disp: String(pick(r,["표시명","disp"])||"").trim(),
-              score: Math.max(0,Math.min(5,score)),
+              score: Math.max(0,Math.min(6,score)),
               py: String(pick(r,["평","py"])||"").trim(),
               price: String(pick(r,["실거래가","price","가격"])||"").trim(),
               land: parseFloat(pick(r,["대지지분","land"]))||0,
@@ -2145,6 +2145,8 @@
               group: String(pick(r,["소분류","그룹","레이어","group","layer","큰그룹"])||"").trim(),
               _mid: String(pick(r,["중분류","mid","권역"])||"").trim(),
               _big: String(pick(r,["대분류","big","지역"])||"").trim(),
+              _kx: parseFloat(pick(r,["x좌표","kx"])||""),
+              _ky: parseFloat(pick(r,["y좌표","ky"])||""),
               seq: isNaN(seqRaw)?seqCounter:seqRaw,
               lat: isNaN(lat)?null:lat, lng: isNaN(lng)?null:lng,
               code: String(pick(r,["법정동코드","code"])||"").trim()
@@ -2208,6 +2210,12 @@
               var done=0, okc=0;
               for (var i=0;i<parsed.length;i++){
                 var p=parsed[i];
+                // 카카오 x,y 좌표 있으면 변환 먼저 시도
+                if ((p.lat==null||p.lng==null) && !isNaN(p._kx) && !isNaN(p._ky)){
+                  var proj=new kakao.maps.services.Coord(p._kx, p._ky);
+                  var wgs=kakao.maps.services.Projection.transformCoords(proj, kakao.maps.services.Coords.WCONGNAMUL, kakao.maps.services.Coords.WGS84);
+                  if(wgs){ p.lat=wgs.y; p.lng=wgs.x; }
+                }
                 if ((p.lat==null||p.lng==null) && (p.addr || p.name)){
                   var geo=await geocodeOne(p.name, p.addr);
                   if (geo){ p.lat=geo.lat; p.lng=geo.lng; if(!p.code) p.code=geo.code; okc++; }
