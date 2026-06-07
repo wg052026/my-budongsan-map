@@ -266,13 +266,9 @@
     <label>메모 (클릭 시 표시)</label>
     <textarea id="f-note" placeholder="호재 / 학군 / 기타 메모"></textarea>
 
-    <label>큰그룹 (레이어)</label>
-    <input id="f-group" placeholder="예: 화성" list="groupOptions" autocomplete="off" />
+    <label>그룹 (레이어)</label>
+    <input id="f-group" placeholder="예: 용인수원화성평택" list="groupOptions" autocomplete="off" />
     <datalist id="groupOptions"></datalist>
-
-    <label>작은그룹 (선택)</label>
-    <input id="f-subgroup" placeholder="예: 동탄 (비우면 소그룹 없음)" list="subgroupOptions" autocomplete="off" />
-    <datalist id="subgroupOptions"></datalist>
 
     <input id="f-code" type="hidden" />
     <div id="pin-hint" class="hint">📍 지도를 클릭해 위치를 찍으세요</div>
@@ -700,222 +696,79 @@
     }
 
     // 그룹(레이어) 편집: 큰그룹 ▸ 작은그룹 ▸ 단지표(인라인 편집)
+    // 그룹(레이어) 패널: 그룹별 개수 + 표시/숨김 체크박스 + 삭제버튼
     function renderGroupPanel(){
       var panel=document.getElementById("groupPanel");
       var listEl=document.getElementById("gpList");
       if (!panel||!listEl) return;
-      var hidden=loadHidden();
-
-      // 큰그룹 > 작은그룹 > 단지[] 트리 구성
-      var tree={}, order=[];
+      var counts={}, order=[];
       all.forEach(function(p){
-        var g=groupOf(p);                       // 큰그룹
-        var sg=(p.subgroup&&p.subgroup.trim())?p.subgroup.trim():"(소그룹 없음)";
-        if(!tree[g]){ tree[g]={subs:{}, subOrder:[], cnt:0}; order.push(g); }
-        if(!tree[g].subs[sg]){ tree[g].subs[sg]=[]; tree[g].subOrder.push(sg); }
-        tree[g].subs[sg].push(p); tree[g].cnt++;
+        var g=groupOf(p);
+        if (counts[g]===undefined){ counts[g]=0; order.push(g); }
+        counts[g]++;
       });
-
+      var hidden=loadHidden();
       listEl.innerHTML="";
       order.forEach(function(g){
-        var gWrap=document.createElement("div"); gWrap.className="lg-group";
-        var visible = hidden.indexOf(g)<0;
-        // 큰그룹 헤더: 체크 / 이름(펼침) / 개수 / 화살표 / 눈 / 이름변경 / 그룹삭제
-        var head=document.createElement("div"); head.className="lg-ghead";
-        head.innerHTML =
-          '<input type="checkbox" class="lg-g-chk" data-g="'+esc(g)+'" style="margin-right:4px;">' +
-          '<span class="lg-gname" data-g="'+esc(g)+'">'+esc(g)+'</span>' +
-          '<span class="lg-cnt">'+tree[g].cnt+'</span>' +
-          '<span class="lg-arrow">▸</span>' +
-          '<button class="lg-eye" data-g="'+esc(g)+'" title="보기/숨김">'+(visible?"👁":"👁\u0336")+'</button>' +
-          '<button class="lg-ren" data-g="'+esc(g)+'" title="이름변경/합치기">✎</button>' +
-          '<button class="lg-del" data-g="'+esc(g)+'" title="그룹 전체 삭제">🗑</button>';
-        gWrap.appendChild(head);
-
-        // 펼침 영역 (작은그룹 + 단지표)
-        var body=document.createElement("div"); body.className="lg-gbody"; body.style.display="none";
-        var arrow=head.querySelector(".lg-arrow");
-        tree[g].subOrder.forEach(function(sg){
-          var items=tree[g].subs[sg];
-          var subT=document.createElement("div"); subT.className="lg-subtitle"; subT.textContent="• "+sg+" ("+items.length+")";
-          body.appendChild(subT);
-          // 전체선택/해제/삭제 툴바
-          var toolbar=document.createElement("div"); toolbar.className="lg-toolbar";
-          toolbar.innerHTML=
-            '<button class="lg-sel-all">전체선택</button>'+
-            '<button class="lg-sel-none">선택해제</button>'+
-            '<button class="lg-sel-del">선택삭제</button>';
-          body.appendChild(toolbar);
-          var tbl=document.createElement("table"); tbl.className="lg-table";
-          tbl.innerHTML='<thead><tr><th style="width:24px;"><input type="checkbox" class="lg-chk-all"></th><th>이름</th><th>점수</th><th>대지</th><th>큰그룹</th><th>소그룹</th><th>메모</th><th></th></tr></thead>';
-          var tb=document.createElement("tbody");
-          items.forEach(function(p){ tb.appendChild(rowForItem(p)); });
-          tbl.appendChild(tb); body.appendChild(tbl);
-
-          // 전체선택
-          toolbar.querySelector(".lg-sel-all").addEventListener("click", function(){
-            tbl.querySelectorAll("tbody .lg-chk").forEach(function(c){ c.checked=true; });
-            tbl.querySelector(".lg-chk-all").checked=true;
-          });
-          // 선택해제
-          toolbar.querySelector(".lg-sel-none").addEventListener("click", function(){
-            tbl.querySelectorAll(".lg-chk, .lg-chk-all").forEach(function(c){ c.checked=false; });
-          });
-          // 선택삭제
-          toolbar.querySelector(".lg-sel-del").addEventListener("click", function(){
-            var checked=tbl.querySelectorAll("tbody .lg-chk:checked");
-            if (!checked.length){ alert("선택된 항목이 없습니다."); return; }
-            if (!confirm(checked.length+"개를 삭제할까요?")) return;
-            checked.forEach(function(c){ deleteItemSilent(c.getAttribute("data-id")); });
-            renderAll(); document.getElementById("groupPanel").style.display="block"; renderGroupPanel();
-          });
-          // 헤더 체크박스: 전체선택/해제
-          tbl.querySelector(".lg-chk-all").addEventListener("change", function(){
-            var v=this.checked;
-            tbl.querySelectorAll("tbody .lg-chk").forEach(function(c){ c.checked=v; });
-          });
-        });
-        gWrap.appendChild(body);
-        listEl.appendChild(gWrap);
-
-        // 이름(펼침) 클릭
-        head.querySelector(".lg-gname").addEventListener("click", function(){
-          var open = body.style.display==="none";
-          body.style.display = open ? "block" : "none";
-          arrow.textContent = open ? "▾" : "▸";
-        });
+        var row=document.createElement("div"); row.className="gp-row";
+        var checked = hidden.indexOf(g)<0;
+        row.innerHTML =
+          '<label><input type="checkbox" '+(checked?"checked":"")+' data-g="'+esc(g)+'">' +
+            '<span class="gp-name">'+esc(g)+'</span>' +
+            '<span class="gp-cnt">'+counts[g]+'</span>' +
+          '</label>' +
+          '<button class="gp-ren" data-g="'+esc(g)+'" title="이름변경/합치기">✎</button>' +
+          '<button class="gp-del" data-g="'+esc(g)+'">🗑</button>';
+        listEl.appendChild(row);
       });
-
-      // 눈 아이콘: 보기/숨김 (비활성=👁에 취소선)
-      listEl.querySelectorAll(".lg-eye").forEach(function(btn){
-        btn.addEventListener("click", function(){
+      listEl.querySelectorAll('input[type=checkbox]').forEach(function(cb){
+        cb.addEventListener("change", function(){
           var g=this.getAttribute("data-g");
           var h=loadHidden(); var idx=h.indexOf(g);
-          if (idx>=0){ h.splice(idx,1); this.textContent="👁"; }
-          else { h.push(g); this.textContent="👁\u0336"; }
+          if (this.checked){ if(idx>=0) h.splice(idx,1); }
+          else { if(idx<0) h.push(g); }
           saveHidden(h); renderAll();
-          document.getElementById("groupPanel").style.display="block";
         });
       });
-      // 그룹 헤더 체크박스 → 하위 단지 전체 선택/해제
-      listEl.querySelectorAll(".lg-g-chk").forEach(function(cb){
-        cb.addEventListener("change", function(){
-          var g=this.getAttribute("data-g"); var v=this.checked;
-          // 이 그룹의 모든 .lg-chk 선택
-          var wrap=this.closest(".lg-group");
-          if (wrap) wrap.querySelectorAll(".lg-chk").forEach(function(c){ c.checked=v; });
-        });
-      });
-      // 그룹 삭제
-      listEl.querySelectorAll(".lg-del").forEach(function(btn){
+      listEl.querySelectorAll('.gp-del').forEach(function(btn){
         btn.addEventListener("click", function(){
           var g=this.getAttribute("data-g");
-          if (!confirm('"'+g+'" 그룹 전체를 삭제할까요?')) return;
+          if (!confirm('"'+g+'" 그룹의 '+counts[g]+'개를 모두 삭제할까요?')) return;
           added = added.filter(function(p){ return groupOf(p)!==g; });
           saveAdded(added);
-          all.forEach(function(p){ if (groupOf(p)===g && p.__id && p.__id.indexOf("fix:")===0){ edits[p.__id]="__deleted__"; } });
+          all.forEach(function(p){
+            if (groupOf(p)===g && p.__id && p.__id.indexOf("fix:")===0){
+              edits[p.__id]="__deleted__";
+            }
+          });
           saveEdits(edits);
           var h=loadHidden(); var i=h.indexOf(g); if(i>=0){ h.splice(i,1); saveHidden(h); }
-          renderAll(); document.getElementById("groupPanel").style.display="block"; renderGroupPanel();
+          renderAll();
         });
       });
-      // 그룹 이름변경/합치기
-      listEl.querySelectorAll(".lg-ren").forEach(function(btn){
+      listEl.querySelectorAll('.gp-ren').forEach(function(btn){
         btn.addEventListener("click", function(){
           var g=this.getAttribute("data-g");
-          var nv=prompt('"'+g+'" 그룹의 새 이름:', g);
-          if (nv===null) return; nv=String(nv).trim(); if(!nv||nv===g) return;
+          var nv=prompt('"'+g+'" 그룹의 새 이름을 입력하세요.\n(이미 있는 그룹 이름을 적으면 그 그룹과 합쳐집니다)', g);
+          if (nv===null) return;
+          nv=String(nv).trim();
+          if (!nv || nv===g) return;
           added.forEach(function(p){ if (groupOf(p)===g) p.group=nv; });
           saveAdded(added);
           all.forEach(function(p){
             if (groupOf(p)===g && p.__id && p.__id.indexOf("fix:")===0){
-              var cur=(edits[p.__id]&&edits[p.__id]!=="__deleted__")?edits[p.__id]:Object.assign({},p);
+              var cur = (edits[p.__id] && edits[p.__id]!=="__deleted__") ? edits[p.__id] : Object.assign({}, p);
               cur.group=nv; delete cur.__id; delete cur.__marker; delete cur.__iw; delete cur.auto;
               edits[p.__id]=cur;
             }
           });
           saveEdits(edits);
-          var h=loadHidden(); var oi=h.indexOf(g); if(oi>=0){ h.splice(oi,1); if(h.indexOf(nv)<0)h.push(nv); saveHidden(h); }
-          renderAll(); document.getElementById("groupPanel").style.display="block"; renderGroupPanel();
+          var h=loadHidden(); var oi=h.indexOf(g);
+          if (oi>=0){ h.splice(oi,1); if(h.indexOf(nv)<0) h.push(nv); saveHidden(h); }
+          renderAll();
         });
       });
     }
-
-    // 단지 한 줄 (인라인 편집 행)
-    function rowForItem(p){
-      var tr=document.createElement("tr");
-      var isApt=(p.kind==="apt"||p.kind==="redev");
-      // 체크박스
-      var tdChk=document.createElement("td");
-      var chk=document.createElement("input"); chk.type="checkbox"; chk.className="lg-chk"; chk.setAttribute("data-id",p.__id);
-      tdChk.appendChild(chk); tr.appendChild(tdChk);
-      // 이름 (클릭하면 지도 이동)
-      var tdName=document.createElement("td"); tdName.className="lg-c-name"; tdName.textContent=p.name||"(이름없음)";
-      tdName.title="지도에서 보기"; tdName.style.cursor="pointer";
-      tdName.addEventListener("click", function(){
-        document.getElementById("groupPanel").style.display="none";
-        map.panTo(new kakao.maps.LatLng(p.lat,p.lng)); map.setLevel(4);
-        if (p.__marker && p.__marker.__onClick) p.__marker.__onClick();
-      });
-      tr.appendChild(tdName);
-      // 점수: 숫자 직접 입력 (아파트/재건축 0~6, 학교 1~3, 6=대장)
-      var tdScore=document.createElement("td");
-      if (p.kind==="spot"){ tdScore.textContent="-"; }
-      else {
-        var inS=document.createElement("input"); inS.className="lg-in lg-score";
-        inS.inputMode="numeric"; inS.value=String(p.score||0);
-        inS.title = (p.kind==="school") ? "등수 1~3" : "0~5, 6=대장(👑)";
-        inS.addEventListener("change", function(){
-          var v=parseInt(this.value,10); if(isNaN(v)) v=0;
-          var max=(p.kind==="school")?3:6;
-          if(v<0)v=0; if(v>max)v=max;
-          this.value=v;
-          applyFields(p.__id,{score:v}); renderAll();
-        });
-        tdScore.appendChild(inS);
-      }
-      tr.appendChild(tdScore);
-      // 대지지분 (아파트만)
-      var tdLand=document.createElement("td");
-      if (p.kind==="apt"){
-        var inL=document.createElement("input"); inL.className="lg-in lg-land"; inL.value=(p.land&&parseFloat(p.land)>0)?p.land:"";
-        inL.placeholder="평"; inL.inputMode="decimal";
-        inL.addEventListener("change", function(){ applyFields(p.__id,{land:(this.value.trim()||0)}); renderAll(); });
-        tdLand.appendChild(inL);
-      } else { tdLand.textContent="-"; }
-      tr.appendChild(tdLand);
-      // 큰그룹
-      var tdGrp=document.createElement("td");
-      var inG=document.createElement("input"); inG.className="lg-in lg-grp"; inG.value=p.group||""; inG.placeholder="큰그룹"; inG.setAttribute("list","groupOptions");
-      inG.addEventListener("change", function(){ applyFields(p.__id,{group:this.value.trim()}); renderAll(); });
-      tdGrp.appendChild(inG); tr.appendChild(tdGrp);
-      // 소그룹
-      var tdSg=document.createElement("td");
-      var inSg=document.createElement("input"); inSg.className="lg-in lg-grp"; inSg.value=p.subgroup||""; inSg.placeholder="소그룹"; inSg.setAttribute("list","subgroupOptions");
-      inSg.addEventListener("change", function(){ applyFields(p.__id,{subgroup:this.value.trim()}); });
-      tdSg.appendChild(inSg); tr.appendChild(tdSg);
-      // 메모
-      var tdNote=document.createElement("td");
-      var inN=document.createElement("input"); inN.className="lg-in lg-note"; inN.value=p.note||""; inN.placeholder="메모";
-      inN.addEventListener("change", function(){ applyFields(p.__id,{note:this.value.trim()}); });
-      tdNote.appendChild(inN); tr.appendChild(tdNote);
-      // 삭제
-      var tdDel=document.createElement("td");
-      var bD=document.createElement("button"); bD.className="lg-rowdel"; bD.textContent="🗑";
-      bD.addEventListener("click", function(){
-        if (!confirm("'"+(p.name||"")+"' 삭제?")) return;
-        deleteItemSilent(p.__id);
-        renderAll(); document.getElementById("groupPanel").style.display="block"; renderGroupPanel();
-      });
-      tdDel.appendChild(bD); tr.appendChild(tdDel);
-      return tr;
-    }
-    // 확인창 없이 삭제 (표에서 자체 confirm 후 호출)
-    function deleteItemSilent(id){
-      if (id && id.indexOf("fix:")===0){ edits[id]="__deleted__"; saveEdits(edits); }
-      else { for(var i=0;i<added.length;i++){ if(added[i].__id===id){ added.splice(i,1); break; } } saveAdded(added); }
-    }
-
     // 수정 패널의 그룹 자동완성(datalist) 갱신
     function refreshGroupOptions(){
       var dl=document.getElementById("groupOptions");
@@ -923,12 +776,6 @@
       var seen={}, html="";
       all.forEach(function(p){ var g=groupOf(p); if(g!=="기타" && !seen[g]){ seen[g]=1; html+='<option value="'+esc(g)+'">'; } });
       dl.innerHTML=html;
-      var dl2=document.getElementById("subgroupOptions");
-      if (dl2){
-        var seen2={}, html2="";
-        all.forEach(function(p){ var sg=(p.subgroup||"").trim(); if(sg && !seen2[sg]){ seen2[sg]=1; html2+='<option value="'+esc(sg)+'">'; } });
-        dl2.innerHTML=html2;
-      }
     }
     function drawMarker(p){
       var color=scoreColor(p), pos=new kakao.maps.LatLng(p.lat,p.lng);
@@ -1051,19 +898,6 @@
       });
     }
     // 필드 하나(또는 여러 개) 인라인 갱신 — 레이어 표 편집용
-    function applyFields(id, changes){
-      if (id && id.indexOf("fix:")===0){
-        var cur=(edits[id] && edits[id]!=="__deleted__") ? Object.assign({}, edits[id]) : Object.assign({}, findById(id)||{});
-        Object.keys(changes).forEach(function(k){ cur[k]=changes[k]; });
-        delete cur.__id; delete cur.__marker; delete cur.__iw; delete cur.auto;
-        edits[id]=cur; saveEdits(edits);
-      } else {
-        for (var ai=0; ai<added.length; ai++){
-          if (added[ai].__id===id){ Object.keys(changes).forEach(function(k){ added[ai][k]=changes[k]; }); break; }
-        }
-        saveAdded(added);
-      }
-    }
     function applyMove(p, lat, lng, code){
       var id=p.__id;
       DBG("applyMove id="+id+" 분기="+(id&&id.indexOf("fix:")===0?"fix":"add"));
@@ -1290,7 +1124,6 @@
       document.getElementById("f-spottype").value = p.spottype||"지하철";
       document.getElementById("f-note").value = p.note||"";
       document.getElementById("f-group").value = p.group||"";
-      document.getElementById("f-subgroup").value = p.subgroup||"";
       refreshGroupOptions();
       document.getElementById("f-code").value = p.code||"";
       pendingPos = new kakao.maps.LatLng(p.lat, p.lng);
@@ -1304,7 +1137,7 @@
       if (tempPin){ tempPin.setMap(null); tempPin=null; }
       if (tempPinLabel){ tempPinLabel.setMap(null); tempPinLabel=null; }
       pendingPos=null;
-      ["f-name","f-disp","f-py","f-price","f-land","f-spot","f-note","f-group","f-subgroup","f-code","f-search"].forEach(function(id){ document.getElementById(id).value=""; });
+      ["f-name","f-disp","f-py","f-price","f-land","f-spot","f-note","f-group","f-code","f-search"].forEach(function(id){ document.getElementById(id).value=""; });
       document.getElementById("f-score").value="5";
       if (typeof syncSegButtons==="function") syncSegButtons();
       clearCands();
@@ -1631,7 +1464,6 @@
         spottype: kind==="spot"?document.getElementById("f-spottype").value:"",
         note:document.getElementById("f-note").value.trim(),
         group:document.getElementById("f-group").value.trim(),
-        subgroup:document.getElementById("f-subgroup").value.trim(),
         seq: editingId ? ((findById(editingId)||{}).seq) : undefined,
         lat:pendingPos.getLat(), lng:pendingPos.getLng(),
         code:document.getElementById("f-code").value.trim()
@@ -1690,7 +1522,7 @@
             "평": p.py||"", "실거래가": p.price||"",
             "대지지분": (p.land&&parseFloat(p.land)>0)?parseFloat(p.land):"",
             "종(용도)": p.jong||"", "단계": p.stage||"", "호재내용": p.sub||"",
-            "메모": p.note||"", "그룹": p.group||"", "작은그룹": p.subgroup||"",
+            "메모": p.note||"", "그룹": p.group||"",
             "위도": p.lat!=null?Number(p.lat).toFixed(6):"",
             "경도": p.lng!=null?Number(p.lng).toFixed(6):"",
             "법정동코드": p.code||"", "주소": ""
@@ -1703,7 +1535,7 @@
             "평": "", "실거래가": "",
             "대지지분": (f.land&&parseFloat(f.land)>0)?parseFloat(f.land):"",
             "종(용도)": f.jong||"", "단계": "", "호재내용": "",
-            "메모": f.note||"", "그룹": f.group||"", "작은그룹": f.subgroup||"",
+            "메모": f.note||"", "그룹": f.group||"",
             "위도": "", "경도": "", "법정동코드": "",
             "주소": f.addr||""   // 실패분은 주소를 넣어둬야 좌표 다시 찾을 수 있음
           };
@@ -1774,7 +1606,6 @@
               sub: String(pick(r,["호재내용","sub"])||"").trim(),
               note: String(pick(r,["메모","note"])||"").trim(),
               group: String(pick(r,["그룹","레이어","group","layer","큰그룹"])||"").trim(),
-              subgroup: String(pick(r,["작은그룹","소그룹","하위그룹","subgroup"])||"").trim(),
               seq: isNaN(seqRaw)?seqCounter:seqRaw,
               lat: isNaN(lat)?null:lat, lng: isNaN(lng)?null:lng,
               code: String(pick(r,["법정동코드","code"])||"").trim()
@@ -1872,7 +1703,7 @@
       return all.map(function(p){
         return '  { kind:'+q(p.kind)+', name:'+q(p.name)+', disp:'+q(p.disp)+', score:'+(p.score||0)+',\n' +
                '    py:'+q(p.py)+', price:'+q(p.price)+', land:'+(parseFloat(p.land)||0)+', jong:'+q(p.jong||"")+', stage:'+q(p.stage)+', sub:'+q(p.sub)+', spottype:'+q(p.spottype||"")+',\n' +
-               '    note:'+q(p.note)+', group:'+q(p.group||"")+', subgroup:'+q(p.subgroup||"")+', seq:'+(p.seq!=null?p.seq:0)+', lat:'+Number(p.lat).toFixed(6)+', lng:'+Number(p.lng).toFixed(6)+', code:'+q(p.code)+' },';
+               '    note:'+q(p.note)+', group:'+q(p.group||"")+', seq:'+(p.seq!=null?p.seq:0)+', lat:'+Number(p.lat).toFixed(6)+', lng:'+Number(p.lng).toFixed(6)+', code:'+q(p.code)+' },';
       }).join("\n");
     }
 
