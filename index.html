@@ -2245,10 +2245,12 @@
               // 같은 이름+그룹이면 덮어쓰기, 없으면 추가
               var dup=0, add=0;
               imported.forEach(function(p){
-                var key=(p.name||"").trim()+"|"+((p.group||"").trim());
+                // 이름+주소 기준 중복 체크 (둘 중 하나라도 다르면 다른 항목)
+                var key=(p.name||"").trim()+"|"+((p.addr||"").trim());
                 var idx=-1;
                 for (var i=0;i<added.length;i++){
-                  if (((added[i].name||"").trim()+"|"+((added[i].group||"").trim()))===key){ idx=i; break; }
+                  var ak=((added[i].name||"").trim()+"|"+((added[i].addr||"").trim()));
+                  if(ak===key){ idx=i; break; }
                 }
                 if (idx>=0){ var oldId=added[idx].__id; p.__id=oldId; added[idx]=p; dup++; }
                 else { added.push(p); add++; }
