@@ -351,10 +351,18 @@
   </div>
 
   <div id="groupPanel">
-    <div class="gp-head">레이어 (그룹)<button id="groupClose">✕</button></div>
+    <div class="gp-head">레이어<button id="groupClose">✕</button></div>
     <div class="gp-all-btns">
-      <button id="gpSelectAll">전체 선택</button>
-      <button id="gpDeselectAll">전체 해제</button>
+      <button id="gpSelectAll">전체선택</button>
+      <button id="gpDeselectAll">전체해제</button>
+      <button id="gpAddGroup" style="background:#3F9E7E;color:#fff;">그룹추가</button>
+    </div>
+    <div style="display:flex;gap:5px;margin-bottom:10px;">
+      <button id="gpMoveTop" title="맨 위" style="flex:1;background:#3a3f49;border:none;color:#cfe8db;border-radius:6px;padding:7px 0;cursor:pointer;"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="display:block;margin:0 auto;"><polyline points="3,9 8,4 13,9" stroke="#cfe8db" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="3,13 8,8 13,13" stroke="#cfe8db" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button id="gpMoveUp" title="위" style="flex:1;background:#3a3f49;border:none;color:#cfe8db;border-radius:6px;padding:7px 0;cursor:pointer;"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="display:block;margin:0 auto;"><polyline points="3,11 8,5 13,11" stroke="#cfe8db" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button id="gpMoveDown" title="아래" style="flex:1;background:#3a3f49;border:none;color:#cfe8db;border-radius:6px;padding:7px 0;cursor:pointer;"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="display:block;margin:0 auto;"><polyline points="3,5 8,11 13,5" stroke="#cfe8db" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button id="gpMoveBot" title="맨 아래" style="flex:1;background:#3a3f49;border:none;color:#cfe8db;border-radius:6px;padding:7px 0;cursor:pointer;"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="display:block;margin:0 auto;"><polyline points="3,3 8,8 13,3" stroke="#cfe8db" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="3,7 8,12 13,7" stroke="#cfe8db" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button id="gpDelSel" title="선택 삭제" style="flex:1;background:#5a3a3a;border:none;color:#f0d6d6;border-radius:6px;padding:7px 0;font-size:14px;cursor:pointer;">🗑</button>
     </div>
     <div id="gpList"></div>
   </div>
@@ -447,20 +455,24 @@
   function priceKey(p){ return (p.code||"")+"|"+(p.name||""); }
   function groupOf(p){ return (p && p.group && String(p.group).trim()) ? String(p.group).trim() : "기타"; }
 
-  // ===== 대분류·중분류 매핑 =====
-  var LAYER_TREE = [
+  // ===== 대분류·중분류 기본 매핑 =====
+  var LAYER_TREE_DEFAULT = [
     { big:"서울", mids:[
       { mid:"동북권", keys:["노원구","도봉구","강북구","성북구","중랑구","동대문구","광진구"] },
       { mid:"서북권", keys:["은평구","서대문구","마포구","종로구","중구"] },
       { mid:"동남권", keys:["강남구","서초구","송파구","강동구","성동구","용산구"] },
-      { mid:"서남권", keys:["강서구","양천구","영등포구","구로구","금천구","동작구","관악구"] }
+      { mid:"서남권", keys:["강서구","양천구","영등포구","구로구","금천구","동작구","관악구"] },
+      { mid:"학교",   keys:[], kind:"school" },
+      { mid:"호재",   keys:[], kind:"spot" }
     ]},
     { big:"경기", mids:[
       { mid:"수원화성평택",         keys:["수원시","화성시","평택시"] },
       { mid:"하남성남용인",         keys:["하남시","성남시","용인시"] },
       { mid:"의정부남양주구리",     keys:["의정부시","남양주시","구리시"] },
       { mid:"부천광명시흥안산안양의왕군포", keys:["부천시","광명시","시흥시","안산시","안양시","의왕시","군포시"] },
-      { mid:"고양파주김포인천",     keys:["고양시","파주시","김포시","인천"] }
+      { mid:"고양파주김포인천",     keys:["고양시","파주시","김포시","인천"] },
+      { mid:"학교",   keys:[], kind:"school" },
+      { mid:"호재",   keys:[], kind:"spot" }
     ]},
     { big:"지방", mids:[
       { mid:"울산창원", keys:["울산","창원시"] },
@@ -468,13 +480,52 @@
       { mid:"광주",     keys:["광주"] },
       { mid:"대구",     keys:["대구"] },
       { mid:"천안아산", keys:["천안시","아산시"] },
-      { mid:"대전",     keys:["대전"] }
+      { mid:"대전",     keys:["대전"] },
+      { mid:"학교",   keys:[], kind:"school" },
+      { mid:"호재",   keys:[], kind:"spot" }
     ]}
   ];
-  // group값(구명 등) → 중분류
-  function groupMid(g){
-    for (var i=0;i<LAYER_TREE.length;i++){
-      var sec=LAYER_TREE[i];
+
+  // localStorage에서 커스텀 트리 순서 불러오기 (없으면 기본값)
+  var LAYER_ORDER_KEY = "budongsan_layer_order_v1";
+  // 커스텀 순서: { "서울": ["동북권","서북권",...], "경기": [...], ... }
+  function loadLayerOrder(){ try{ return JSON.parse(localStorage.getItem(LAYER_ORDER_KEY)||"null"); }catch(e){ return null; } }
+  function saveLayerOrder(o){ try{ localStorage.setItem(LAYER_ORDER_KEY, JSON.stringify(o)); }catch(e){} }
+
+  // 소분류→중분류 커스텀 매핑 (이동 시 덮어씀)
+  var LAYER_MID_MAP_KEY = "budongsan_layer_midmap_v1";
+  // { "강북구": { big:"서울", mid:"서북권" }, ... }
+  function loadMidMap(){ try{ return JSON.parse(localStorage.getItem(LAYER_MID_MAP_KEY)||"{}"); }catch(e){ return {}; } }
+  function saveMidMap(o){ try{ localStorage.setItem(LAYER_MID_MAP_KEY, JSON.stringify(o)); }catch(e){} }
+
+  // 실제 사용 트리 (기본 + 커스텀 순서 반영)
+  function buildLayerTree(){
+    var order = loadLayerOrder();
+    if (!order) return LAYER_TREE_DEFAULT;
+    return LAYER_TREE_DEFAULT.map(function(sec){
+      var midOrder = order[sec.big];
+      if (!midOrder) return sec;
+      var midMap = {};
+      sec.mids.forEach(function(m){ midMap[m.mid]=m; });
+      var sorted = midOrder.map(function(mn){ return midMap[mn]; }).filter(Boolean);
+      // 혹시 새로 추가된 mid가 order에 없으면 뒤에 붙임
+      sec.mids.forEach(function(m){ if(sorted.indexOf(m)<0) sorted.push(m); });
+      return { big:sec.big, mids:sorted };
+    });
+  }
+  var LAYER_TREE = buildLayerTree();
+
+  // p(단지) → 중분류 결정
+  function groupMid(g, kind){
+    // 커스텀 맵 우선
+    var mm = loadMidMap();
+    if (mm[g]) return mm[g].mid;
+    // kind 기반 (학교/호재)
+    if (kind==="school") return "학교";
+    if (kind==="spot") return "호재";
+    // 기본 매핑
+    for (var i=0;i<LAYER_TREE_DEFAULT.length;i++){
+      var sec=LAYER_TREE_DEFAULT[i];
       for (var j=0;j<sec.mids.length;j++){
         var m=sec.mids[j];
         for (var k=0;k<m.keys.length;k++){
@@ -484,10 +535,14 @@
     }
     return null;
   }
-  // group값 → 대분류
-  function groupBig(g){
-    for (var i=0;i<LAYER_TREE.length;i++){
-      var sec=LAYER_TREE[i];
+  // p(단지) → 대분류 결정
+  function groupBig(g, kind, lat, lng){
+    // 커스텀 맵 우선
+    var mm = loadMidMap();
+    if (mm[g]) return mm[g].big;
+    // 기본 매핑
+    for (var i=0;i<LAYER_TREE_DEFAULT.length;i++){
+      var sec=LAYER_TREE_DEFAULT[i];
       for (var j=0;j<sec.mids.length;j++){
         var m=sec.mids[j];
         for (var k=0;k<m.keys.length;k++){
@@ -495,8 +550,21 @@
         }
       }
     }
+    // 학교/호재: 좌표로 대분류 추정
+    if ((kind==="school"||kind==="spot") && lat && lng){
+      var lt=parseFloat(lat);
+      // 간단한 위도 기반 추정 (서울: 37.4~37.7, 경기: 36.9~37.8)
+      if (lt>=37.4 && lt<=37.72) return "서울";
+      if (lt>=36.9 && lt<37.4) return "경기";
+      if (lt>=37.4) return "경기";
+      return "지방";
+    }
     return null;
   }
+  // 단지 객체 → 중분류 (kind 포함)
+  function placeGroupMid(p){ return groupMid(groupOf(p), p.kind); }
+  // 단지 객체 → 대분류
+  function placeGroupBig(p){ return groupBig(groupOf(p), p.kind, p.lat, p.lng); }
   function DBG(msg){
     try{
       var b=document.getElementById("dbgBody");
@@ -771,9 +839,9 @@
       var hidden = loadHidden();
       var drawn=0;
       all.forEach(function(p){
-        var g=groupOf(p);
-        var mid=groupMid(g);
-        var hideKey = mid ? mid : ("__ung__"+g);
+        var mid=placeGroupMid(p);
+        var big=placeGroupBig(p);
+        var hideKey = mid ? (big+"::"+mid) : ("__ung__"+groupOf(p));
         if (hidden.indexOf(hideKey)<0){ drawMarker(p); drawn++; }
       });
       DBG("renderAll 끝 all="+all.length+" 그림="+drawn);
@@ -781,130 +849,290 @@
       renderGroupPanel();
     }
 
-    // ===== 레이어 패널: 대분류 > 중분류 트리 =====
+    // ===== 레이어 패널: 대분류 > 중분류 트리 (최종) =====
     function renderGroupPanel(){
       var panel=document.getElementById("groupPanel");
       var listEl=document.getElementById("gpList");
       if (!panel||!listEl) return;
 
-      // 현재 펼쳐진 대분류 목록 저장
+      // 펼침 상태 저장
       var openBigs={};
-      listEl.querySelectorAll('.gp-mid-list.open').forEach(function(el){
-        openBigs[el.id]=true;
-      });
+      listEl.querySelectorAll('.gp-mid-list.open').forEach(function(el){ openBigs[el.id]=true; });
+
+      LAYER_TREE = buildLayerTree();
 
       // 중분류별 단지 수 집계
-      var midCounts={}, ungrouped={};
+      var midCounts={};  // "big::mid" → count
+      var bigCounts={};  // big → count
+      var ungrouped={};  // 매핑 안된 소분류 → count
       all.forEach(function(p){
-        var g=groupOf(p);
-        var mid=groupMid(g);
-        if (mid){ midCounts[mid]=(midCounts[mid]||0)+1; }
-        else { ungrouped[g]=(ungrouped[g]||0)+1; }
+        var mid=placeGroupMid(p);
+        var big=placeGroupBig(p);
+        if (mid && big){
+          var k=big+"::"+mid;
+          midCounts[k]=(midCounts[k]||0)+1;
+          bigCounts[big]=(bigCounts[big]||0)+1;
+        } else {
+          var g=groupOf(p);
+          ungrouped[g]=(ungrouped[g]||0)+1;
+        }
       });
 
       var hidden=loadHidden();
       listEl.innerHTML="";
 
-      // 중분류 토글 생성 헬퍼
-      function makeToggle(id, checked, onChange){
-        var lbl=document.createElement("label"); lbl.className="gp-toggle";
+      // 선택 상태 관리
+      var selected={};  // "big::mid" or "__ung__g" → true
+
+      // 상단 버튼 이벤트
+      var selAllBtn=document.getElementById("gpSelectAll");
+      var deselAllBtn=document.getElementById("gpDeselectAll");
+
+      function getCheckedKeys(){
+        var keys=[];
+        listEl.querySelectorAll('[data-selkey]').forEach(function(cb){
+          if(cb.checked) keys.push(cb.getAttribute('data-selkey'));
+        });
+        return keys;
+      }
+
+      // 토글 생성 헬퍼
+      function makeToggle(hideKey, checked, onChange){
+        var lbl=document.createElement("label");
+        lbl.style.cssText="position:relative;display:inline-block;width:34px;height:18px;flex-shrink:0;";
         var inp=document.createElement("input"); inp.type="checkbox"; inp.checked=checked;
+        inp.style.cssText="opacity:0;width:0;height:0;position:absolute;";
         var span=document.createElement("span"); span.className="slider";
         lbl.appendChild(inp); lbl.appendChild(span);
-        inp.addEventListener("change", function(){ onChange(this.checked); });
+        inp.addEventListener("change", function(e){
+          e.stopPropagation();
+          onChange(this.checked);
+        });
         return lbl;
       }
 
-      // 대분류 섹션 렌더
-      LAYER_TREE.forEach(function(sec){
-        var bigTotal=0;
-        sec.mids.forEach(function(m){ bigTotal+=(midCounts[m.mid]||0); });
-        if (!bigTotal) return;
+      // 이동 함수 (중분류 flat 리스트 기준)
+      function getMidFlatList(){
+        var list=[];
+        LAYER_TREE.forEach(function(sec){
+          sec.mids.forEach(function(m){
+            var k=sec.big+"::"+m.mid;
+            if(midCounts[k]) list.push({big:sec.big, mid:m.mid, key:k});
+          });
+        });
+        // 기타
+        Object.keys(ungrouped).forEach(function(g){
+          list.push({big:"__기타", mid:g, key:"__ung__"+g});
+        });
+        return list;
+      }
 
-        var bigAllHidden=sec.mids.every(function(m){ return !midCounts[m.mid] || hidden.indexOf(m.mid)>=0; });
+      function moveSel(dir){
+        var keys=getCheckedKeys();
+        if(!keys.length){ alert("이동할 항목을 선택하세요."); return; }
+        var flat=getMidFlatList();
+        var order=loadLayerOrder()||{};
+        LAYER_TREE.forEach(function(sec){ if(!order[sec.big]) order[sec.big]=sec.mids.map(function(m){return m.mid;}); });
+
+        keys.forEach(function(k){
+          var idx=flat.findIndex(function(x){return x.key===k;});
+          if(idx<0) return;
+          var target=-1;
+          if(dir==="top") target=0;
+          else if(dir==="up") target=Math.max(0,idx-1);
+          else if(dir==="down") target=Math.min(flat.length-1,idx+1);
+          else if(dir==="bot") target=flat.length-1;
+          if(target===idx) return;
+
+          // flat 배열에서 이동
+          var item=flat.splice(idx,1)[0];
+          flat.splice(target,0,item);
+        });
+
+        // flat → order 재구성
+        var newOrder={};
+        LAYER_TREE.forEach(function(sec){ newOrder[sec.big]=[]; });
+        flat.forEach(function(item){
+          if(item.big!=="__기타"){
+            if(!newOrder[item.big]) newOrder[item.big]=[];
+            newOrder[item.big].push(item.mid);
+          }
+        });
+        saveLayerOrder(newOrder);
+        renderAll();
+      }
+
+      // 이동 버튼 이벤트
+      ["gpMoveTop","gpMoveUp","gpMoveDown","gpMoveBot"].forEach(function(id,i){
+        var btn=document.getElementById(id);
+        if(btn){ btn.onclick=function(){ moveSel(["top","up","down","bot"][i]); }; }
+      });
+      var delSelBtn=document.getElementById("gpDelSel");
+      if(delSelBtn){ delSelBtn.onclick=function(){
+        var keys=getCheckedKeys();
+        if(!keys.length){ alert("삭제할 항목을 선택하세요."); return; }
+        if(!confirm(keys.length+"개 중분류를 삭제할까요?")) return;
+        keys.forEach(function(k){
+          if(k.indexOf("__ung__")===0){
+            var g=k.replace("__ung__","");
+            added=added.filter(function(p){return groupOf(p)!==g;});
+            all.forEach(function(p){ if(groupOf(p)===g&&p.__id&&p.__id.indexOf("fix:")===0) edits[p.__id]="__deleted__"; });
+          } else {
+            var parts=k.split("::");
+            var big=parts[0], mid=parts[1];
+            added=added.filter(function(p){return !(placeGroupBig(p)===big&&placeGroupMid(p)===mid);});
+            all.forEach(function(p){
+              if(placeGroupBig(p)===big&&placeGroupMid(p)===mid&&p.__id&&p.__id.indexOf("fix:")===0) edits[p.__id]="__deleted__";
+            });
+          }
+        });
+        saveAdded(added); saveEdits(edits); renderAll();
+      }; }
+
+      if(selAllBtn){ selAllBtn.onclick=function(){ saveHidden([]); renderAll(); }; }
+      if(deselAllBtn){ deselAllBtn.onclick=function(){
+        var allKeys=[];
+        LAYER_TREE.forEach(function(sec){
+          sec.mids.forEach(function(m){
+            var k=sec.big+"::"+m.mid;
+            if(midCounts[k]) allKeys.push(k);
+          });
+        });
+        Object.keys(ungrouped).forEach(function(g){ allKeys.push("__ung__"+g); });
+        saveHidden(allKeys); renderAll();
+      }; }
+
+      // ── 대분류 렌더 ──
+      LAYER_TREE.forEach(function(sec){
+        if(!bigCounts[sec.big]) return;
+
+        var bigAllHidden=sec.mids.every(function(m){
+          var k=sec.big+"::"+m.mid;
+          return !midCounts[k]||hidden.indexOf(k)>=0;
+        });
 
         var secEl=document.createElement("div"); secEl.className="gp-section";
 
         // 대분류 행
-        var bigRow=document.createElement("div"); bigRow.className="gp-big"; bigRow.setAttribute("data-big", sec.big);
+        var bigRow=document.createElement("div"); bigRow.className="gp-big";
+        bigRow.setAttribute("data-big", sec.big);
+
+        var bigCb=document.createElement("input"); bigCb.type="checkbox";
+        bigCb.style.cssText="width:13px;height:13px;accent-color:#3F9E7E;flex-shrink:0;cursor:pointer;";
+        bigCb.setAttribute("data-selkey","__big__"+sec.big);
+
         var arrow=document.createElement("span"); arrow.className="gp-big-arrow"; arrow.textContent="▶";
+        arrow.style.cursor="pointer";
+
         var lbl=document.createElement("span"); lbl.className="gp-big-label"; lbl.textContent=sec.big;
-        var cnt=document.createElement("span"); cnt.className="gp-big-cnt"; cnt.textContent=bigTotal;
-        var tog=makeToggle("big-"+sec.big, !bigAllHidden, function(checked){
+        lbl.style.cursor="pointer";
+
+        var cnt=document.createElement("span"); cnt.className="gp-big-cnt"; cnt.textContent=bigCounts[sec.big]||0;
+
+        var renBtn=document.createElement("button"); renBtn.className="gp-ren"; renBtn.textContent="✎";
+        renBtn.addEventListener("click", function(e){ e.stopPropagation();
+          var nv=prompt('"'+sec.big+'" 대분류 이름 변경:', sec.big);
+          if(!nv||nv===sec.big) return;
+          alert("대분류 이름 변경은 현재 지원하지 않습니다.");
+        });
+
+        var delBtn=document.createElement("button"); delBtn.className="gp-del"; delBtn.textContent="🗑";
+        delBtn.addEventListener("click", function(e){ e.stopPropagation();
+          if(!confirm('"'+sec.big+'" 대분류 전체('+bigCounts[sec.big]+'개)를 삭제할까요?')) return;
+          added=added.filter(function(p){return placeGroupBig(p)!==sec.big;});
+          all.forEach(function(p){ if(placeGroupBig(p)===sec.big&&p.__id&&p.__id.indexOf("fix:")===0) edits[p.__id]="__deleted__"; });
+          saveAdded(added); saveEdits(edits); renderAll();
+        });
+
+        var bigTog=makeToggle("big::"+sec.big, !bigAllHidden, function(checked){
           var h=loadHidden();
           sec.mids.forEach(function(m){
-            var idx=h.indexOf(m.mid);
-            if (checked){ if(idx>=0) h.splice(idx,1); }
-            else { if(idx<0) h.push(m.mid); }
+            var k=sec.big+"::"+m.mid;
+            if(!midCounts[k]) return;
+            var idx=h.indexOf(k);
+            if(checked){if(idx>=0)h.splice(idx,1);}else{if(idx<0)h.push(k);}
           });
           saveHidden(h); renderAll();
         });
-        bigRow.appendChild(arrow); bigRow.appendChild(tog); bigRow.appendChild(lbl); bigRow.appendChild(cnt);
+        bigTog.querySelector('.slider').style.cssText="position:absolute;inset:0;border-radius:18px;cursor:pointer;transition:background 0.2s;"+((!bigAllHidden)?"background:#3F9E7E;":"background:#3a3f49;");
+
+        bigRow.appendChild(bigCb); bigRow.appendChild(arrow); bigRow.appendChild(lbl);
+        bigRow.appendChild(cnt); bigRow.appendChild(renBtn); bigRow.appendChild(delBtn); bigRow.appendChild(bigTog);
 
         var midListEl=document.createElement("div"); midListEl.className="gp-mid-list";
         midListEl.id="gp-mid-"+sec.big;
+        if(openBigs[midListEl.id]){ midListEl.classList.add("open"); arrow.textContent="▼"; }
 
-        // 펼침 복원
-        if (openBigs[midListEl.id]){ midListEl.classList.add("open"); arrow.textContent="▼"; }
+        // 대분류 클릭 → 펼치기
+        function toggleBig(){ var isOpen=midListEl.classList.contains("open"); midListEl.classList.toggle("open",!isOpen); arrow.textContent=isOpen?"▶":"▼"; }
+        arrow.addEventListener("click", function(e){ e.stopPropagation(); toggleBig(); });
+        lbl.addEventListener("click", function(e){ e.stopPropagation(); toggleBig(); });
 
-        // 대분류 클릭 → 펼치기/접기 (토글 클릭 제외)
-        bigRow.addEventListener("click", function(e){
-          if (e.target.tagName==="INPUT"||e.target.tagName==="LABEL"||e.target.className==="slider") return;
-          var isOpen=midListEl.classList.contains("open");
-          midListEl.classList.toggle("open", !isOpen);
-          arrow.textContent=isOpen?"▶":"▼";
-        });
-
-        // 중분류 행
+        // ── 중분류 렌더 ──
+        var isFirst=true;
         sec.mids.forEach(function(m){
-          if (!midCounts[m.mid]) return;
-          var checked=hidden.indexOf(m.mid)<0;
+          var k=sec.big+"::"+m.mid;
+          if(!midCounts[k]) return;
+
+          // 학교/호재 앞에 구분선
+          if((m.mid==="학교"||m.mid==="호재") && isFirst===false){
+            var sep=document.createElement("div");
+            sep.style.cssText="border-top:0.5px solid rgba(255,255,255,0.08);margin:4px 0;";
+            // 첫 학교/호재 앞에만
+            if(m.mid==="학교") midListEl.appendChild(sep);
+          }
+          isFirst=false;
+
+          var checked=hidden.indexOf(k)<0;
           var row=document.createElement("div"); row.className="gp-mid";
 
-          var nameSp=document.createElement("span"); nameSp.className="gp-name"; nameSp.textContent=m.mid;
-          var cntSp=document.createElement("span"); cntSp.className="gp-cnt"; cntSp.textContent=midCounts[m.mid];
+          var midCb=document.createElement("input"); midCb.type="checkbox";
+          midCb.style.cssText="width:13px;height:13px;accent-color:#3F9E7E;flex-shrink:0;cursor:pointer;";
+          midCb.setAttribute("data-selkey", k);
 
-          var renBtn=document.createElement("button"); renBtn.className="gp-ren"; renBtn.textContent="✎";
-          renBtn.title="이름 변경"; renBtn.addEventListener("click", function(){
-            var nv=prompt('"'+m.mid+'" 중분류의 새 이름을 입력하세요.', m.mid);
-            if (!nv||nv===m.mid) return; nv=String(nv).trim();
-            // 해당 중분류에 속한 모든 단지의 group을 새 이름으로 변경
-            added.forEach(function(p){ if(groupMid(groupOf(p))===m.mid) p.group=nv; });
-            saveAdded(added);
+          var icon = m.mid==="학교"?"🏫 ":m.mid==="호재"?"⭐ ":"";
+          var nameSp=document.createElement("span"); nameSp.className="gp-name";
+          nameSp.textContent=icon+m.mid;
+          if(m.mid==="학교"||m.mid==="호재") nameSp.style.color="#9aa0ab";
+
+          var cntSp=document.createElement("span"); cntSp.className="gp-cnt"; cntSp.textContent=midCounts[k];
+
+          var mRen=document.createElement("button"); mRen.className="gp-ren"; mRen.textContent="✎";
+          mRen.addEventListener("click", function(){
+            var nv=prompt('"'+m.mid+'" 중분류 이름 변경:', m.mid);
+            if(!nv||nv===m.mid) return; nv=nv.trim();
+            // 해당 중분류 단지의 group→mid 커스텀 맵 갱신
+            var mm=loadMidMap();
             all.forEach(function(p){
-              if(groupMid(groupOf(p))===m.mid && p.__id && p.__id.indexOf("fix:")===0){
-                var cur=(edits[p.__id]&&edits[p.__id]!=="__deleted__")?edits[p.__id]:Object.assign({},p);
-                cur.group=nv; delete cur.__id; delete cur.__marker; delete cur.__iw; delete cur.auto;
-                edits[p.__id]=cur;
+              if(placeGroupBig(p)===sec.big&&placeGroupMid(p)===m.mid){
+                mm[groupOf(p)]={big:sec.big,mid:nv};
               }
             });
-            saveEdits(edits); renderAll();
+            saveMidMap(mm); renderAll();
           });
 
-          var delBtn=document.createElement("button"); delBtn.className="gp-del"; delBtn.textContent="🗑";
-          delBtn.addEventListener("click", function(){
-            if (!confirm('"'+m.mid+'" 중분류의 '+midCounts[m.mid]+'개를 모두 삭제할까요?')) return;
-            added=added.filter(function(p){ return groupMid(groupOf(p))!==m.mid; });
-            saveAdded(added);
+          var mDel=document.createElement("button"); mDel.className="gp-del"; mDel.textContent="🗑";
+          mDel.addEventListener("click", function(){
+            if(!confirm('"'+sec.big+' > '+m.mid+'"의 '+midCounts[k]+'개를 삭제할까요?')) return;
+            added=added.filter(function(p){return !(placeGroupBig(p)===sec.big&&placeGroupMid(p)===m.mid);});
             all.forEach(function(p){
-              if(groupMid(groupOf(p))===m.mid && p.__id && p.__id.indexOf("fix:")===0){
-                edits[p.__id]="__deleted__";
-              }
+              if(placeGroupBig(p)===sec.big&&placeGroupMid(p)===m.mid&&p.__id&&p.__id.indexOf("fix:")===0) edits[p.__id]="__deleted__";
             });
-            saveEdits(edits);
-            var h=loadHidden(); var i=h.indexOf(m.mid); if(i>=0){ h.splice(i,1); saveHidden(h); }
+            saveAdded(added); saveEdits(edits);
+            var h=loadHidden(); var i=h.indexOf(k); if(i>=0){h.splice(i,1); saveHidden(h);}
             renderAll();
           });
 
-          var midTog=makeToggle("mid-"+m.mid, checked, function(chk){
-            var h=loadHidden(); var idx=h.indexOf(m.mid);
-            if (chk){ if(idx>=0) h.splice(idx,1); }
-            else { if(idx<0) h.push(m.mid); }
+          var midTog=makeToggle(k, checked, function(chk){
+            var h=loadHidden(); var idx=h.indexOf(k);
+            if(chk){if(idx>=0)h.splice(idx,1);}else{if(idx<0)h.push(k);}
             saveHidden(h); renderAll();
           });
+          var sliderEl=midTog.querySelector('.slider');
+          sliderEl.style.cssText="position:absolute;inset:0;border-radius:18px;cursor:pointer;transition:background 0.2s;"+(checked?"background:#3F9E7E;":"background:#3a3f49;");
 
-          row.appendChild(midTog); row.appendChild(nameSp); row.appendChild(cntSp);
-          row.appendChild(renBtn); row.appendChild(delBtn);
+          row.appendChild(midCb); row.appendChild(nameSp); row.appendChild(cntSp);
+          row.appendChild(mRen); row.appendChild(mDel); row.appendChild(midTog);
           midListEl.appendChild(row);
         });
 
@@ -912,54 +1140,64 @@
         listEl.appendChild(secEl);
       });
 
-      // 매핑 안 된 그룹(기타) 섹션
+      // ── 기타(매핑 안된) 섹션 ──
       var ungKeys=Object.keys(ungrouped);
-      if (ungKeys.length){
+      if(ungKeys.length){
         var etcTotal=ungKeys.reduce(function(s,g){return s+ungrouped[g];},0);
-        var etcAllHidden=ungKeys.every(function(g){ return hidden.indexOf("__ung__"+g)>=0; });
+        var etcAllHidden=ungKeys.every(function(g){return hidden.indexOf("__ung__"+g)>=0;});
 
         var etcEl=document.createElement("div"); etcEl.className="gp-section";
-        var etcBigRow=document.createElement("div"); etcBigRow.className="gp-big"; etcBigRow.setAttribute("data-big","__기타");
-        var etcArrow=document.createElement("span"); etcArrow.className="gp-big-arrow"; etcArrow.textContent="▶";
-        var etcLbl=document.createElement("span"); etcLbl.className="gp-big-label"; etcLbl.textContent="기타";
+        var etcRow=document.createElement("div"); etcRow.className="gp-big";
+
+        var etcCb=document.createElement("input"); etcCb.type="checkbox";
+        etcCb.style.cssText="width:13px;height:13px;accent-color:#3F9E7E;flex-shrink:0;cursor:pointer;";
+        etcCb.setAttribute("data-selkey","__big____기타");
+
+        var etcArrow=document.createElement("span"); etcArrow.className="gp-big-arrow"; etcArrow.textContent="▶"; etcArrow.style.cursor="pointer";
+        var etcLbl=document.createElement("span"); etcLbl.className="gp-big-label"; etcLbl.textContent="기타"; etcLbl.style.cursor="pointer";
         var etcCnt=document.createElement("span"); etcCnt.className="gp-big-cnt"; etcCnt.textContent=etcTotal;
-        var etcTog=makeToggle("big-__기타", !etcAllHidden, function(checked){
+
+        var etcTog=makeToggle("__etc__", !etcAllHidden, function(checked){
           var h=loadHidden();
           ungKeys.forEach(function(g){
-            var hKey="__ung__"+g; var idx=h.indexOf(hKey);
-            if (checked){ if(idx>=0) h.splice(idx,1); }
-            else { if(idx<0) h.push(hKey); }
+            var hk="__ung__"+g; var idx=h.indexOf(hk);
+            if(checked){if(idx>=0)h.splice(idx,1);}else{if(idx<0)h.push(hk);}
           });
           saveHidden(h); renderAll();
         });
-        etcBigRow.appendChild(etcArrow); etcBigRow.appendChild(etcTog); etcBigRow.appendChild(etcLbl); etcBigRow.appendChild(etcCnt);
+        etcTog.querySelector('.slider').style.cssText="position:absolute;inset:0;border-radius:18px;cursor:pointer;transition:background 0.2s;"+(!etcAllHidden?"background:#3F9E7E;":"background:#3a3f49;");
+
+        etcRow.appendChild(etcCb); etcRow.appendChild(etcArrow); etcRow.appendChild(etcLbl);
+        etcRow.appendChild(etcCnt); etcRow.appendChild(etcTog);
 
         var etcMidList=document.createElement("div"); etcMidList.className="gp-mid-list";
         etcMidList.id="gp-mid-__기타";
-        if (openBigs[etcMidList.id]){ etcMidList.classList.add("open"); etcArrow.textContent="▼"; }
+        if(openBigs[etcMidList.id]){ etcMidList.classList.add("open"); etcArrow.textContent="▼"; }
 
-        etcBigRow.addEventListener("click", function(e){
-          if (e.target.tagName==="INPUT"||e.target.tagName==="LABEL"||e.target.className==="slider") return;
-          var isOpen=etcMidList.classList.contains("open");
-          etcMidList.classList.toggle("open",!isOpen);
-          etcArrow.textContent=isOpen?"▶":"▼";
-        });
+        function toggleEtc(){ var isOpen=etcMidList.classList.contains("open"); etcMidList.classList.toggle("open",!isOpen); etcArrow.textContent=isOpen?"▶":"▼"; }
+        etcArrow.addEventListener("click",function(e){e.stopPropagation();toggleEtc();});
+        etcLbl.addEventListener("click",function(e){e.stopPropagation();toggleEtc();});
 
         ungKeys.forEach(function(g){
-          var hKey="__ung__"+g;
-          var checked=hidden.indexOf(hKey)<0;
+          var hk="__ung__"+g;
+          var checked=hidden.indexOf(hk)<0;
           var row=document.createElement("div"); row.className="gp-mid";
+
+          var ungCb=document.createElement("input"); ungCb.type="checkbox";
+          ungCb.style.cssText="width:13px;height:13px;accent-color:#3F9E7E;flex-shrink:0;cursor:pointer;";
+          ungCb.setAttribute("data-selkey", hk);
+
           var nameSp=document.createElement("span"); nameSp.className="gp-name"; nameSp.textContent=g;
           var cntSp=document.createElement("span"); cntSp.className="gp-cnt"; cntSp.textContent=ungrouped[g];
 
-          var renBtn=document.createElement("button"); renBtn.className="gp-ren"; renBtn.textContent="✎";
-          renBtn.addEventListener("click", function(){
-            var nv=prompt('"'+g+'" 그룹의 새 이름을 입력하세요.', g);
-            if (!nv||nv===g) return; nv=String(nv).trim();
-            added.forEach(function(p){ if(groupOf(p)===g) p.group=nv; });
+          var uRen=document.createElement("button"); uRen.className="gp-ren"; uRen.textContent="✎";
+          uRen.addEventListener("click",function(){
+            var nv=prompt('"'+g+'" 그룹 이름 변경:',g);
+            if(!nv||nv===g) return; nv=nv.trim();
+            added.forEach(function(p){if(groupOf(p)===g)p.group=nv;});
             saveAdded(added);
             all.forEach(function(p){
-              if(groupOf(p)===g && p.__id && p.__id.indexOf("fix:")===0){
+              if(groupOf(p)===g&&p.__id&&p.__id.indexOf("fix:")===0){
                 var cur=(edits[p.__id]&&edits[p.__id]!=="__deleted__")?edits[p.__id]:Object.assign({},p);
                 cur.group=nv; delete cur.__id; delete cur.__marker; delete cur.__iw; delete cur.auto;
                 edits[p.__id]=cur;
@@ -968,49 +1206,31 @@
             saveEdits(edits); renderAll();
           });
 
-          var delBtn=document.createElement("button"); delBtn.className="gp-del"; delBtn.textContent="🗑";
-          delBtn.addEventListener("click", function(){
-            if (!confirm('"'+g+'" 그룹의 '+ungrouped[g]+'개를 모두 삭제할까요?')) return;
-            added=added.filter(function(p){ return groupOf(p)!==g; });
-            saveAdded(added);
-            all.forEach(function(p){
-              if(groupOf(p)===g && p.__id && p.__id.indexOf("fix:")===0){
-                edits[p.__id]="__deleted__";
-              }
-            });
-            saveEdits(edits);
-            var h=loadHidden(); var i=h.indexOf(hKey); if(i>=0){ h.splice(i,1); saveHidden(h); }
+          var uDel=document.createElement("button"); uDel.className="gp-del"; uDel.textContent="🗑";
+          uDel.addEventListener("click",function(){
+            if(!confirm('"'+g+'" 그룹의 '+ungrouped[g]+'개를 삭제할까요?')) return;
+            added=added.filter(function(p){return groupOf(p)!==g;});
+            all.forEach(function(p){if(groupOf(p)===g&&p.__id&&p.__id.indexOf("fix:")===0)edits[p.__id]="__deleted__";});
+            saveAdded(added); saveEdits(edits);
+            var h=loadHidden(); var i=h.indexOf(hk); if(i>=0){h.splice(i,1);saveHidden(h);}
             renderAll();
           });
 
-          var ungTog=makeToggle("ung-"+g, checked, function(chk){
-            var h=loadHidden(); var idx=h.indexOf(hKey);
-            if (chk){ if(idx>=0) h.splice(idx,1); }
-            else { if(idx<0) h.push(hKey); }
+          var ungTog=makeToggle(hk, checked, function(chk){
+            var h=loadHidden(); var idx=h.indexOf(hk);
+            if(chk){if(idx>=0)h.splice(idx,1);}else{if(idx<0)h.push(hk);}
             saveHidden(h); renderAll();
           });
+          ungTog.querySelector('.slider').style.cssText="position:absolute;inset:0;border-radius:18px;cursor:pointer;transition:background 0.2s;"+(checked?"background:#3F9E7E;":"background:#3a3f49;");
 
-          row.appendChild(ungTog); row.appendChild(nameSp); row.appendChild(cntSp);
-          row.appendChild(renBtn); row.appendChild(delBtn);
+          row.appendChild(ungCb); row.appendChild(nameSp); row.appendChild(cntSp);
+          row.appendChild(uRen); row.appendChild(uDel); row.appendChild(ungTog);
           etcMidList.appendChild(row);
         });
 
-        etcEl.appendChild(etcBigRow); etcEl.appendChild(etcMidList);
+        etcEl.appendChild(etcRow); etcEl.appendChild(etcMidList);
         listEl.appendChild(etcEl);
       }
-
-      // 전체 선택 / 전체 해제 버튼
-      var selAll=document.getElementById("gpSelectAll");
-      var deselAll=document.getElementById("gpDeselectAll");
-      if (selAll){ selAll.onclick=function(){
-        saveHidden([]); renderAll();
-      }; }
-      if (deselAll){ deselAll.onclick=function(){
-        var allMids=[];
-        LAYER_TREE.forEach(function(sec){ sec.mids.forEach(function(m){ if(midCounts[m.mid]) allMids.push(m.mid); }); });
-        ungKeys.forEach(function(g){ allMids.push("__ung__"+g); });
-        saveHidden(allMids); renderAll();
-      }; }
     }
     // 수정 패널의 그룹 자동완성(datalist) 갱신
     function refreshGroupOptions(){
@@ -1765,7 +1985,8 @@
             "평": p.py||"", "실거래가": p.price||"",
             "대지지분": (p.land&&parseFloat(p.land)>0)?parseFloat(p.land):"",
             "종(용도)": p.jong||"", "단계": p.stage||"", "호재내용": p.sub||"",
-            "메모": p.note||"", "그룹": p.group||"",
+            "메모": p.note||"", "소분류": p.group||"",
+            "중분류": placeGroupMid(p)||"", "대분류": placeGroupBig(p)||"",
             "위도": p.lat!=null?Number(p.lat).toFixed(6):"",
             "경도": p.lng!=null?Number(p.lng).toFixed(6):"",
             "법정동코드": p.code||"", "주소": ""
