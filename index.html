@@ -854,8 +854,9 @@
         if (hidden.indexOf(hideKey)>=0) return;
         // 줌 레벨별 점수 필터
         var score = p.score||0;
-        if (zoomLevel >= 6 && score < 5) return; // 레벨 6이상: ★5+대장만
-        if (zoomLevel >= 4 && score < 4 && score !== 6) return; // 레벨 4~5: ★4이상만
+        if (zoomLevel >= 7) return; // 레벨 7이상: 전부 숨김
+        if (zoomLevel === 6 && score < 5 && score !== 6) return; // 레벨 6: ★5+대장만
+        if (zoomLevel >= 4 && zoomLevel <= 5 && score < 4 && score !== 6) return; // 레벨 4~5: ★4+대장만
         drawMarker(p); drawn++;
       });
       DBG("renderAll 끝 all="+all.length+" 그림="+drawn);
