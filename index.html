@@ -157,29 +157,11 @@
     #failBox .acts { display:flex; gap:8px; margin-top:12px; }
     #failBox .acts button { flex:1; border:none; border-radius:6px; padding:8px; font-size:12px; font-weight:700; cursor:pointer; }
 
-    #groupPanel { display:none; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:45; background:rgba(28,31,38,0.99);
-      border:0.5px solid rgba(255,255,255,0.2); border-radius:12px; padding:16px 18px; width:94%; height:90%;
-      overflow-y:auto; box-shadow:0 4px 24px rgba(0,0,0,0.6); }
-    #groupPanel .gp-head { color:#f2f3f5; font-size:16px; font-weight:700; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; }
-    #groupClose { background:#3a3f49; border:none; color:#e8eaed; border-radius:6px; padding:4px 12px; font-size:14px; cursor:pointer; }
-    .lg-group { border-bottom:0.5px solid rgba(255,255,255,0.12); padding:8px 0; }
-    .lg-ghead { display:flex; align-items:center; gap:8px; }
-    .lg-eye, .lg-ren, .lg-del { background:none; border:none; cursor:pointer; font-size:16px; padding:3px 6px; color:#e8eaed; filter:grayscale(0); }
-    .lg-gname { flex:1; color:#fff; font-size:15px; font-weight:700; cursor:pointer; }
-    .lg-cnt { color:#9aa0ab; font-size:13px; margin-right:4px; }
-    .lg-gbody { margin:8px 0 6px; }
-    .lg-subtitle { color:#9fe7c8; font-size:13px; margin:10px 0 5px; font-weight:700; }
-    .lg-table { width:100%; border-collapse:collapse; font-size:13px; }
-    .lg-table th { color:#9aa0ab; font-weight:600; text-align:left; padding:5px 6px; border-bottom:0.5px solid rgba(255,255,255,0.15); }
-    .lg-table td { padding:5px 6px; border-bottom:0.5px solid rgba(255,255,255,0.07); }
-    .lg-c-name { color:#cfe8db; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .lg-in { background:#1a1d24; color:#e8eaed; border:0.5px solid rgba(255,255,255,0.25); border-radius:5px; font-size:13px; padding:4px 6px; }
-    .lg-score { width:46px; text-align:center; } .lg-land { width:50px; } .lg-grp { width:70px; } .lg-note { width:100%; box-sizing:border-box; }
-    .lg-rowdel { background:none; border:none; cursor:pointer; font-size:15px; color:#f0a0a0; }
-    .lg-toolbar { display:flex; gap:8px; margin:6px 0 4px; }
-    .lg-toolbar button { background:#2c3742; border:0.5px solid rgba(255,255,255,0.2); color:#e8eaed; border-radius:6px; padding:4px 10px; font-size:12px; cursor:pointer; }
-    .lg-toolbar .lg-sel-del { background:#5a3a3a; color:#f0d6d6; }
-    .lg-arrow { color:#9aa0ab; font-size:13px; margin-left:2px; }
+    #groupPanel { display:none; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:45; background:rgba(35,39,47,0.98);
+      border:0.5px solid rgba(255,255,255,0.2); border-radius:12px; padding:16px 18px; width:min(360px,88%);
+      max-height:70vh; overflow-y:auto; box-shadow:0 4px 24px rgba(0,0,0,0.6); }
+    #groupPanel .gp-head { color:#f2f3f5; font-size:15px; font-weight:700; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; }
+    #groupClose { background:#3a3f49; border:none; color:#e8eaed; border-radius:6px; padding:3px 10px; font-size:13px; cursor:pointer; }
     .gp-row { display:flex; align-items:center; gap:6px; padding:3px 0; }
     .gp-row label { flex:1; display:flex; align-items:center; gap:6px; color:#e8eaed; font-size:12px; cursor:pointer; min-width:0; }
     .gp-row .gp-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
