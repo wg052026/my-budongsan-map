@@ -927,29 +927,41 @@
         return list;
       }
 
+      function findIdx(arr, key){
+        for(var i=0;i<arr.length;i++){ if(arr[i].key===key) return i; }
+        return -1;
+      }
+
       function moveSel(dir){
         var keys=getCheckedKeys();
         if(!keys.length){ alert("이동할 항목을 선택하세요."); return; }
-        var flat=getMidFlatList();
-        var order=loadLayerOrder()||{};
-        LAYER_TREE.forEach(function(sec){ if(!order[sec.big]) order[sec.big]=sec.mids.map(function(m){return m.mid;}); });
+        // 전체 flat (단지 없는 중분류도 포함해서 순서 관리)
+        var flat=[];
+        LAYER_TREE.forEach(function(sec){
+          sec.mids.forEach(function(m){
+            flat.push({big:sec.big, mid:m.mid, key:sec.big+"::"+m.mid});
+          });
+        });
+        Object.keys(ungrouped).forEach(function(g){
+          flat.push({big:"__기타", mid:g, key:"__ung__"+g});
+        });
 
+        // 선택된 항목 하나씩 이동 (여러 개면 순서대로)
         keys.forEach(function(k){
-          var idx=flat.findIndex(function(x){return x.key===k;});
+          var idx=findIdx(flat, k);
           if(idx<0) return;
-          var target=-1;
+          var target;
           if(dir==="top") target=0;
           else if(dir==="up") target=Math.max(0,idx-1);
           else if(dir==="down") target=Math.min(flat.length-1,idx+1);
           else if(dir==="bot") target=flat.length-1;
+          else target=idx;
           if(target===idx) return;
-
-          // flat 배열에서 이동
           var item=flat.splice(idx,1)[0];
           flat.splice(target,0,item);
         });
 
-        // flat → order 재구성
+        // flat → newOrder 재구성
         var newOrder={};
         LAYER_TREE.forEach(function(sec){ newOrder[sec.big]=[]; });
         flat.forEach(function(item){
@@ -1098,17 +1110,32 @@
           var cntSp=document.createElement("span"); cntSp.className="gp-cnt"; cntSp.textContent=midCounts[k];
 
           var mRen=document.createElement("button"); mRen.className="gp-ren"; mRen.textContent="✎";
-          mRen.addEventListener("click", function(){
-            var nv=prompt('"'+m.mid+'" 중분류 이름 변경:', m.mid);
-            if(!nv||nv===m.mid) return; nv=nv.trim();
-            // 해당 중분류 단지의 group→mid 커스텀 맵 갱신
-            var mm=loadMidMap();
-            all.forEach(function(p){
-              if(placeGroupBig(p)===sec.big&&placeGroupMid(p)===m.mid){
-                mm[groupOf(p)]={big:sec.big,mid:nv};
-              }
+          mRen.addEventListener("click", function(e){
+            e.stopPropagation();
+            // 인라인 편집: 이름 span을 input으로 교체
+            var oldText=nameSp.textContent;
+            var inp=document.createElement("input");
+            inp.value=m.mid;
+            inp.style.cssText="flex:1;background:#2a2f3a;border:1px solid #3F9E7E;color:#f2f3f5;border-radius:4px;padding:1px 4px;font-size:12px;min-width:0;";
+            nameSp.replaceWith(inp);
+            inp.focus(); inp.select();
+            function commit(){
+              var nv=inp.value.trim();
+              inp.replaceWith(nameSp);
+              if(!nv||nv===m.mid) return;
+              var mm=loadMidMap();
+              all.forEach(function(p){
+                if(placeGroupBig(p)===sec.big&&placeGroupMid(p)===m.mid){
+                  mm[groupOf(p)]={big:sec.big,mid:nv};
+                }
+              });
+              saveMidMap(mm); renderAll();
+            }
+            inp.addEventListener("blur", commit);
+            inp.addEventListener("keydown", function(e){
+              if(e.key==="Enter") inp.blur();
+              if(e.key==="Escape"){ inp.value=m.mid; inp.blur(); }
             });
-            saveMidMap(mm); renderAll();
           });
 
           var mDel=document.createElement("button"); mDel.className="gp-del"; mDel.textContent="🗑";
@@ -1191,19 +1218,33 @@
           var cntSp=document.createElement("span"); cntSp.className="gp-cnt"; cntSp.textContent=ungrouped[g];
 
           var uRen=document.createElement("button"); uRen.className="gp-ren"; uRen.textContent="✎";
-          uRen.addEventListener("click",function(){
-            var nv=prompt('"'+g+'" 그룹 이름 변경:',g);
-            if(!nv||nv===g) return; nv=nv.trim();
-            added.forEach(function(p){if(groupOf(p)===g)p.group=nv;});
-            saveAdded(added);
-            all.forEach(function(p){
-              if(groupOf(p)===g&&p.__id&&p.__id.indexOf("fix:")===0){
-                var cur=(edits[p.__id]&&edits[p.__id]!=="__deleted__")?edits[p.__id]:Object.assign({},p);
-                cur.group=nv; delete cur.__id; delete cur.__marker; delete cur.__iw; delete cur.auto;
-                edits[p.__id]=cur;
-              }
+          uRen.addEventListener("click",function(e){
+            e.stopPropagation();
+            var inp=document.createElement("input");
+            inp.value=g;
+            inp.style.cssText="flex:1;background:#2a2f3a;border:1px solid #3F9E7E;color:#f2f3f5;border-radius:4px;padding:1px 4px;font-size:12px;min-width:0;";
+            nameSp.replaceWith(inp);
+            inp.focus(); inp.select();
+            function commit(){
+              var nv=inp.value.trim();
+              inp.replaceWith(nameSp);
+              if(!nv||nv===g) return;
+              added.forEach(function(p){if(groupOf(p)===g)p.group=nv;});
+              saveAdded(added);
+              all.forEach(function(p){
+                if(groupOf(p)===g&&p.__id&&p.__id.indexOf("fix:")===0){
+                  var cur=(edits[p.__id]&&edits[p.__id]!=="__deleted__")?edits[p.__id]:Object.assign({},p);
+                  cur.group=nv; delete cur.__id; delete cur.__marker; delete cur.__iw; delete cur.auto;
+                  edits[p.__id]=cur;
+                }
+              });
+              saveEdits(edits); renderAll();
+            }
+            inp.addEventListener("blur", commit);
+            inp.addEventListener("keydown", function(e){
+              if(e.key==="Enter") inp.blur();
+              if(e.key==="Escape"){ inp.value=g; inp.blur(); }
             });
-            saveEdits(edits); renderAll();
           });
 
           var uDel=document.createElement("button"); uDel.className="gp-del"; uDel.textContent="🗑";
