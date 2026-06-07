@@ -564,9 +564,15 @@
     return null;
   }
   // 단지 객체 → 중분류 (kind 포함)
-  function placeGroupMid(p){ return groupMid(groupOf(p), p.kind); }
+  function placeGroupMid(p){
+    if(p._mid) return p._mid;  // 엑셀에서 직접 지정된 중분류
+    return groupMid(groupOf(p), p.kind);
+  }
   // 단지 객체 → 대분류
-  function placeGroupBig(p){ return groupBig(groupOf(p), p.kind, p.lat, p.lng); }
+  function placeGroupBig(p){
+    if(p._big) return p._big;  // 엑셀에서 직접 지정된 대분류
+    return groupBig(groupOf(p), p.kind, p.lat, p.lng);
+  }
   function DBG(msg){
     try{
       var b=document.getElementById("dbgBody");
@@ -2177,7 +2183,8 @@
             } else if(grp && !big && !mid) {
               // 소분류만 있고 매핑 없으면 기존 매핑 유지
             }
-            delete p._mid; delete p._big;
+            // _mid, _big은 삭제하지 않고 단지 객체에 유지 (레이어 분류용)
+            // delete p._mid; delete p._big;
           });
           if(mmChanged) saveMidMap(mm);
 
