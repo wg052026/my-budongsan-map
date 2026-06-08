@@ -593,13 +593,12 @@
       if (p.score === 2) return "#5A7595";
       return "#6E7A88";   // 3등 (거의 회색파랑)
     }
-    if (p.score >= 6) return "#D4AF37";  // 대장 - 금색
-    // 아파트: 같은 초록 계열, 채도만 (5점 선명 → 1점 탁한 회녹)
-    if (p.score === 5) return "#1F9E5A";
-    if (p.score === 4) return "#4A9466";
-    if (p.score === 3) return "#5E8A6E";
-    if (p.score === 2) return "#6E8175";
-    if (p.score === 1) return "#79807A";
+    if (p.score >= 6) return "#9B59B6";  // 대장 - 보라
+    if (p.score === 5) return "#E74C3C";  // ★5 - 빨강
+    if (p.score === 4) return "#E67E22";  // ★4 - 주황
+    if (p.score === 3) return "#F1C40F";  // ★3 - 노랑
+    if (p.score === 2) return "#6E8175";  // ★2
+    if (p.score === 1) return "#2ECC71";  // ★1 - 초록
     return "#828282";                    // 점수없음 - 회색
   }
   function scoreOpacity(p){ return 1; }   // 채도로 구분하므로 투명도는 끔
@@ -855,8 +854,7 @@
         // 줌 레벨별 점수 필터
         var score = p.score||0;
         if (zoomLevel >= 7) return; // 레벨 7이상: 전부 숨김
-        if (zoomLevel === 6 && score < 5 && score !== 6) return; // 레벨 6: ★5+대장만
-        if (zoomLevel >= 4 && zoomLevel <= 5 && score < 4 && score !== 6) return; // 레벨 4~5: ★4+대장만
+        if (zoomLevel >= 5 && zoomLevel <= 6 && score < 4 && score !== 6) return; // 레벨 5~6: ★4이상+대장만
         drawMarker(p); drawn++;
       });
       DBG("renderAll 끝 all="+all.length+" 그림="+drawn);
@@ -2206,47 +2204,68 @@
           parsed.forEach(function(p){ if(!p.group) p.group="기타"; });
 
           var needGeo = parsed.filter(function(p){ return (p.lat==null||p.lng==null) && (p.addr||p.name); }).length;
+          var needConv = parsed.filter(function(p){ return (p.lat==null||p.lng==null) && !isNaN(p._kx) && !isNaN(p._ky); }).length;
           var msg = parsed.length+"개를 지도에 넣습니다.";
-          if (needGeo) msg += "\n(좌표 없는 "+needGeo+"개는 주소로 자동 변환 — 시간이 좀 걸립니다)";
+          if (needConv) msg += "\n(좌표 "+needConv+"개는 자동 변환 — 시간이 좀 걸립니다)";
           if (skipped) msg += "\n(이름·좌표·주소 모두 없는 "+skipped+"개는 건너뜀)";
           msg += "\n\n[확인]=기존 추가분에 더하기 / [취소]=기존 추가분 교체";
           var append = confirm(msg);
 
-          // 좌표 없는 건 주소로 변환
+          // WCONGNAMUL → WGS84 변환 (카카오 REST transcoord)
+          var REST_KEY = "f5e811dd14d0ff8af54bdbb30219e1a5";
+          function transcoord(x, y){
+            return fetch("https://dapi.kakao.com/v2/local/geo/transcoord.json?x="+x+"&y="+y+"&input_coord=WCONGNAMUL&output_coord=WGS84",
+              { headers: { "Authorization": "KakaoAK "+REST_KEY } })
+              .then(function(r){ return r.ok ? r.json() : null; })
+              .then(function(j){
+                if (j && j.documents && j.documents.length){
+                  return { lat: parseFloat(j.documents[0].y), lng: parseFloat(j.documents[0].x) };
+                }
+                return null;
+              })
+              .catch(function(){ return null; });
+          }
+
+          // 좌표 없는 건 변환/지오코딩
           (async function(){
             var failList=[];
-            if (needGeo){
+            var totalWork = parsed.filter(function(p){ return (p.lat==null||p.lng==null) && ((!isNaN(p._kx)&&!isNaN(p._ky)) || p.addr || p.name); }).length;
+            if (totalWork){
               // 진행률 오버레이 표시
               var pBox=document.getElementById("progBox");
               var pBar=document.querySelector("#progBar > div");
               var pText=document.getElementById("progText");
               var pTitle=document.getElementById("progTitle");
               var pFail=document.getElementById("progFail");
-              pTitle.textContent="주소를 좌표로 변환 중…";
-              pFail.innerHTML=""; pBar.style.width="0%"; pText.textContent="0 / "+needGeo;
+              pTitle.textContent="좌표 변환 중…";
+              pFail.innerHTML=""; pBar.style.width="0%"; pText.textContent="0 / "+totalWork;
               pBox.style.display="flex";
 
               var done=0, okc=0;
-              for (var i=0;i<parsed.length;i++){
-                var p=parsed[i];
-                // 카카오 x,y 좌표 있으면 변환 먼저 시도
-                if ((p.lat==null||p.lng==null) && !isNaN(p._kx) && !isNaN(p._ky)){
-                  var proj=new kakao.maps.services.Coord(p._kx, p._ky);
-                  var wgs=kakao.maps.services.Projection.transformCoords(proj, kakao.maps.services.Coords.WCONGNAMUL, kakao.maps.services.Coords.WGS84);
-                  if(wgs){ p.lat=wgs.y; p.lng=wgs.x; }
-                }
-                if ((p.lat==null||p.lng==null) && (p.addr || p.name)){
-                  var geo=await geocodeOne(p.name, p.addr);
-                  if (geo){ p.lat=geo.lat; p.lng=geo.lng; if(!p.code) p.code=geo.code; okc++; }
-                  else { failList.push({name:p.name, addr:p.addr, group:p.group||"", land:p.land||0, jong:p.jong||"", note:p.note||"", seq:p.seq, score:p.score||0}); }
-                  done++;
-                  pBar.style.width = Math.round(done/needGeo*100)+"%";
-                  pText.textContent = done+" / "+needGeo+"  (성공 "+okc+" · 실패 "+failList.length+")";
-                  if (failList.length){
-                    pFail.innerHTML = "변환 실패: "+failList.slice(0,12).map(function(f){return f.name;}).join(", ")+(failList.length>12?" 외 "+(failList.length-12)+"개":"");
+              var BATCH=10;
+              for (var bi=0; bi<parsed.length; bi+=BATCH){
+                var batch=parsed.slice(bi, bi+BATCH);
+                await Promise.all(batch.map(async function(p){
+                  if (p.lat!=null && p.lng!=null) return;
+                  // 1) WCONGNAMUL 좌표 우선 변환
+                  if (!isNaN(p._kx) && !isNaN(p._ky)){
+                    var wgs=await transcoord(p._kx, p._ky);
+                    if (wgs){ p.lat=wgs.lat; p.lng=wgs.lng; okc++; done++; return; }
                   }
-                  await new Promise(function(r){ setTimeout(r,120); });
+                  // 2) 주소/이름 지오코딩 폴백
+                  if (p.addr || p.name){
+                    var geo=await geocodeOne(p.name, p.addr);
+                    if (geo){ p.lat=geo.lat; p.lng=geo.lng; if(!p.code) p.code=geo.code; okc++; }
+                    else { failList.push({name:p.name, addr:p.addr, group:p.group||"", land:p.land||0, jong:p.jong||"", note:p.note||"", seq:p.seq, score:p.score||0}); }
+                    done++;
+                  }
+                }));
+                pBar.style.width = Math.round(done/totalWork*100)+"%";
+                pText.textContent = done+" / "+totalWork+"  (성공 "+okc+" · 실패 "+failList.length+")";
+                if (failList.length){
+                  pFail.innerHTML = "변환 실패: "+failList.slice(0,12).map(function(f){return f.name;}).join(", ")+(failList.length>12?" 외 "+(failList.length-12)+"개":"");
                 }
+                await new Promise(function(r){ setTimeout(r,80); });
               }
               pBox.style.display="none";
             }
