@@ -32,6 +32,9 @@
     .mk-land { font-size:10px; font-weight:700; line-height:1.2; }
     .mk-tail { width:0; height:0; border-left:6px solid transparent; border-right:6px solid transparent;
       border-top:7px solid #fff; margin:0 auto; }
+    .mk-spin { display:inline-block; width:11px; height:11px; border:2px solid #ccc;
+      border-top-color:#3F9E7E; border-radius:50%; animation:mkspin 0.7s linear infinite; vertical-align:middle; }
+    @keyframes mkspin { to { transform:rotate(360deg); } }
 
     /* ===== 정보창 ===== */
     .iw { width:230px; background:#23272f; border:0.5px solid rgba(255,255,255,0.18); border-radius:12px;
@@ -648,11 +651,21 @@
     if (p.kind==="apt"){
       var lc = landColor(parseFloat(p.land)||0);
       var py = shownPy(p), price = shownPrice(p);
-      var main = esc(price) || (isAutoPrice(p) ? (p.auto===undefined?"조회중…":"거래없음") : "");
+      var main, mainColor="";
+      if (price){
+        main = esc(price);
+        if (p.auto && p.auto.approx) main += '<span style="font-size:9px;color:#C9982F;">≈</span>';  // 마을 근사
+      } else if (isAutoPrice(p)){
+        if (p.auto==="__loading") main = '<span class="mk-spin"></span>';
+        else if (p.auto===undefined) main = "조회중…";
+        else if (p.auto && p.auto.error){ main = "조회실패"; mainColor="color:#d9534f;"; }   // API 오류
+        else if (p.auto && p.auto.nocode){ main = "코드없음"; mainColor="color:#d9534f;"; }  // 법정동코드 없음
+        else main = "거래없음";   // 정상 응답, 거래 0건
+      } else main = "";
       var pyTxt = py ? ('<div class="mk-sub">'+esc(py)+'</div>') : "";
       var landTxt = (p.land!==""&&p.land!=null&&!isNaN(parseFloat(p.land))&&parseFloat(p.land)>0)
         ? ('<div class="mk-land" style="color:'+lc+';">대지 '+pad2(p.land)+'평</div>') : "";
-      return pyTxt + '<div class="mk-main">'+main+'</div>' + landTxt;
+      return pyTxt + '<div class="mk-main" style="'+mainColor+'">'+main+'</div>' + landTxt;
     }
     if (p.kind==="redev"){ return '<div class="mk-main">'+esc(p.name)+'</div>'; }
     if (p.kind==="school"){
@@ -1537,6 +1550,8 @@
     async function fetchOnePrice(p){
       var k = priceKey(p);
       __priceFetching[k] = true;
+      // 조회중 표시 (p.auto만 임시; autoCache엔 저장 안 함)
+      p.auto = "__loading"; refreshMarker(p);
       try {
         if (!p.code && p.lat!=null && p.lng!=null){
           await new Promise(function(resolve){
@@ -1552,25 +1567,42 @@
             });
           });
         }
-        if (!p.code) return;
+        var cache = loadPriceCache();
+        // 코드 없음 → 캐시 저장 안 함 (다음에 재시도)
+        if (!p.code){ p.auto = {nocode:true}; refreshMarker(p); return; }
+
         var url = DEAL_API + "?lawd=" + encodeURIComponent(p.code) +
                   "&apt=" + encodeURIComponent(p.name) + "&months=12";
-        var j = await fetch(url).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; });
-        var deals = (j && j.ok && j.deals) ? j.deals : [];
-        var cache = loadPriceCache();
+        var j = await fetch(url)
+          .then(function(r){ return r.ok ? r.json() : "__http"; })
+          .catch(function(){ return "__neterr"; });
+
+        // 네트워크/HTTP 오류 → 조회실패 (캐시 저장 안 함, 다음에 재시도)
+        if (j === "__http" || j === "__neterr" || j === null){
+          p.auto = {error:true}; refreshMarker(p); return;
+        }
+        // 서버가 ok:false → 조회실패
+        if (!j.ok){
+          p.auto = {error:true}; refreshMarker(p); return;
+        }
+
+        var deals = (j.deals) ? j.deals : [];
         if (deals.length){
           deals.sort(function(a,b){ return (b.dateNum||0) - (a.dateNum||0); });
           var d = deals[0];
           var val = {
             amountText: d.amountText || (d.amountManwon ? (Math.round(d.amountManwon/1000)/10+"억") : ""),
             pyeong: d.pyeong || "",
-            date: d.date || ""
+            date: d.date || "",
+            approx: !!d.approxMatch   // 마을 단위 근사 매칭이면 true
           };
           cache[k] = val;
           p.auto = val; autoCache[p.__id] = val;
         } else {
-          cache[k] = null;
-          p.auto = null; autoCache[p.__id] = null;
+          // 진짜 거래없음 (정상 응답, 거래 0건) → 캐시 저장 (재조회 방지)
+          var nv = {none:true};
+          cache[k] = nv;
+          p.auto = nv; autoCache[p.__id] = nv;
         }
         savePriceCache(cache);
         refreshMarker(p);
