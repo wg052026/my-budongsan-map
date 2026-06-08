@@ -461,6 +461,27 @@
     var ln = (p.lng!=null) ? Number(p.lng).toFixed(4) : "";
     return (p.name||"")+"@"+la+","+ln;
   }
+  // 주소에서 도로명+건물번호 또는 지번 추출 (국토부 매칭용)
+  function parseAddr(addr){
+    var a = String(addr||"").trim();
+    // 1) 도로명: 'XX로/길/번길' + 건물번호  (예: '용현로 10', '김포한강8로 409')
+    var rm = a.match(/([가-힣]+[0-9]*(?:번길|로|길))\s+(\d+(?:-\d+)?)/);
+    if (rm) return { road: rm[1], bun: rm[2], jibun: "" };
+    // 2) 지번: '동/리 + 번지'  (예: '구래동 6887-3', '주안동 830-2')
+    var jm = a.match(/([가-힣]+(?:동|리|가))\s+(\d+(?:-\d+)?)\s*$/);
+    if (jm) return { road: "", bun: "", jibun: jm[2] };
+    return { road: "", bun: "", jibun: "" };
+  }
+  // DEAL_API 호출 URL 생성 (주소 매칭 파라미터 포함)
+  function dealUrl(p, months){
+    var u = DEAL_API + "?lawd=" + encodeURIComponent(p.code) +
+            "&apt=" + encodeURIComponent(p.name) +
+            "&months=" + months;
+    var ad = parseAddr(p.addr);
+    if (ad.road) u += "&road=" + encodeURIComponent(ad.road) + "&bun=" + encodeURIComponent(ad.bun);
+    else if (ad.jibun) u += "&jibun=" + encodeURIComponent(ad.jibun);
+    return u;
+  }
   function groupOf(p){ return (p && p.group && String(p.group).trim()) ? String(p.group).trim() : "기타"; }
 
   // ===== 대분류·중분류 기본 매핑 =====
@@ -781,8 +802,7 @@
       document.querySelectorAll("#trendRange .tr-range").forEach(function(b){ b.classList.toggle("on", b.getAttribute("data-y")==="5"); });
       box.style.display="flex";
 
-      var url = DEAL_API + "?lawd=" + encodeURIComponent(rp.code) +
-                "&apt=" + encodeURIComponent(rp.name) + "&months=60";
+      var url = dealUrl(rp, 60);
       fetch(url).then(function(r){return r.json();}).then(function(j){
         var deals = (j && j.ok && j.deals) ? j.deals : [];
         trendDeals = deals;
@@ -1581,8 +1601,7 @@
         // 코드 없음 → 캐시 저장 안 함 (다음에 재시도)
         if (!p.code){ p.auto = {nocode:true}; refreshMarker(p); return; }
 
-        var url = DEAL_API + "?lawd=" + encodeURIComponent(p.code) +
-                  "&apt=" + encodeURIComponent(p.name) + "&months=12";
+        var url = dealUrl(p, 12);
         var j = await fetch(url)
           .then(function(r){ return r.ok ? r.json() : "__http"; })
           .catch(function(){ return "__neterr"; });
