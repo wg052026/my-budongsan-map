@@ -623,9 +623,9 @@
   function isAuto(kind){ return kind==="apt" || kind==="school"; }
   function hasStars(p){ return !(p.kind==="spot" || p.kind==="school"); }
 
-  // 아파트가 자동조회 대상인지 (평·실거래가 둘 다 비어있으면 자동)
+  // 아파트/재건축이 자동조회 대상인지 (평·실거래가 둘 다 비어있으면 자동)
   function isAutoPrice(p){
-    return p.kind==="apt" && (!p.py || !p.py.trim()) && (!p.price || !p.price.trim());
+    return (p.kind==="apt"||p.kind==="redev") && (!p.py || !p.py.trim()) && (!p.price || !p.price.trim());
   }
   // 표시용 평/가격 (자동값 우선 폴백)
   function shownPy(p){ if (p.py && p.py.trim()) return p.py; if (p.auto && p.auto.pyeong) return p.auto.pyeong+"평"; return ""; }
@@ -646,28 +646,38 @@
   // 재건축 단계는 뱃지를 단계명으로
   function badgeTextRedev(p){ return p.stage || "단계"; }
 
+  // 자동 실거래가 상태 → 표시 텍스트/색 (apt·redev 공용)
+  function priceMain(p){
+    var price = shownPrice(p);
+    if (price) return { txt: esc(price), color: "" };
+    if (p.auto==="__loading") return { txt: '<span class="mk-spin"></span>', color: "" };
+    if (p.auto===undefined) return { txt: "조회중…", color: "" };
+    if (p.auto && p.auto.error) return { txt: "조회실패", color: "color:#d9534f;" };
+    if (p.auto && p.auto.nocode) return { txt: "코드없음", color: "color:#d9534f;" };
+    return { txt: "거래없음", color: "" };
+  }
+
   // 마커 흰 박스 본문 HTML
   function boxBodyHtml(p){
     if (p.kind==="apt"){
       var lc = landColor(parseFloat(p.land)||0);
-      var py = shownPy(p), price = shownPrice(p);
-      var main, mainColor="";
-      if (price){
-        main = esc(price);
-        if (p.auto && p.auto.approx) main += '<span style="font-size:9px;color:#C9982F;">≈</span>';  // 마을 근사
-      } else if (isAutoPrice(p)){
-        if (p.auto==="__loading") main = '<span class="mk-spin"></span>';
-        else if (p.auto===undefined) main = "조회중…";
-        else if (p.auto && p.auto.error){ main = "조회실패"; mainColor="color:#d9534f;"; }   // API 오류
-        else if (p.auto && p.auto.nocode){ main = "코드없음"; mainColor="color:#d9534f;"; }  // 법정동코드 없음
-        else main = "거래없음";   // 정상 응답, 거래 0건
-      } else main = "";
+      var py = shownPy(p);
+      var pm = priceMain(p);
       var pyTxt = py ? ('<div class="mk-sub">'+esc(py)+'</div>') : "";
       var landTxt = (p.land!==""&&p.land!=null&&!isNaN(parseFloat(p.land))&&parseFloat(p.land)>0)
         ? ('<div class="mk-land" style="color:'+lc+';">대지 '+pad2(p.land)+'평</div>') : "";
-      return pyTxt + '<div class="mk-main" style="'+mainColor+'">'+main+'</div>' + landTxt;
+      return pyTxt + '<div class="mk-main" style="'+pm.color+'">'+pm.txt+'</div>' + landTxt;
     }
-    if (p.kind==="redev"){ return '<div class="mk-main">'+esc(p.name)+'</div>'; }
+    if (p.kind==="redev"){
+      var lc2 = landColor(parseFloat(p.land)||0);
+      var pm2 = priceMain(p);
+      // 이름 + 시세 + (대지지분)
+      var nameTxt = '<div class="mk-sub" style="font-weight:700;color:#333;">'+esc(p.name)+'</div>';
+      var priceTxt = '<div class="mk-main" style="'+pm2.color+'">'+pm2.txt+'</div>';
+      var landTxt2 = (p.land!==""&&p.land!=null&&!isNaN(parseFloat(p.land))&&parseFloat(p.land)>0)
+        ? ('<div class="mk-land" style="color:'+lc2+';">대지 '+pad2(p.land)+'평</div>') : "";
+      return nameTxt + priceTxt + landTxt2;
+    }
     if (p.kind==="school"){
       var rank = p.score>=1 ? (' · '+p.score+'등') : '';
       return '<div class="mk-main">'+esc(p.name)+esc(rank)+'</div>';
