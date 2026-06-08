@@ -2445,18 +2445,22 @@
               pBox.style.display="none";
             }
             var imported = parsed.filter(function(p){ return p.lat!=null && p.lng!=null; })
-                                 .map(function(p){ var o=Object.assign({},p); delete o.addr; return o; });
+                                 .map(function(p){ return Object.assign({},p); });
             if (!imported.length && !failList.length){ alert("좌표를 확정한 항목이 없습니다."); return; }
             if (append){
-              // 같은 이름+그룹이면 덮어쓰기, 없으면 추가
+              // 같은 이름+좌표면 덮어쓰기, 없으면 추가
+              // (주소는 위에서 삭제되므로 좌표로 구분 — 동명이인 단지가 섞이지 않게)
               var dup=0, add=0;
+              function locKey(o){
+                var la=(o.lat!=null)?Number(o.lat).toFixed(5):"";
+                var ln=(o.lng!=null)?Number(o.lng).toFixed(5):"";
+                return (o.name||"").trim()+"@"+la+","+ln;
+              }
               imported.forEach(function(p){
-                // 이름+주소 기준 중복 체크 (둘 중 하나라도 다르면 다른 항목)
-                var key=(p.name||"").trim()+"|"+((p.addr||"").trim());
+                var key=locKey(p);
                 var idx=-1;
                 for (var i=0;i<added.length;i++){
-                  var ak=((added[i].name||"").trim()+"|"+((added[i].addr||"").trim()));
-                  if(ak===key){ idx=i; break; }
+                  if(locKey(added[i])===key){ idx=i; break; }
                 }
                 if (idx>=0){ var oldId=added[idx].__id; p.__id=oldId; added[idx]=p; dup++; }
                 else { added.push(p); add++; }
