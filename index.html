@@ -453,7 +453,11 @@
   var PRICE_KEY = "budongsan_price_cache_v1";   // 실거래가 캐시 (코드+이름 → 값)
   function loadPriceCache(){ try{ return JSON.parse(localStorage.getItem(PRICE_KEY)||"{}"); }catch(e){ return {}; } }
   function savePriceCache(o){ try{ localStorage.setItem(PRICE_KEY, JSON.stringify(o)); }catch(e){} }
-  function priceKey(p){ return (p.code||"")+"|"+(p.name||""); }
+  function priceKey(p){
+    var la = (p.lat!=null) ? Number(p.lat).toFixed(4) : "";
+    var ln = (p.lng!=null) ? Number(p.lng).toFixed(4) : "";
+    return (p.name||"")+"@"+la+","+ln;
+  }
   function groupOf(p){ return (p && p.group && String(p.group).trim()) ? String(p.group).trim() : "기타"; }
 
   // ===== 대분류·중분류 기본 매핑 =====
@@ -631,9 +635,10 @@
       if (p.score>=1) return "★"+p.score;
       return "·";
     }
-    if (p.kind==="school"){ return p.score>=1 ? (p.score+"등") : "·"; }
-    // 호재: 종류 아이콘
-    return p.spottype==="지하철" ? "🚇" : (p.spottype==="개발" ? "🏗" : "⭐");
+    if (p.kind==="school"){ return "🏫"; }
+    // 호재: 종류 아이콘 (이름에 '역' 들어가면 지하철로 간주)
+    if (p.spottype==="지하철" || /역(\s|$|\))/.test(p.name||"")) return "🚇";
+    return p.spottype==="개발" ? "🏗" : "⭐";
   }
   // 재건축 단계는 뱃지를 단계명으로
   function badgeTextRedev(p){ return p.stage || "단계"; }
@@ -650,7 +655,10 @@
       return pyTxt + '<div class="mk-main">'+main+'</div>' + landTxt;
     }
     if (p.kind==="redev"){ return '<div class="mk-main">'+esc(p.name)+'</div>'; }
-    if (p.kind==="school"){ return '<div class="mk-main">'+esc(p.name)+'</div>'; }
+    if (p.kind==="school"){
+      var rank = p.score>=1 ? (' · '+p.score+'등') : '';
+      return '<div class="mk-main">'+esc(p.name)+esc(rank)+'</div>';
+    }
     return '<div class="mk-main">'+esc(p.sub||p.name)+'</div>';   // 호재: 내용
   }
   // 정보창 정보 줄
@@ -717,7 +725,28 @@
 
     window.__showTrend = function(id){
       var rp = findById(id);
-      if (!rp || !rp.code) return;
+      if (!rp) return;
+      // 법정동코드 없으면 좌표로 먼저 조회
+      if (!rp.code && rp.lat!=null && rp.lng!=null){
+        geocoder.coord2RegionCode(rp.lng, rp.lat, function(rc, st){
+          if (st===kakao.maps.services.Status.OK){
+            var b=null; for(var k=0;k<rc.length;k++){ if(rc[k].region_type==="B"){ b=rc[k]; break; } }
+            if (b && b.code){
+              rp.code = String(b.code).substring(0,5);
+              for (var i=0;i<added.length;i++){ if(added[i].__id===rp.__id){ added[i].code=rp.code; break; } }
+              saveAdded(added);
+            }
+          }
+          if (rp.code) doShowTrend(rp);
+          else alert("법정동코드를 찾을 수 없어 실거래가를 조회할 수 없습니다.");
+        });
+        return;
+      }
+      if (!rp.code){ alert("법정동코드가 없어 실거래가를 조회할 수 없습니다."); return; }
+      doShowTrend(rp);
+    };
+
+    function doShowTrend(rp){
       var box=document.getElementById("trendBox");
       document.getElementById("trendTitle").textContent = rp.name + " 실거래가 추세";
       document.getElementById("trendPy").innerHTML = "";
@@ -854,7 +883,7 @@
         // 줌 레벨별 점수 필터
         var score = p.score||0;
         if (zoomLevel >= 7) return; // 레벨 7이상: 전부 숨김
-        if (zoomLevel >= 5 && zoomLevel <= 6 && score < 4 && score !== 6) return; // 레벨 5~6: ★4이상+대장만
+        if (zoomLevel === 6 && score < 4 && score !== 6) return; // 레벨 6: ★4이상+대장만 (줌5는 전부)
         drawMarker(p); drawn++;
       });
       DBG("renderAll 끝 all="+all.length+" 그림="+drawn);
@@ -1470,15 +1499,84 @@
       if (p.__iw && p.__iw.__el){ p.__iw.__el.innerHTML = iwHtml(p, color); bindIwButtons(p.__iw.__el, p.__id); }
       else if (p.__iw){ p.__iw.setContent(iwHtml(p, color)); }
     }
-    // 자동 실거래가 조회 — 평·가격 비운 아파트만 (결과는 id 캐시에 보관)
-    // 실거래가: 자동 호출 안 함. 캐시에 있으면 그 값만 마커에 반영 (한도 절약)
+    // 자동 실거래가 조회 — 줌 필터 레벨(6 이하)에서 화면에 보이는 아파트만 일괄 조회
+    var __priceFetching = {};
     function autoFetchPrices(){
       var cache = loadPriceCache();
+      var zoomLevel = map.getLevel();
+      // 1) 캐시에 있는 값은 항상 마커에 반영
       all.forEach(function(p){
         if (!isAutoPrice(p)) return;
         var k = priceKey(p);
         if (cache[k] !== undefined){ p.auto = cache[k]; autoCache[p.__id]=cache[k]; refreshMarker(p); }
       });
+      // 2) 줌 7 이상(축소)에서는 자동 조회 안 함 (줌 필터와 동일 기준)
+      if (zoomLevel >= 7) return;
+      // 3) 화면 영역 안 + 캐시 없는 아파트만 조회 대상
+      var bounds = map.getBounds();
+      var targets = all.filter(function(p){
+        if (!isAutoPrice(p)) return false;
+        if (p.lat==null || p.lng==null) return false;
+        if (!bounds.contain(new kakao.maps.LatLng(p.lat, p.lng))) return false;
+        var k = priceKey(p);
+        if (cache[k] !== undefined) return false;
+        if (__priceFetching[k]) return false;
+        return true;
+      });
+      if (!targets.length) return;
+      // 4) 10개씩 배치로 조회
+      (async function(){
+        for (var bi=0; bi<targets.length; bi+=10){
+          var batch=targets.slice(bi, bi+10);
+          await Promise.all(batch.map(function(p){ return fetchOnePrice(p); }));
+        }
+      })();
+    }
+
+    // 단일 아파트 실거래가 조회 → 최근 거래를 캐시·마커에 반영
+    async function fetchOnePrice(p){
+      var k = priceKey(p);
+      __priceFetching[k] = true;
+      try {
+        if (!p.code && p.lat!=null && p.lng!=null){
+          await new Promise(function(resolve){
+            geocoder.coord2RegionCode(p.lng, p.lat, function(rc, st){
+              if (st===kakao.maps.services.Status.OK){
+                var b=null; for(var i=0;i<rc.length;i++){ if(rc[i].region_type==="B"){ b=rc[i]; break; } }
+                if (b && b.code){
+                  p.code = String(b.code).substring(0,5);
+                  for (var j=0;j<added.length;j++){ if(added[j].__id===p.__id){ added[j].code=p.code; break; } }
+                }
+              }
+              resolve();
+            });
+          });
+        }
+        if (!p.code) return;
+        var url = DEAL_API + "?lawd=" + encodeURIComponent(p.code) +
+                  "&apt=" + encodeURIComponent(p.name) + "&months=12";
+        var j = await fetch(url).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; });
+        var deals = (j && j.ok && j.deals) ? j.deals : [];
+        var cache = loadPriceCache();
+        if (deals.length){
+          deals.sort(function(a,b){ return (b.dateNum||0) - (a.dateNum||0); });
+          var d = deals[0];
+          var val = {
+            amountText: d.amountText || (d.amountManwon ? (Math.round(d.amountManwon/1000)/10+"억") : ""),
+            pyeong: d.pyeong || "",
+            date: d.date || ""
+          };
+          cache[k] = val;
+          p.auto = val; autoCache[p.__id] = val;
+        } else {
+          cache[k] = null;
+          p.auto = null; autoCache[p.__id] = null;
+        }
+        savePriceCache(cache);
+        refreshMarker(p);
+      } finally {
+        delete __priceFetching[k];
+      }
     }
     renderAll();
 
@@ -1926,6 +2024,10 @@
     // 줌 변경 시 마커 필터 적용
     kakao.maps.event.addListener(map, "zoom_changed", function(){
       renderAll();
+    });
+    // 지도 이동(드래그) 끝나면 화면 내 아파트 실거래가 자동조회
+    kakao.maps.event.addListener(map, "idle", function(){
+      if (map.getLevel() <= 6) autoFetchPrices();
     });
 
     kakao.maps.event.addListener(map, "click", function(mouseEvent){
