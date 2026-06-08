@@ -2211,19 +2211,30 @@
           msg += "\n\n[확인]=기존 추가분에 더하기 / [취소]=기존 추가분 교체";
           var append = confirm(msg);
 
-          // WCONGNAMUL → WGS84 변환 (카카오 REST transcoord)
+          // WCONGNAMUL → WGS84 변환 (카카오 REST transcoord, 재시도 포함)
           var REST_KEY = "f5e811dd14d0ff8af54bdbb30219e1a5";
-          function transcoord(x, y){
+          function transcoord(x, y, retry){
             return fetch("https://dapi.kakao.com/v2/local/geo/transcoord.json?x="+x+"&y="+y+"&input_coord=WCONGNAMUL&output_coord=WGS84",
               { headers: { "Authorization": "KakaoAK "+REST_KEY } })
-              .then(function(r){ return r.ok ? r.json() : null; })
+              .then(function(r){
+                if (r.status===429 || r.status===503){ return "RETRY"; }
+                return r.ok ? r.json() : null;
+              })
               .then(function(j){
+                if (j==="RETRY") return "RETRY";
                 if (j && j.documents && j.documents.length){
                   return { lat: parseFloat(j.documents[0].y), lng: parseFloat(j.documents[0].x) };
                 }
                 return null;
               })
-              .catch(function(){ return null; });
+              .catch(function(){ return "RETRY"; })
+              .then(async function(res){
+                if (res==="RETRY" && (retry||0) < 3){
+                  await new Promise(function(r){ setTimeout(r, 400*((retry||0)+1)); });
+                  return transcoord(x, y, (retry||0)+1);
+                }
+                return res==="RETRY" ? null : res;
+              });
           }
 
           // 좌표 없는 건 변환/지오코딩
@@ -2242,7 +2253,7 @@
               pBox.style.display="flex";
 
               var done=0, okc=0;
-              var BATCH=10;
+              var BATCH=5;
               for (var bi=0; bi<parsed.length; bi+=BATCH){
                 var batch=parsed.slice(bi, bi+BATCH);
                 await Promise.all(batch.map(async function(p){
@@ -2265,7 +2276,7 @@
                 if (failList.length){
                   pFail.innerHTML = "변환 실패: "+failList.slice(0,12).map(function(f){return f.name;}).join(", ")+(failList.length>12?" 외 "+(failList.length-12)+"개":"");
                 }
-                await new Promise(function(r){ setTimeout(r,80); });
+                await new Promise(function(r){ setTimeout(r,60); });
               }
               pBox.style.display="none";
             }
