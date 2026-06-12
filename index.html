@@ -342,27 +342,10 @@
     </div>
   </div>
 
-  <!-- ===== 사진 첨부/뷰어 모달 ===== -->
-  <div id="photoBox" style="display:none; position:absolute; inset:0; z-index:48; background:rgba(0,0,0,0.85); flex-direction:column;">
-    <div style="display:flex; align-items:center; gap:8px; padding:14px 16px; border-bottom:0.5px solid rgba(255,255,255,0.15);">
-      <span id="photoTitle" style="color:#f2f3f5; font-size:15px; font-weight:700; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">사진</span>
-      <label id="photoAddBtn" style="background:#3F9E7E; color:#fff; border-radius:8px; padding:8px 14px; font-size:13px; font-weight:700; cursor:pointer;">
-        ＋ 사진 추가
-        <input id="photoInput" type="file" accept="image/*" multiple capture="environment" style="display:none;">
-      </label>
-      <button id="photoClose" style="background:#3a3f49; border:none; color:#e8eaed; border-radius:8px; padding:8px 12px; font-size:14px; cursor:pointer;">✕</button>
-    </div>
-    <div id="photoProgress" style="display:none; padding:8px 16px; color:#cfe8db; font-size:12px; background:#23272f;"></div>
-    <div id="photoGrid" style="flex:1; overflow-y:auto; padding:12px; display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:8px; align-content:start;"></div>
-  </div>
-
-  <!-- 사진 확대 뷰 -->
+  <!-- 사진 확대 뷰 (탭하면 닫힘) -->
   <div id="photoView" style="display:none; position:absolute; inset:0; z-index:49; background:rgba(0,0,0,0.95); align-items:center; justify-content:center; flex-direction:column;">
-    <img id="photoViewImg" style="max-width:96%; max-height:82%; object-fit:contain; border-radius:8px;">
-    <div style="display:flex; gap:10px; margin-top:16px;">
-      <button id="photoViewDel" style="background:#5a3a3a; border:none; color:#f0d6d6; border-radius:8px; padding:10px 18px; font-size:13px; font-weight:700; cursor:pointer;">🗑 삭제</button>
-      <button id="photoViewClose" style="background:#3a3f49; border:none; color:#e8eaed; border-radius:8px; padding:10px 18px; font-size:13px; cursor:pointer;">닫기</button>
-    </div>
+    <img id="photoViewImg" style="max-width:96%; max-height:84%; object-fit:contain; border-radius:8px; cursor:pointer;">
+    <button id="photoViewClose" style="margin-top:16px; background:#3a3f49; border:none; color:#e8eaed; border-radius:8px; padding:10px 22px; font-size:13px; cursor:pointer;">닫기</button>
   </div>
 
   <div id="failBox">
@@ -869,87 +852,115 @@
     window.__editItem = function(id){ startEdit(id); };
     window.__deleteItem = function(id){ deleteItem(id); };
 
-    // ===== 임장 사진 기능 =====
-    var photoCurId = null, photoItems = [], photoCurView = null;
+    // ===== 임장 사진 기능 (InfoWindow 인라인) =====
+    var photoOpenId = null;       // 현재 펼쳐진 단지 id (null이면 접힘)
+    var photoCache = {};          // id -> items 배열 (재조회 최소화)
 
-    window.__openPhotos = function(id, name){
+    // 버튼 클릭 → 토글
+    window.__togglePhotos = function(id){
       if (!window.__photo){ alert("사진 기능 로딩 중입니다. 잠시 후 다시 시도하세요."); return; }
-      photoCurId = id;
-      document.getElementById("photoTitle").textContent = "📷 " + name;
-      document.getElementById("photoBox").style.display = "flex";
-      document.getElementById("photoGrid").innerHTML = '<div style="color:#9aa0ab;grid-column:1/-1;text-align:center;padding:30px;">불러오는 중…</div>';
-      window.__loadPhotos();
-    };
-
-    window.__loadPhotos = async function(){
-      if (!photoCurId) return;
-      photoItems = await window.__photo.list(photoCurId);
-      var grid = document.getElementById("photoGrid");
-      if (!photoItems.length){
-        grid.innerHTML = '<div style="color:#9aa0ab;grid-column:1/-1;text-align:center;padding:30px;">아직 사진이 없습니다.<br>상단 ＋ 버튼으로 추가하세요.</div>';
-      } else {
-        // 최신순
-        var sorted = photoItems.slice().sort(function(a,b){ return (b.ts||0)-(a.ts||0); });
-        grid.innerHTML = sorted.map(function(it){
-          var thumb = it.url.replace("/upload/", "/upload/w_300,h_300,c_fill,q_auto/");
-          return '<div style="position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;cursor:pointer;background:#1a1d24;" onclick="window.__viewPhoto(\''+encodeURIComponent(JSON.stringify(it))+'\')">' +
-                 '<img src="'+thumb+'" style="width:100%;height:100%;object-fit:cover;" loading="lazy">' +
-                 '</div>';
-        }).join("");
+      var panel = document.getElementById("photoPanel-"+id);
+      if (!panel) return;
+      if (photoOpenId === id){
+        // 접기
+        panel.style.display = "none";
+        photoOpenId = null;
+        var arr0 = document.getElementById("photoArrow-"+id); if(arr0) arr0.textContent = "▾";
+        return;
       }
-      // InfoWindow 버튼의 개수 표시 갱신
-      var cnt = document.getElementById("iwPhotoCnt-"+photoCurId);
-      if (cnt) cnt.textContent = photoItems.length ? "("+photoItems.length+")" : "";
+      photoOpenId = id;
+      panel.style.display = "block";
+      var arr = document.getElementById("photoArrow-"+id); if(arr) arr.textContent = "▴";
+      window.__renderPhotos(id);
     };
 
+    window.__renderPhotos = async function(id){
+      var panel = document.getElementById("photoPanel-"+id);
+      if (!panel) return;
+      panel.innerHTML = '<div style="color:#9aa0ab;text-align:center;padding:14px;font-size:11px;">불러오는 중…</div>';
+      var items = await window.__photo.list(id);
+      photoCache[id] = items;
+      var sorted = items.slice().sort(function(a,b){ return (b.ts||0)-(a.ts||0); });
+      var cells = sorted.map(function(it){
+        var enc = encodeURIComponent(JSON.stringify(it));
+        var thumb = it.url.replace("/upload/", "/upload/w_300,h_300,c_fill,q_auto/");
+        return '<div style="position:relative;aspect-ratio:1;border-radius:6px;overflow:hidden;background:#1a1d24;">' +
+                 '<img src="'+thumb+'" loading="lazy" style="width:100%;height:100%;object-fit:cover;cursor:pointer;" onclick="window.__viewPhoto(\''+enc+'\')">' +
+                 '<span onclick="window.__delPhoto(\''+id+'\',\''+enc+'\')" style="position:absolute;top:-2px;right:-2px;width:18px;height:18px;border-radius:50%;background:#c0392b;color:#fff;font-size:14px;line-height:17px;text-align:center;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.6);">−</span>' +
+               '</div>';
+      }).join("");
+      // 추가 버튼 칸
+      var addCell = '<label style="aspect-ratio:1;border-radius:6px;border:1px dashed rgba(255,255,255,0.28);display:flex;align-items:center;justify-content:center;color:#9aa0ab;font-size:22px;cursor:pointer;">＋' +
+        '<input type="file" accept="image/*" multiple capture="environment" style="display:none;" onchange="window.__uploadPhotos(\''+id+'\', this)"></label>';
+      panel.innerHTML =
+        '<div id="photoProg-'+id+'" style="display:none;color:#cfe8db;font-size:11px;padding:4px 0;"></div>' +
+        '<div id="photoDrop-'+id+'" style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:6px;border-radius:8px;transition:background 0.15s,outline 0.15s;outline:2px dashed transparent;outline-offset:2px;">' + cells + addCell + '</div>' +
+        '<div id="photoDropHint-'+id+'" style="display:none;color:#3F9E7E;font-size:10px;text-align:center;padding:4px 0;">여기에 사진을 끌어다 놓으세요</div>';
+      // 버튼 개수 갱신
+      var cnt = document.getElementById("iwPhotoCnt-"+id);
+      if (cnt) cnt.textContent = items.length ? "("+items.length+")" : "";
+      // 드래그앤드롭 연결 (PC)
+      window.__bindDrop(id);
+    };
+
+    // 드래그앤드롭 바인딩
+    window.__bindDrop = function(id){
+      var zone = document.getElementById("photoDrop-"+id);
+      if (!zone) return;
+      var hint = document.getElementById("photoDropHint-"+id);
+      function show(on){
+        zone.style.outlineColor = on ? "#3F9E7E" : "transparent";
+        zone.style.background = on ? "rgba(63,158,126,0.12)" : "transparent";
+        if (hint) hint.style.display = on ? "block" : "none";
+      }
+      ["dragenter","dragover"].forEach(function(ev){
+        zone.addEventListener(ev, function(e){ e.preventDefault(); e.stopPropagation(); show(true); });
+      });
+      ["dragleave","dragend"].forEach(function(ev){
+        zone.addEventListener(ev, function(e){ e.preventDefault(); e.stopPropagation(); show(false); });
+      });
+      zone.addEventListener("drop", function(e){
+        e.preventDefault(); e.stopPropagation(); show(false);
+        var files = Array.from((e.dataTransfer && e.dataTransfer.files) || [])
+          .filter(function(f){ return f.type && f.type.indexOf("image/")===0; });
+        if (files.length) window.__uploadPhotos(id, { files: files, value: "" });
+      });
+    };
+
+    window.__uploadPhotos = async function(id, input){
+      var files = Array.from(input.files || []);
+      input.value = "";
+      if (!files.length) return;
+      var prog = document.getElementById("photoProg-"+id);
+      if (prog){ prog.style.display = "block"; }
+      var done = 0;
+      for (var i=0;i<files.length;i++){
+        if (prog) prog.textContent = "업로드 중… " + (done+1) + "/" + files.length;
+        try{ await window.__photo.add(id, files[i]); done++; }
+        catch(err){ console.error(err); if(prog) prog.textContent = "실패: " + (err.message||err); await new Promise(function(r){ setTimeout(r,1500); }); }
+      }
+      if (prog) prog.textContent = "완료! " + done + "장 추가됨";
+      await window.__renderPhotos(id);
+    };
+
+    window.__delPhoto = async function(id, enc){
+      var it = JSON.parse(decodeURIComponent(enc));
+      if (!confirm("이 사진을 삭제할까요?")) return;
+      try{ await window.__photo.remove(id, it); await window.__renderPhotos(id); }
+      catch(err){ alert("삭제 실패: " + (err.message||err)); }
+    };
+
+    // 사진 크게 보기 (전체화면)
     window.__viewPhoto = function(enc){
       var it = JSON.parse(decodeURIComponent(enc));
-      photoCurView = it;
       document.getElementById("photoViewImg").src = it.url;
       document.getElementById("photoView").style.display = "flex";
     };
-
-    // 파일 선택 → 업로드
-    document.getElementById("photoInput").addEventListener("change", async function(e){
-      var files = Array.from(e.target.files || []);
-      e.target.value = ""; // 같은 파일 재선택 가능하게
-      if (!files.length || !photoCurId) return;
-      var prog = document.getElementById("photoProgress");
-      prog.style.display = "block";
-      var done = 0;
-      for (var i=0; i<files.length; i++){
-        prog.textContent = "업로드 중… " + (done+1) + "/" + files.length;
-        try{
-          await window.__photo.add(photoCurId, files[i]);
-          done++;
-        }catch(err){
-          console.error(err);
-          prog.textContent = "업로드 실패: " + (err.message||err);
-          await new Promise(function(r){ setTimeout(r, 1500); });
-        }
-      }
-      prog.textContent = "완료! " + done + "장 추가됨";
-      await window.__loadPhotos();
-      setTimeout(function(){ prog.style.display = "none"; }, 1200);
-    });
-
-    document.getElementById("photoClose").addEventListener("click", function(){
-      document.getElementById("photoBox").style.display = "none";
-      photoCurId = null;
-    });
     document.getElementById("photoViewClose").addEventListener("click", function(){
       document.getElementById("photoView").style.display = "none";
-      photoCurView = null;
     });
-    document.getElementById("photoViewDel").addEventListener("click", async function(){
-      if (!photoCurView || !photoCurId) return;
-      if (!confirm("이 사진을 삭제할까요?")) return;
-      try{
-        await window.__photo.remove(photoCurId, photoCurView);
-        document.getElementById("photoView").style.display = "none";
-        photoCurView = null;
-        await window.__loadPhotos();
-      }catch(err){ alert("삭제 실패: " + (err.message||err)); }
+    document.getElementById("photoViewImg").addEventListener("click", function(){
+      document.getElementById("photoView").style.display = "none";
     });
     var trendDeals=[];   // 현재 추세창에 로드된 거래 전체
 
@@ -1085,7 +1096,8 @@
         ? '<button class="iw-trend" onclick="window.__showTrend(\''+p.__id+'\')" style="width:100%;margin-top:8px;background:#2c3742;border:0.5px solid rgba(255,255,255,0.2);color:#cfe8db;border-radius:6px;padding:7px;font-size:11px;font-weight:700;cursor:pointer;">📈 실거래가 추세</button>'
         : '';
       var photoBtn =
-        '<button class="iw-photo" onclick="window.__openPhotos(\''+p.__id+'\',\''+esc(p.name).replace(/'/g,"\\'")+'\')" style="width:100%;margin-top:8px;background:#2c3742;border:0.5px solid rgba(255,255,255,0.2);color:#cfe8db;border-radius:6px;padding:7px;font-size:11px;font-weight:700;cursor:pointer;">📷 임장 사진 <span id="iwPhotoCnt-'+p.__id+'" style="opacity:0.7;"></span></button>';
+        '<button class="iw-photo" onclick="window.__togglePhotos(\''+p.__id+'\')" style="width:100%;margin-top:8px;background:#2c3742;border:0.5px solid rgba(255,255,255,0.2);color:#cfe8db;border-radius:6px;padding:7px;font-size:11px;font-weight:700;cursor:pointer;">📷 임장 사진 <span id="iwPhotoCnt-'+p.__id+'" style="opacity:0.7;"></span> <span id="photoArrow-'+p.__id+'">▾</span></button>' +
+        '<div id="photoPanel-'+p.__id+'" style="display:none;"></div>';
       var editDel =
         '<div style="display:flex;gap:6px;margin-top:8px;">' +
           '<button class="iw-edit" onclick="window.__editItem(\''+p.__id+'\')" style="flex:1;background:#3a3f49;border:none;color:#e8eaed;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;">✏ 수정</button>' +
