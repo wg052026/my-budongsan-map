@@ -1094,15 +1094,15 @@
       var info = infoLine(p);
       var infoEl = info ? '<div class="iw-info">'+esc(info)+'</div>' : '';
       var moreBtns = isAutoPrice(p)
-        ? '<button class="iw-trend" onclick="window.__showTrend(\''+p.__id+'\')" style="width:100%;margin-top:8px;background:#2c3742;border:0.5px solid rgba(255,255,255,0.2);color:#cfe8db;border-radius:6px;padding:7px;font-size:11px;font-weight:700;cursor:pointer;">📈 실거래가 추세</button>'
+        ? '<button class="iw-trend" onclick="window.__showTrend(\''+p.__id+'\')" style="box-sizing:border-box;display:block;width:100%;margin-top:8px;background:#2c3742;border:0.5px solid rgba(255,255,255,0.2);color:#cfe8db;border-radius:6px;padding:7px;font-size:11px;font-weight:700;cursor:pointer;">📈 실거래가 추세</button>'
         : '';
       var photoBtn =
-        '<button class="iw-photo" onclick="window.__togglePhotos(\''+p.__id+'\')" style="width:100%;margin-top:8px;background:#2c3742;border:0.5px solid rgba(255,255,255,0.2);color:#cfe8db;border-radius:6px;padding:7px;font-size:11px;font-weight:700;cursor:pointer;">📷 임장 사진 <span id="iwPhotoCnt-'+p.__id+'" style="opacity:0.7;"></span> <span id="photoArrow-'+p.__id+'">▾</span></button>' +
+        '<button class="iw-photo" onclick="window.__togglePhotos(\''+p.__id+'\')" style="box-sizing:border-box;display:block;width:100%;margin-top:8px;background:#2c3742;border:0.5px solid rgba(255,255,255,0.2);color:#cfe8db;border-radius:6px;padding:7px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📷 임장 사진 <span id="iwPhotoCnt-'+p.__id+'" style="opacity:0.7;"></span> <span id="photoArrow-'+p.__id+'">▾</span></button>' +
         '<div id="photoPanel-'+p.__id+'" style="display:none;"></div>';
       var editDel =
         '<div style="display:flex;gap:6px;margin-top:8px;">' +
-          '<button class="iw-edit" onclick="window.__editItem(\''+p.__id+'\')" style="flex:1;background:#3a3f49;border:none;color:#e8eaed;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;">✏ 수정</button>' +
-          '<button class="iw-del" onclick="window.__deleteItem(\''+p.__id+'\')" style="flex:1;background:#5a3a3a;border:none;color:#f0d6d6;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;">🗑 삭제</button>' +
+          '<button class="iw-edit" onclick="window.__editItem(\''+p.__id+'\')" style="box-sizing:border-box;flex:1;background:#3a3f49;border:none;color:#e8eaed;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;">✏ 수정</button>' +
+          '<button class="iw-del" onclick="window.__deleteItem(\''+p.__id+'\')" style="box-sizing:border-box;flex:1;background:#5a3a3a;border:none;color:#f0d6d6;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;">🗑 삭제</button>' +
         '</div>';
       return '<div class="iw"><div class="iw-top">' +
         '<div class="iw-name">'+esc(p.name)+'</div>' +
@@ -1133,9 +1133,12 @@
         drawMarker(p); drawn++;
       });
       DBG("renderAll 끝 all="+all.length+" 그림="+drawn);
-      autoFetchPrices();
+      // 실거래가 자동조회는 약간 지연 (연속 줌/이동 시 부하 감소)
+      if (__autoPriceTimer) clearTimeout(__autoPriceTimer);
+      __autoPriceTimer = setTimeout(function(){ __autoPriceTimer=null; autoFetchPrices(); }, 200);
       renderGroupPanel();
     }
+    var __autoPriceTimer = null;
 
     // ===== 레이어 패널: 대분류 > 중분류 트리 (최종) =====
     function renderGroupPanel(){
@@ -2286,8 +2289,11 @@
     }
 
     // 줌 변경 시 마커 필터 적용
+    var __zoomTimer = null;
     kakao.maps.event.addListener(map, "zoom_changed", function(){
-      renderAll();
+      // 연속 줌 시 마지막 한 번만 렌더 (부하 감소)
+      if (__zoomTimer) clearTimeout(__zoomTimer);
+      __zoomTimer = setTimeout(function(){ __zoomTimer=null; renderAll(); }, 120);
     });
     // 지도 이동(드래그) 끝나면 화면 내 아파트 실거래가 자동조회
     kakao.maps.event.addListener(map, "idle", function(){
