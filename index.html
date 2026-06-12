@@ -885,6 +885,20 @@
     var autoCache={};   // __id -> 자동 실거래가값 (재렌더에도 유지)
 
     window.__closeIW = function(){ if(openIW){ openIW.setMap(null); openIW=null; } };
+
+    // 데이터 변경 시 마커 전체 강제 재생성
+    function forceRebuildMarkers(){
+      if (all && all.length){
+        all.forEach(function(p){
+          if(p.__marker) p.__marker.setMap(null);
+          if(p.__iw) p.__iw.setMap(null);
+          p.__marker=null; p.__iw=null;
+        });
+      }
+      markerObjs=[];
+      window.__closeIW();
+      renderAll();
+    }
     window.__mkClick = function(id){
       var p = findById(id);
       if (p && p.__marker && p.__marker.__onClick){ p.__marker.__onClick(); }
@@ -1152,27 +1166,41 @@
     }
     function renderAll(){
       DBG("renderAll 시작 markerObjs="+markerObjs.length);
-      // 기존 마커 + 정보창 모두 확실히 제거
-      markerObjs.forEach(function(o){ if(o) o.setMap(null); }); markerObjs=[];
-      if (all && all.length){ all.forEach(function(p){ if(p.__marker) p.__marker.setMap(null); if(p.__iw) p.__iw.setMap(null); }); }
-      window.__closeIW();
-      buildAll();
-      var hidden = loadHidden();
-      var drawn=0;
+      var hidden  = loadHidden();
       var zoomLevel = map.getLevel();
+
+      // ── 처음 or 데이터 변경 시만 전체 재생성 ──
+      if (markerObjs.length === 0){
+        // 기존 마커 제거 (안전)
+        if (all && all.length){ all.forEach(function(p){ if(p.__marker) p.__marker.setMap(null); if(p.__iw) p.__iw.setMap(null); p.__marker=null; p.__iw=null; }); }
+        window.__closeIW();
+        buildAll();
+        // 전체 단지를 한 번만 마커 생성 (show/hide용)
+        all.forEach(function(p){ drawMarker(p); });
+        DBG("renderAll: 마커 최초 생성 "+all.length+"개");
+      } else {
+        buildAll();
+      }
+
+      // ── 줌/필터에 따라 show/hide만 ──
+      var drawn = 0;
       all.forEach(function(p){
-        var mid=placeGroupMid(p);
-        var big=placeGroupBig(p);
+        if (!p.__marker) return;
+        var mid  = placeGroupMid(p);
+        var big  = placeGroupBig(p);
         var hideKey = mid ? (big+"::"+mid) : ("__ung__"+groupOf(p));
-        if (hidden.indexOf(hideKey)>=0) return;
-        // 줌 레벨별 점수 필터
-        var score = p.score||0;
-        if (zoomLevel >= 7) return; // 레벨 7이상: 전부 숨김
-        if (zoomLevel === 6 && score < 4 && score !== 6) return; // 레벨 6: ★4이상+대장만 (줌5는 전부)
-        drawMarker(p); drawn++;
+        var visible = true;
+        if (hidden.indexOf(hideKey) >= 0) visible = false;
+        if (zoomLevel >= 7) visible = false;
+        var score = p.score || 0;
+        if (zoomLevel === 6 && score < 4 && score !== 6) visible = false;
+
+        p.__marker.setMap(visible ? map : null);
+        if (!visible && p.__iw) p.__iw.setMap(null);
+        if (visible) drawn++;
       });
+
       DBG("renderAll 끝 all="+all.length+" 그림="+drawn);
-      // 실거래가 자동조회는 약간 지연 (연속 줌/이동 시 부하 감소)
       if (__autoPriceTimer) clearTimeout(__autoPriceTimer);
       __autoPriceTimer = setTimeout(function(){ __autoPriceTimer=null; autoFetchPrices(); }, 200);
       renderGroupPanel();
@@ -1342,7 +1370,7 @@
             });
           }
         });
-        saveAdded(added); saveEdits(edits); renderAll();
+        saveAdded(added); saveEdits(edits); forceRebuildMarkers();
       }; }
 
       if(selAllBtn){ selAllBtn.onclick=function(){ saveHidden([]); renderAll(); }; }
@@ -1397,7 +1425,7 @@
           if(!confirm('"'+sec.big+'" 대분류 전체('+bigCounts[sec.big]+'개)를 삭제할까요?')) return;
           added=added.filter(function(p){return placeGroupBig(p)!==sec.big;});
           all.forEach(function(p){ if(placeGroupBig(p)===sec.big&&p.__id&&p.__id.indexOf("fix:")===0) edits[p.__id]="__deleted__"; });
-          saveAdded(added); saveEdits(edits); renderAll();
+          saveAdded(added); saveEdits(edits); forceRebuildMarkers();
         });
 
         var bigTog=makeToggle("big::"+sec.big, !bigAllHidden, function(checked){
@@ -1578,7 +1606,7 @@
                   edits[p.__id]=cur;
                 }
               });
-              saveEdits(edits); renderAll();
+              saveEdits(edits); forceRebuildMarkers();
             }
             inp.addEventListener("blur", commit);
             inp.addEventListener("keydown", function(e){
@@ -2109,7 +2137,7 @@
         }
         saveAdded(added);
       }
-      renderAll();
+      forceRebuildMarkers();
     }
     function startEdit(id){
       var p = findById(id);
