@@ -342,6 +342,29 @@
     </div>
   </div>
 
+  <!-- ===== 사진 첨부/뷰어 모달 ===== -->
+  <div id="photoBox" style="display:none; position:absolute; inset:0; z-index:48; background:rgba(0,0,0,0.85); flex-direction:column;">
+    <div style="display:flex; align-items:center; gap:8px; padding:14px 16px; border-bottom:0.5px solid rgba(255,255,255,0.15);">
+      <span id="photoTitle" style="color:#f2f3f5; font-size:15px; font-weight:700; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">사진</span>
+      <label id="photoAddBtn" style="background:#3F9E7E; color:#fff; border-radius:8px; padding:8px 14px; font-size:13px; font-weight:700; cursor:pointer;">
+        ＋ 사진 추가
+        <input id="photoInput" type="file" accept="image/*" multiple capture="environment" style="display:none;">
+      </label>
+      <button id="photoClose" style="background:#3a3f49; border:none; color:#e8eaed; border-radius:8px; padding:8px 12px; font-size:14px; cursor:pointer;">✕</button>
+    </div>
+    <div id="photoProgress" style="display:none; padding:8px 16px; color:#cfe8db; font-size:12px; background:#23272f;"></div>
+    <div id="photoGrid" style="flex:1; overflow-y:auto; padding:12px; display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:8px; align-content:start;"></div>
+  </div>
+
+  <!-- 사진 확대 뷰 -->
+  <div id="photoView" style="display:none; position:absolute; inset:0; z-index:49; background:rgba(0,0,0,0.95); align-items:center; justify-content:center; flex-direction:column;">
+    <img id="photoViewImg" style="max-width:96%; max-height:82%; object-fit:contain; border-radius:8px;">
+    <div style="display:flex; gap:10px; margin-top:16px;">
+      <button id="photoViewDel" style="background:#5a3a3a; border:none; color:#f0d6d6; border-radius:8px; padding:10px 18px; font-size:13px; font-weight:700; cursor:pointer;">🗑 삭제</button>
+      <button id="photoViewClose" style="background:#3a3f49; border:none; color:#e8eaed; border-radius:8px; padding:10px 18px; font-size:13px; cursor:pointer;">닫기</button>
+    </div>
+  </div>
+
   <div id="failBox">
     <div class="inner">
       <h3>주소 변환 실패 목록</h3>
@@ -419,6 +442,87 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
   <script src="data.js?v=1"></script>
+
+  <!-- ===== Firebase (사진 목록 동기화) + Cloudinary (사진 저장) ===== -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove }
+      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBjxTup5SwqTn8nVfQ1eC1cvybhPTwktLg",
+      authDomain: "budongsan-map.firebaseapp.com",
+      projectId: "budongsan-map",
+      storageBucket: "budongsan-map.firebasestorage.app",
+      messagingSenderId: "213449798110",
+      appId: "1:213449798110:web:8afa776f3f7b35c9622d4f"
+    };
+    const fbApp = initializeApp(firebaseConfig);
+    const db = getFirestore(fbApp);
+
+    // 전역 노출 (일반 스크립트에서 사용)
+    window.__photo = {
+      CLOUD_NAME: "dmony4wej",
+      UPLOAD_PRESET: "budongsan",
+
+      // 단지(__id)의 사진 목록 가져오기 → [{url, public_id, ts}, ...]
+      async list(id){
+        try{
+          const snap = await getDoc(doc(db, "photos", id));
+          return snap.exists() ? (snap.data().items || []) : [];
+        }catch(e){ console.error("photo list err", e); return []; }
+      },
+
+      // Cloudinary 업로드 후 Firestore에 기록
+      async add(id, file, onProgress){
+        // 1) 이미지 리사이즈/압축 (가로 1280, 화질 0.8)
+        const blob = await window.__photo._resize(file, 1280, 0.8);
+        // 2) Cloudinary 업로드
+        const fd = new FormData();
+        fd.append("file", blob);
+        fd.append("upload_preset", window.__photo.UPLOAD_PRESET);
+        const res = await fetch(
+          "https://api.cloudinary.com/v1_1/" + window.__photo.CLOUD_NAME + "/image/upload",
+          { method:"POST", body:fd }
+        );
+        if(!res.ok) throw new Error("Cloudinary 업로드 실패");
+        const data = await res.json();
+        const item = { url: data.secure_url, public_id: data.public_id, ts: Date.now() };
+        // 3) Firestore 기록 (문서 없으면 생성)
+        const ref = doc(db, "photos", id);
+        const snap = await getDoc(ref);
+        if(snap.exists()) await updateDoc(ref, { items: arrayUnion(item) });
+        else await setDoc(ref, { items: [item] });
+        return item;
+      },
+
+      // 사진 삭제 (Firestore에서만 제거 — Cloudinary 원본은 남지만 목록에서 사라짐)
+      async remove(id, item){
+        const ref = doc(db, "photos", id);
+        await updateDoc(ref, { items: arrayRemove(item) });
+      },
+
+      // 캔버스로 리사이즈 → Blob
+      _resize(file, maxW, quality){
+        return new Promise((resolve, reject)=>{
+          const img = new Image();
+          const url = URL.createObjectURL(file);
+          img.onload = ()=>{
+            URL.revokeObjectURL(url);
+            let w = img.width, h = img.height;
+            if(w > maxW){ h = Math.round(h * maxW / w); w = maxW; }
+            const cv = document.createElement("canvas");
+            cv.width = w; cv.height = h;
+            cv.getContext("2d").drawImage(img, 0, 0, w, h);
+            cv.toBlob(b=> b ? resolve(b) : reject(new Error("리사이즈 실패")), "image/jpeg", quality);
+          };
+          img.onerror = ()=>{ URL.revokeObjectURL(url); reject(new Error("이미지 로드 실패")); };
+          img.src = url;
+        });
+      }
+    };
+    window.dispatchEvent(new Event("photoReady"));
+  </script>
 
   <script>
   // =======================================================================
@@ -764,6 +868,89 @@
     };
     window.__editItem = function(id){ startEdit(id); };
     window.__deleteItem = function(id){ deleteItem(id); };
+
+    // ===== 임장 사진 기능 =====
+    var photoCurId = null, photoItems = [], photoCurView = null;
+
+    window.__openPhotos = function(id, name){
+      if (!window.__photo){ alert("사진 기능 로딩 중입니다. 잠시 후 다시 시도하세요."); return; }
+      photoCurId = id;
+      document.getElementById("photoTitle").textContent = "📷 " + name;
+      document.getElementById("photoBox").style.display = "flex";
+      document.getElementById("photoGrid").innerHTML = '<div style="color:#9aa0ab;grid-column:1/-1;text-align:center;padding:30px;">불러오는 중…</div>';
+      window.__loadPhotos();
+    };
+
+    window.__loadPhotos = async function(){
+      if (!photoCurId) return;
+      photoItems = await window.__photo.list(photoCurId);
+      var grid = document.getElementById("photoGrid");
+      if (!photoItems.length){
+        grid.innerHTML = '<div style="color:#9aa0ab;grid-column:1/-1;text-align:center;padding:30px;">아직 사진이 없습니다.<br>상단 ＋ 버튼으로 추가하세요.</div>';
+      } else {
+        // 최신순
+        var sorted = photoItems.slice().sort(function(a,b){ return (b.ts||0)-(a.ts||0); });
+        grid.innerHTML = sorted.map(function(it){
+          var thumb = it.url.replace("/upload/", "/upload/w_300,h_300,c_fill,q_auto/");
+          return '<div style="position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;cursor:pointer;background:#1a1d24;" onclick="window.__viewPhoto(\''+encodeURIComponent(JSON.stringify(it))+'\')">' +
+                 '<img src="'+thumb+'" style="width:100%;height:100%;object-fit:cover;" loading="lazy">' +
+                 '</div>';
+        }).join("");
+      }
+      // InfoWindow 버튼의 개수 표시 갱신
+      var cnt = document.getElementById("iwPhotoCnt-"+photoCurId);
+      if (cnt) cnt.textContent = photoItems.length ? "("+photoItems.length+")" : "";
+    };
+
+    window.__viewPhoto = function(enc){
+      var it = JSON.parse(decodeURIComponent(enc));
+      photoCurView = it;
+      document.getElementById("photoViewImg").src = it.url;
+      document.getElementById("photoView").style.display = "flex";
+    };
+
+    // 파일 선택 → 업로드
+    document.getElementById("photoInput").addEventListener("change", async function(e){
+      var files = Array.from(e.target.files || []);
+      e.target.value = ""; // 같은 파일 재선택 가능하게
+      if (!files.length || !photoCurId) return;
+      var prog = document.getElementById("photoProgress");
+      prog.style.display = "block";
+      var done = 0;
+      for (var i=0; i<files.length; i++){
+        prog.textContent = "업로드 중… " + (done+1) + "/" + files.length;
+        try{
+          await window.__photo.add(photoCurId, files[i]);
+          done++;
+        }catch(err){
+          console.error(err);
+          prog.textContent = "업로드 실패: " + (err.message||err);
+          await new Promise(function(r){ setTimeout(r, 1500); });
+        }
+      }
+      prog.textContent = "완료! " + done + "장 추가됨";
+      await window.__loadPhotos();
+      setTimeout(function(){ prog.style.display = "none"; }, 1200);
+    });
+
+    document.getElementById("photoClose").addEventListener("click", function(){
+      document.getElementById("photoBox").style.display = "none";
+      photoCurId = null;
+    });
+    document.getElementById("photoViewClose").addEventListener("click", function(){
+      document.getElementById("photoView").style.display = "none";
+      photoCurView = null;
+    });
+    document.getElementById("photoViewDel").addEventListener("click", async function(){
+      if (!photoCurView || !photoCurId) return;
+      if (!confirm("이 사진을 삭제할까요?")) return;
+      try{
+        await window.__photo.remove(photoCurId, photoCurView);
+        document.getElementById("photoView").style.display = "none";
+        photoCurView = null;
+        await window.__loadPhotos();
+      }catch(err){ alert("삭제 실패: " + (err.message||err)); }
+    });
     var trendDeals=[];   // 현재 추세창에 로드된 거래 전체
 
     var trendYears = 5, trendPyVal = null;
@@ -897,6 +1084,8 @@
       var moreBtns = isAutoPrice(p)
         ? '<button class="iw-trend" onclick="window.__showTrend(\''+p.__id+'\')" style="width:100%;margin-top:8px;background:#2c3742;border:0.5px solid rgba(255,255,255,0.2);color:#cfe8db;border-radius:6px;padding:7px;font-size:11px;font-weight:700;cursor:pointer;">📈 실거래가 추세</button>'
         : '';
+      var photoBtn =
+        '<button class="iw-photo" onclick="window.__openPhotos(\''+p.__id+'\',\''+esc(p.name).replace(/'/g,"\\'")+'\')" style="width:100%;margin-top:8px;background:#2c3742;border:0.5px solid rgba(255,255,255,0.2);color:#cfe8db;border-radius:6px;padding:7px;font-size:11px;font-weight:700;cursor:pointer;">📷 임장 사진 <span id="iwPhotoCnt-'+p.__id+'" style="opacity:0.7;"></span></button>';
       var editDel =
         '<div style="display:flex;gap:6px;margin-top:8px;">' +
           '<button class="iw-edit" onclick="window.__editItem(\''+p.__id+'\')" style="flex:1;background:#3a3f49;border:none;color:#e8eaed;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;">✏ 수정</button>' +
@@ -907,7 +1096,7 @@
         '<button class="iw-close" aria-label="닫기" onclick="window.__closeIW()">✕</button></div>' +
         stars + infoEl +
         '<div class="iw-note">'+esc(p.note)+'</div>' +
-        moreBtns + editDel + '</div>';
+        moreBtns + photoBtn + editDel + '</div>';
     }
     function renderAll(){
       DBG("renderAll 시작 markerObjs="+markerObjs.length);
