@@ -1699,13 +1699,12 @@
         return iw;
       }
       marker.__onClick=function(){
-        window.__suppressClose = true;  // 동기적으로 즉시 설정 — map click 이벤트 차단
+        window.__suppressCloseUntil = Date.now() + 600; // 600ms 동안 map click 차단
         window.__closeIW();
         var iw=ensureIW();
         iw.setPosition(marker.getPosition());
         iw.setMap(map); openIW=iw;
         startEdit(p.__id);
-        // setMap 후 DOM에 붙을 때까지 대기 후 사진 로드
         var _id = p.__id;
         setTimeout(function(){
           (function tryLoad(n){
@@ -2479,7 +2478,7 @@
 
     kakao.maps.event.addListener(map, "click", function(mouseEvent){
       if (moveMode) return;
-      if (window.__suppressClose){ window.__suppressClose=false; return; }
+      if (window.__suppressCloseUntil && Date.now() < window.__suppressCloseUntil) return;
       window.__closeIW();
       if (typeof refreshGroupOptions==="function") refreshGroupOptions();
       // 추가 패널 펴기
