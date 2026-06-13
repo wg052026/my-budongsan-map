@@ -1715,8 +1715,11 @@
         p.__iw=iw;
         return iw;
       }
+      var __onClickBusy = false;
       marker.__onClick=function(){
-        window.__suppressCloseUntil = Date.now() + 600; // 600ms 동안 map click 차단
+        if (__onClickBusy) return;
+        __onClickBusy = true;
+        setTimeout(function(){ __onClickBusy = false; }, 500);
         window.__closeIW();
         var iw=ensureIW();
         iw.setPosition(marker.getPosition());
@@ -2215,7 +2218,7 @@
       refreshGroupOptions();
       document.getElementById("f-code").value = p.code||"";
       pendingPos = new kakao.maps.LatLng(p.lat, p.lng);
-      map.panTo(pendingPos);
+      // map.panTo(pendingPos); // 제거 — panTo가 내부적으로 click 이벤트를 유발해 팝업이 닫힘
       var h=document.getElementById("pin-hint"); h.textContent="✏ 수정 중: "+p.name+" (위치는 이동 모드로 변경)"; h.classList.add("on");
       var b=document.getElementById("addBtn"); b.textContent="수정 저장"; b.disabled=false;
       document.getElementById("panel").scrollTop=0;
@@ -2495,8 +2498,8 @@
 
     kakao.maps.event.addListener(map, "click", function(mouseEvent){
       if (moveMode) return;
-      if (window.__suppressCloseUntil && Date.now() < window.__suppressCloseUntil) return;
-      window.__closeIW();
+      // 팝업은 X버튼 또는 다른 마커 클릭으로 닫힘 (map click으로는 닫지 않음)
+      // window.__closeIW(); // 제거 — kakao 내부 이벤트 버블링으로 팝업이 닫히는 문제 방지
       if (typeof refreshGroupOptions==="function") refreshGroupOptions();
       // 추가 패널 펴기
       var pbody=document.getElementById("panelBody");
