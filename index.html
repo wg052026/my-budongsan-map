@@ -864,17 +864,34 @@
 
     // 고정항목(fix) + 추가항목(add)을 합치고, 편집/삭제 오버라이드 적용
     function buildAll(){
+      // 기존 __marker, __iw를 __id 기준으로 보존
+      var prevMap = {};
+      if (all && all.length){
+        all.forEach(function(p){ if(p.__id) prevMap[p.__id] = p; });
+      }
       var list = [];
       places.forEach(function(p, i){
         var id = "fix:" + i;
         if (edits[id] === "__deleted__") return;
         var merged = Object.assign({}, p, edits[id] || {});
         merged.__id = id;
+        // 기존 마커 객체 재활용
+        if (prevMap[id]){
+          merged.__marker = prevMap[id].__marker;
+          merged.__iw     = prevMap[id].__iw;
+          merged.auto     = prevMap[id].auto;
+        }
         list.push(merged);
       });
       added.forEach(function(p, i){
-        if (!p.__id) p.__id = "add_" + i;   // 안전망 (보통 loadAdded에서 이미 부여됨)
+        if (!p.__id) p.__id = "add_" + i;
         var item = Object.assign({}, p);
+        var prev = prevMap[item.__id];
+        if (prev){
+          item.__marker = prev.__marker;
+          item.__iw     = prev.__iw;
+          item.auto     = prev.auto;
+        }
         list.push(item);
       });
       all = list;
