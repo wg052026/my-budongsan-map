@@ -1699,14 +1699,11 @@
         return iw;
       }
       marker.__onClick=function(){
+        window.__suppressClose = true;  // 동기적으로 즉시 설정 — map click 이벤트 차단
         window.__closeIW();
         var iw=ensureIW();
         iw.setPosition(marker.getPosition());
         iw.setMap(map); openIW=iw;
-        // panTo가 내부적으로 click 이벤트를 발생시켜 closeIW를 호출하는 문제 방지
-        window.__suppressClose = true;
-        map.panTo(marker.getPosition());
-        setTimeout(function(){ window.__suppressClose = false; }, 300);
         startEdit(p.__id);
         // setMap 후 DOM에 붙을 때까지 대기 후 사진 로드
         var _id = p.__id;
@@ -2482,7 +2479,7 @@
 
     kakao.maps.event.addListener(map, "click", function(mouseEvent){
       if (moveMode) return;
-      if (window.__suppressClose) return;  // 마커 클릭 직후 panTo로 인한 오발 방지
+      if (window.__suppressClose){ window.__suppressClose=false; return; }
       window.__closeIW();
       if (typeof refreshGroupOptions==="function") refreshGroupOptions();
       // 추가 패널 펴기
