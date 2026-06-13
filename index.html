@@ -937,6 +937,12 @@
     window.__renderPhotos = async function(id){
       var panel = document.getElementById("photoPanel-"+id);
       if (!panel) return;
+      if (!window.__photo){
+        // Firebase 아직 로드 전 — 로딩 표시 후 대기
+        panel.innerHTML = '<div style="color:#9aa0ab;text-align:center;padding:10px;font-size:11px;">사진 기능 로딩 중…</div>';
+        window.addEventListener("photoReady", function(){ window.__renderPhotos(id); }, {once:true});
+        return;
+      }
       panel.innerHTML = '<div style="color:#9aa0ab;text-align:center;padding:14px;font-size:11px;">불러오는 중…</div>';
       var items = await window.__photo.list(id);
       photoCache[id] = items;
@@ -1691,8 +1697,12 @@
         iw.__el=iwEl;
         bindIwButtons(iwEl, p.__id);
         p.__iw=iw;
-        // 사진 자동 로드 (항상 펼침)
-        if (window.__photo && window.__renderPhotos) window.__renderPhotos(p.__id);
+        // 사진 패널 로드 — Firebase 준비됐으면 바로, 아니면 ready 이벤트 후
+        function _loadPhotos(){
+          if (window.__photo && window.__renderPhotos) window.__renderPhotos(p.__id);
+        }
+        if (window.__photo) _loadPhotos();
+        else window.addEventListener("photoReady", _loadPhotos, {once:true});
         return iw;
       }
       marker.__onClick=function(){
