@@ -513,6 +513,7 @@
       }
     };
     window.dispatchEvent(new Event("photoReady"));
+    window.__photoReady = true;  // 폴링용 플래그
   </script>
 
   <script>
@@ -938,9 +939,8 @@
       var panel = document.getElementById("photoPanel-"+id);
       if (!panel) return;
       if (!window.__photo){
-        // Firebase 아직 로드 전 — 로딩 표시 후 대기
         panel.innerHTML = '<div style="color:#9aa0ab;text-align:center;padding:10px;font-size:11px;">사진 기능 로딩 중…</div>';
-        window.addEventListener("photoReady", function(){ window.__renderPhotos(id); }, {once:true});
+        setTimeout(function(){ window.__renderPhotos(id); }, 500);
         return;
       }
       panel.innerHTML = '<div style="color:#9aa0ab;text-align:center;padding:14px;font-size:11px;">불러오는 중…</div>';
@@ -1697,12 +1697,14 @@
         iw.__el=iwEl;
         bindIwButtons(iwEl, p.__id);
         p.__iw=iw;
-        // 사진 패널 로드 — Firebase 준비됐으면 바로, 아니면 ready 이벤트 후
-        function _loadPhotos(){
-          if (window.__photo && window.__renderPhotos) window.__renderPhotos(p.__id);
-        }
-        if (window.__photo) _loadPhotos();
-        else window.addEventListener("photoReady", _loadPhotos, {once:true});
+        // 사진 패널 로드 — Firebase 준비 대기 (최대 10초, 0.3초마다 체크)
+        (function tryLoad(n){
+          if (window.__photo && window.__renderPhotos){
+            window.__renderPhotos(p.__id);
+          } else if (n > 0){
+            setTimeout(function(){ tryLoad(n-1); }, 300);
+          }
+        })(33);
         return iw;
       }
       marker.__onClick=function(){
