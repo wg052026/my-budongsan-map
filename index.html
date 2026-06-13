@@ -37,14 +37,15 @@
     @keyframes mkspin { to { transform:rotate(360deg); } }
 
     /* ===== 정보창 ===== */
-    .iw { width:230px; box-sizing:border-box; overflow:hidden; background:#23272f; border:0.5px solid rgba(255,255,255,0.18); border-radius:12px;
+    .iw { width:230px; box-sizing:border-box; background:#23272f; border:0.5px solid rgba(255,255,255,0.18); border-radius:12px;
       padding:12px 14px; color:#f2f3f5; box-shadow:0 4px 16px rgba(0,0,0,0.5); position:relative; z-index:10; }
     .iw * { box-sizing:border-box; max-width:100%; }
     .iw-top { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
     .iw-name { font-size:15px; font-weight:700; line-height:1.3; }
     .iw-close { background:none; border:none; color:#9aa0ab; cursor:pointer; font-size:16px; line-height:1; padding:0; }
     .iw-stars { margin:6px 0 8px; font-size:13px; }
-    .iw-info { font-size:13px; font-weight:700; color:#fff; margin-bottom:8px; word-break:break-all; line-height:1.4; }
+    .iw-info { font-size:13px; font-weight:700; color:#fff; margin-bottom:8px; word-break:keep-all; overflow-wrap:break-word; line-height:1.4; white-space:normal; }
+    .iw-name { font-size:15px; font-weight:700; line-height:1.3; word-break:keep-all; overflow-wrap:break-word; }
     .iw-note { font-size:12.5px; color:#c5c9d1; line-height:1.5; border-top:0.5px solid rgba(255,255,255,0.12); padding-top:8px; white-space:pre-wrap; }
     .iw-action-btn { box-sizing:border-box; display:block; width:100%; margin-top:8px; background:#2c3742; border:0.5px solid rgba(255,255,255,0.2); color:#cfe8db; border-radius:6px; padding:7px; font-size:11px; font-weight:700; cursor:pointer; }
     .iw-edit { box-sizing:border-box; flex:1; background:#3a3f49; border:none; color:#e8eaed; border-radius:6px; padding:6px; font-size:11px; font-weight:700; cursor:pointer; }
@@ -435,14 +436,15 @@
   <script src="data.js?v=1"></script>
 
   <!-- ===== Firebase (compat 번들) + Cloudinary ===== -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js" onload="window.__fbAppReady=true;window.__tryInitFirebase&&window.__tryInitFirebase()"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js" onload="window.__fbFsReady=true;window.__tryInitFirebase&&window.__tryInitFirebase()"></script>
   <script>
+    // Firebase SDK 로드 완료 후 호출되는 초기화 함수 — SDK보다 먼저 정의해야 onload에서 사용 가능
+    window.__fbAppReady = false;
+    window.__fbFsReady  = false;
     window.__tryInitFirebase = function(){
-      if (!window.__fbAppReady || !window.__fbFsReady) return; // 둘 다 로드돼야 실행
-      if (window.__photo) return; // 이미 초기화됨
+      if (!window.__fbAppReady || !window.__fbFsReady) return;
+      if (window.__photo) return;
       try {
-        var firebaseConfig = {
+        var cfg = {
           apiKey: "AIzaSyBjxTup5SwqTn8nVfQ1eC1cvybhPTwktLg",
           authDomain: "budongsan-map.firebaseapp.com",
           projectId: "budongsan-map",
@@ -450,7 +452,7 @@
           messagingSenderId: "213449798110",
           appId: "1:213449798110:web:8afa776f3f7b35c9622d4f"
         };
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        if (!firebase.apps.length) firebase.initializeApp(cfg);
         var db = firebase.firestore();
 
         window.__photo = {
@@ -484,8 +486,8 @@
           },
 
           async remove(id, item){
-            var ref = db.collection("photos").doc(id);
-            await ref.update({ items: firebase.firestore.FieldValue.arrayRemove(item) });
+            await db.collection("photos").doc(id)
+              .update({ items: firebase.firestore.FieldValue.arrayRemove(item) });
           },
 
           _resize(file, maxW, quality){
@@ -507,14 +509,16 @@
           }
         };
         window.__photoReady = true;
-        window.dispatchEvent(new Event("photoReady"));
+        console.log("Firebase 초기화 완료 ✓");
       } catch(e) {
         console.error("Firebase 초기화 실패:", e);
       }
     };
-    // 이미 둘 다 로드된 경우 대비
-    if (window.__fbAppReady && window.__fbFsReady) window.__tryInitFirebase();
   </script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"
+    onload="window.__fbAppReady=true; window.__tryInitFirebase();"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"
+    onload="window.__fbFsReady=true; window.__tryInitFirebase();"></script>
 
   <script>
   // =======================================================================
@@ -937,12 +941,7 @@
 
     window.__renderPhotos = async function(id){
       var panel = document.getElementById("photoPanel-"+id);
-      if (!panel) return;
-      if (!window.__photo){
-        panel.innerHTML = '<div style="color:#9aa0ab;text-align:center;padding:10px;font-size:11px;">사진 기능 로딩 중…</div>';
-        setTimeout(function(){ window.__renderPhotos(id); }, 500);
-        return;
-      }
+      if (!panel || !window.__photo) return;  // panel 없거나 photo 미준비면 그냥 종료 (tryLoad가 재시도)
       panel.innerHTML = '<div style="color:#9aa0ab;text-align:center;padding:14px;font-size:11px;">불러오는 중…</div>';
       var items = await window.__photo.list(id);
       photoCache[id] = items;
@@ -1697,14 +1696,6 @@
         iw.__el=iwEl;
         bindIwButtons(iwEl, p.__id);
         p.__iw=iw;
-        // 사진 패널 로드 — Firebase 준비 대기 (최대 10초, 0.3초마다 체크)
-        (function tryLoad(n){
-          if (window.__photo && window.__renderPhotos){
-            window.__renderPhotos(p.__id);
-          } else if (n > 0){
-            setTimeout(function(){ tryLoad(n-1); }, 300);
-          }
-        })(33);
         return iw;
       }
       marker.__onClick=function(){
@@ -1712,6 +1703,18 @@
         var iw=ensureIW();
         iw.setPosition(marker.getPosition());
         iw.setMap(map); openIW=iw; map.panTo(marker.getPosition()); startEdit(p.__id);
+        // setMap 후 DOM에 붙을 때까지 대기 (최소 50ms) 후 사진 로드
+        var _id = p.__id;
+        setTimeout(function(){
+          (function tryLoad(n){
+            var panel = document.getElementById("photoPanel-"+_id);
+            if (panel && window.__photo && window.__renderPhotos){
+              window.__renderPhotos(_id);
+            } else if (n > 0){
+              setTimeout(function(){ tryLoad(n-1); }, 200);
+            }
+          })(25); // 최대 5초 대기
+        }, 50);
       };
       marker.__ensureIW=ensureIW;
 
