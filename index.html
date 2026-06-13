@@ -1702,8 +1702,13 @@
         window.__closeIW();
         var iw=ensureIW();
         iw.setPosition(marker.getPosition());
-        iw.setMap(map); openIW=iw; map.panTo(marker.getPosition()); startEdit(p.__id);
-        // setMap 후 DOM에 붙을 때까지 대기 (최소 50ms) 후 사진 로드
+        iw.setMap(map); openIW=iw;
+        // panTo가 내부적으로 click 이벤트를 발생시켜 closeIW를 호출하는 문제 방지
+        window.__suppressClose = true;
+        map.panTo(marker.getPosition());
+        setTimeout(function(){ window.__suppressClose = false; }, 300);
+        startEdit(p.__id);
+        // setMap 후 DOM에 붙을 때까지 대기 후 사진 로드
         var _id = p.__id;
         setTimeout(function(){
           (function tryLoad(n){
@@ -1713,8 +1718,8 @@
             } else if (n > 0){
               setTimeout(function(){ tryLoad(n-1); }, 200);
             }
-          })(25); // 최대 5초 대기
-        }, 50);
+          })(25);
+        }, 80);
       };
       marker.__ensureIW=ensureIW;
 
@@ -2476,7 +2481,8 @@
     });
 
     kakao.maps.event.addListener(map, "click", function(mouseEvent){
-      if (moveMode) return;   // 이동 모드에선 지도 클릭 무시
+      if (moveMode) return;
+      if (window.__suppressClose) return;  // 마커 클릭 직후 panTo로 인한 오발 방지
       window.__closeIW();
       if (typeof refreshGroupOptions==="function") refreshGroupOptions();
       // 추가 패널 펴기
