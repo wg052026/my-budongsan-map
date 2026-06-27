@@ -11,7 +11,7 @@ SERVICE_KEY = "b7f3b1b7a845ff366c079f48081a3732b4b3f9174e1df76a999e4350637bd3e7"
 ENDPOINT    = "https://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev"
 PRICES_FILE = Path("prices.json")
 PLACES_FILE = Path("data.js")
-MAX_PER_RUN = 150
+MAX_PER_RUN = 200
 MONTHS      = 12
 DELAY_SEC   = 0.5
 
@@ -139,7 +139,7 @@ def main():
         try: cache = json.loads(PRICES_FILE.read_text(encoding='utf-8'))
         except: cache = {}
 
-    TTL = 30 * 24 * 3600
+    TTL = 15 * 24 * 3600
     now_ts = time.time()
 
     todo = [p for p in apts
