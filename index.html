@@ -37,21 +37,14 @@
     @keyframes mkspin { to { transform:rotate(360deg); } }
 
     /* ===== 정보창 ===== */
-    .iw { width:230px; box-sizing:border-box; background:#23272f; border:0.5px solid rgba(255,255,255,0.18); border-radius:12px;
-      padding:12px 14px; color:#f2f3f5; box-shadow:0 4px 16px rgba(0,0,0,0.5); position:relative; z-index:10; }
-    .iw * { box-sizing:border-box; max-width:100%; }
+    .iw { width:230px; background:#23272f; border:0.5px solid rgba(255,255,255,0.18); border-radius:12px;
+      padding:12px 14px; color:#f2f3f5; box-shadow:0 4px 16px rgba(0,0,0,0.5); }
     .iw-top { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
     .iw-name { font-size:15px; font-weight:700; line-height:1.3; }
     .iw-close { background:none; border:none; color:#9aa0ab; cursor:pointer; font-size:16px; line-height:1; padding:0; }
     .iw-stars { margin:6px 0 8px; font-size:13px; }
-    .iw-info { font-size:13px; font-weight:700; color:#fff; margin-bottom:8px; word-break:keep-all; overflow-wrap:break-word; line-height:1.4; white-space:normal; }
-    .iw-name { font-size:15px; font-weight:700; line-height:1.3; word-break:keep-all; overflow-wrap:break-word; }
+    .iw-info { font-size:13px; font-weight:700; color:#fff; margin-bottom:8px; }
     .iw-note { font-size:12.5px; color:#c5c9d1; line-height:1.5; border-top:0.5px solid rgba(255,255,255,0.12); padding-top:8px; white-space:pre-wrap; }
-    .iw-action-btn { box-sizing:border-box; display:block; width:100%; margin-top:8px; background:#2c3742; border:0.5px solid rgba(255,255,255,0.2); color:#cfe8db; border-radius:6px; padding:7px; font-size:11px; font-weight:700; cursor:pointer; }
-    .iw-edit { box-sizing:border-box; flex:1; background:#3a3f49; border:none; color:#e8eaed; border-radius:6px; padding:6px; font-size:11px; font-weight:700; cursor:pointer; }
-    .iw-del  { box-sizing:border-box; flex:1; background:#5a3a3a; border:none; color:#f0d6d6; border-radius:6px; padding:6px; font-size:11px; font-weight:700; cursor:pointer; }
-    .iw-edit-row { display:flex; gap:6px; margin-top:8px; }
-    .iw-photo-label { margin-top:8px; font-size:11px; font-weight:700; color:#cfe8db; }
 
     /* ===== 추가 패널 ===== */
     #panel { position:absolute; top:12px; left:12px; z-index:20; width:230px;
@@ -337,8 +330,6 @@
       <button id="saveGhBtn">💾 GitHub에 저장</button>
       <button id="clearBtn">🗑 내 추가분 비우기</button>
       <button id="clearPriceBtn">💰 실거래가 캐시 비우기</button>
-      <button id="collectBtn" onclick="window.__startCollect()" style="background:#2c5a3a;color:#cfe8db;">▶ 전체 수집</button>
-      <div id="collectStatus" style="display:none; font-size:11px; color:#cfe8db; padding:4px 6px; background:#1a2e22; border-radius:6px; margin-top:2px; text-align:center;"></div>
       <div style="border-top:0.5px solid rgba(255,255,255,0.15); margin:6px 0 4px;"></div>
       <button id="dbgToggle" style="background:#2c3742;color:#cfe8db;">🐞 디버그 로그 보기</button>
       <div id="dbgWrap" style="display:none; margin-top:4px;">
@@ -349,12 +340,6 @@
         <textarea id="dbgBody" readonly style="width:100%; box-sizing:border-box; height:160px; background:#0a0c10; color:#9fe7c8; font-family:monospace; font-size:11px; line-height:1.5; border:0.5px solid rgba(255,255,255,0.2); border-radius:6px; padding:6px; resize:vertical;"></textarea>
       </div>
     </div>
-  </div>
-
-  <!-- 사진 확대 뷰 (탭하면 닫힘) -->
-  <div id="photoView" style="display:none; position:absolute; inset:0; z-index:49; background:rgba(0,0,0,0.95); align-items:center; justify-content:center; flex-direction:column;">
-    <img id="photoViewImg" style="max-width:96%; max-height:84%; object-fit:contain; border-radius:8px; cursor:pointer;">
-    <button id="photoViewClose" style="margin-top:16px; background:#3a3f49; border:none; color:#e8eaed; border-radius:8px; padding:10px 22px; font-size:13px; cursor:pointer;">닫기</button>
   </div>
 
   <div id="failBox">
@@ -435,91 +420,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
   <script src="data.js?v=1"></script>
 
-  <!-- ===== Firebase (compat 번들) + Cloudinary ===== -->
-  <script>
-    // Firebase SDK 로드 완료 후 호출되는 초기화 함수 — SDK보다 먼저 정의해야 onload에서 사용 가능
-    window.__fbAppReady = false;
-    window.__fbFsReady  = false;
-    window.__tryInitFirebase = function(){
-      if (!window.__fbAppReady || !window.__fbFsReady) return;
-      if (window.__photo) return;
-      try {
-        var cfg = {
-          apiKey: "AIzaSyBjxTup5SwqTn8nVfQ1eC1cvybhPTwktLg",
-          authDomain: "budongsan-map.firebaseapp.com",
-          projectId: "budongsan-map",
-          storageBucket: "budongsan-map.firebasestorage.app",
-          messagingSenderId: "213449798110",
-          appId: "1:213449798110:web:8afa776f3f7b35c9622d4f"
-        };
-        if (!firebase.apps.length) firebase.initializeApp(cfg);
-        var db = firebase.firestore();
-
-        window.__photo = {
-          CLOUD_NAME: "dmony4wej",
-          UPLOAD_PRESET: "budongsan",
-
-          async list(id){
-            try{
-              var snap = await db.collection("photos").doc(id).get();
-              return snap.exists ? (snap.data().items || []) : [];
-            }catch(e){ console.error("photo list err", e); return []; }
-          },
-
-          async add(id, file){
-            var blob = await window.__photo._resize(file, 1280, 0.8);
-            var fd = new FormData();
-            fd.append("file", blob);
-            fd.append("upload_preset", window.__photo.UPLOAD_PRESET);
-            var res = await fetch(
-              "https://api.cloudinary.com/v1_1/" + window.__photo.CLOUD_NAME + "/image/upload",
-              { method:"POST", body:fd }
-            );
-            if(!res.ok) throw new Error("Cloudinary 업로드 실패");
-            var data = await res.json();
-            var item = { url: data.secure_url, public_id: data.public_id, ts: Date.now() };
-            var ref = db.collection("photos").doc(id);
-            var snap = await ref.get();
-            if(snap.exists) await ref.update({ items: firebase.firestore.FieldValue.arrayUnion(item) });
-            else await ref.set({ items: [item] });
-            return item;
-          },
-
-          async remove(id, item){
-            await db.collection("photos").doc(id)
-              .update({ items: firebase.firestore.FieldValue.arrayRemove(item) });
-          },
-
-          _resize(file, maxW, quality){
-            return new Promise(function(resolve, reject){
-              var img = new Image();
-              var url = URL.createObjectURL(file);
-              img.onload = function(){
-                URL.revokeObjectURL(url);
-                var w = img.width, h = img.height;
-                if(w > maxW){ h = Math.round(h * maxW / w); w = maxW; }
-                var cv = document.createElement("canvas");
-                cv.width = w; cv.height = h;
-                cv.getContext("2d").drawImage(img, 0, 0, w, h);
-                cv.toBlob(function(b){ b ? resolve(b) : reject(new Error("리사이즈 실패")); }, "image/jpeg", quality);
-              };
-              img.onerror = function(){ URL.revokeObjectURL(url); reject(new Error("이미지 로드 실패")); };
-              img.src = url;
-            });
-          }
-        };
-        window.__photoReady = true;
-        console.log("Firebase 초기화 완료 ✓");
-      } catch(e) {
-        console.error("Firebase 초기화 실패:", e);
-      }
-    };
-  </script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"
-    onload="window.__fbAppReady=true; window.__tryInitFirebase();"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"
-    onload="window.__fbFsReady=true; window.__tryInitFirebase();"></script>
-
   <script>
   // =======================================================================
   //  고정 항목은 data.js 에서 불러옵니다 (window.PLACES)
@@ -549,52 +449,39 @@
     return arr;
   }
   function saveAdded(a){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(a)); }catch(e){} }
-  var __hiddenCache = null;
-  function loadHidden(){ try{ return (__hiddenCache = JSON.parse(localStorage.getItem(HIDE_KEY)||"[]")); }catch(e){ return []; } }
-  function saveHidden(a){ __hiddenCache=a; try{ localStorage.setItem(HIDE_KEY, JSON.stringify(a)); }catch(e){} }
+  function loadHidden(){ try{ return JSON.parse(localStorage.getItem(HIDE_KEY)||"[]"); }catch(e){ return []; } }
+  function saveHidden(a){ try{ localStorage.setItem(HIDE_KEY, JSON.stringify(a)); }catch(e){} }
   var FAIL_KEY = "budongsan_fails_v1";   // 마지막 변환 실패 목록
   function loadFails(){ try{ return JSON.parse(localStorage.getItem(FAIL_KEY)||"[]"); }catch(e){ return []; } }
   function saveFails(a){ try{ localStorage.setItem(FAIL_KEY, JSON.stringify(a)); }catch(e){} }
-  var PRICE_KEY = "budongsan_price_cache_v2";   // v2: {key: {val, ts}} 형태
-  var PRICE_TTL = 30 * 24 * 60 * 60 * 1000;    // 1달 (ms)
+  var PRICE_KEY = "budongsan_price_cache_v1";   // 실거래가 캐시 (코드+이름 → 값)
+  function loadPriceCache(){ try{ return JSON.parse(localStorage.getItem(PRICE_KEY)||"{}"); }catch(e){ return {}; } }
+  function savePriceCache(o){ try{ localStorage.setItem(PRICE_KEY, JSON.stringify(o)); }catch(e){} }
 
-  function loadPriceCache(){
-    try{
-      var raw = JSON.parse(localStorage.getItem(PRICE_KEY)||"{}");
-      // v1 호환: 값이 객체지만 ts가 없으면 ts=0 으로 처리
-      return raw;
-    }catch(e){ return {}; }
-  }
-  function savePriceCache(o){
-    try{
-      // 용량 초과 시 오래된 것부터 삭제 (최대 2000개 유지)
-      var keys = Object.keys(o);
-      if (keys.length > 2000){
-        keys.sort(function(a,b){ return (o[a].ts||0)-(o[b].ts||0); });
-        keys.slice(0, keys.length-2000).forEach(function(k){ delete o[k]; });
-      }
-      localStorage.setItem(PRICE_KEY, JSON.stringify(o));
-    }catch(e){
-      // localStorage 꽉 찼을 때: 가장 오래된 절반 삭제 후 재시도
-      try{
-        var keys2 = Object.keys(o).sort(function(a,b){ return (o[a].ts||0)-(o[b].ts||0); });
-        keys2.slice(0, Math.ceil(keys2.length/2)).forEach(function(k){ delete o[k]; });
-        localStorage.setItem(PRICE_KEY, JSON.stringify(o));
-      }catch(e2){}
-    }
-  }
-  function getCacheVal(cache, k){
-    var entry = cache[k];
-    if (entry == null) return undefined;
-    // v1 호환: ts 없는 구버전 → 무조건 만료 처리
-    if (entry.ts == null) return undefined;
-    // 1달 만료 체크
-    if (Date.now() - entry.ts > PRICE_TTL) return undefined;
-    return entry.val;
-  }
-  function setCacheVal(cache, k, val){
-    cache[k] = { val: val, ts: Date.now() };
-  }
+  // prices.json (GitHub Actions 서버 수집분) → localStorage 캐시에 병합
+  (function loadServerPrices(){
+    fetch('prices.json?v=' + Date.now())
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(server){
+        if (!server || typeof server !== 'object') return;
+        var local = loadPriceCache();
+        var merged = 0;
+        Object.keys(server).forEach(function(k){
+          var sv = server[k];
+          var lv = local[k];
+          // 서버 캐시가 더 최신이면 덮어씀
+          if (!lv || !lv.ts || (sv.ts && sv.ts > lv.ts)){
+            local[k] = sv;
+            merged++;
+          }
+        });
+        if (merged > 0){
+          savePriceCache(local);
+          console.log('[prices.json] ' + merged + '개 병합 완료');
+        }
+      })
+      .catch(function(){});  // prices.json 없으면 조용히 무시
+  })();
   function priceKey(p){
     var la = (p.lat!=null) ? Number(p.lat).toFixed(4) : "";
     var ln = (p.lng!=null) ? Number(p.lng).toFixed(4) : "";
@@ -864,34 +751,17 @@
 
     // 고정항목(fix) + 추가항목(add)을 합치고, 편집/삭제 오버라이드 적용
     function buildAll(){
-      // 기존 __marker, __iw를 __id 기준으로 보존
-      var prevMap = {};
-      if (all && all.length){
-        all.forEach(function(p){ if(p.__id) prevMap[p.__id] = p; });
-      }
       var list = [];
       places.forEach(function(p, i){
         var id = "fix:" + i;
         if (edits[id] === "__deleted__") return;
         var merged = Object.assign({}, p, edits[id] || {});
         merged.__id = id;
-        // 기존 마커 객체 재활용
-        if (prevMap[id]){
-          merged.__marker = prevMap[id].__marker;
-          merged.__iw     = prevMap[id].__iw;
-          merged.auto     = prevMap[id].auto;
-        }
         list.push(merged);
       });
       added.forEach(function(p, i){
-        if (!p.__id) p.__id = "add_" + i;
+        if (!p.__id) p.__id = "add_" + i;   // 안전망 (보통 loadAdded에서 이미 부여됨)
         var item = Object.assign({}, p);
-        var prev = prevMap[item.__id];
-        if (prev){
-          item.__marker = prev.__marker;
-          item.__iw     = prev.__iw;
-          item.auto     = prev.auto;
-        }
         list.push(item);
       });
       all = list;
@@ -913,137 +783,12 @@
     var autoCache={};   // __id -> 자동 실거래가값 (재렌더에도 유지)
 
     window.__closeIW = function(){ if(openIW){ openIW.setMap(null); openIW=null; } };
-
-    // 데이터 변경 시 마커 전체 강제 재생성
-    function forceRebuildMarkers(){
-      if (all && all.length){
-        all.forEach(function(p){
-          if(p.__marker) p.__marker.setMap(null);
-          if(p.__iw) p.__iw.setMap(null);
-          p.__marker=null; p.__iw=null;
-        });
-      }
-      markerObjs=[];
-      window.__closeIW();
-      renderAll();
-    }
     window.__mkClick = function(id){
       var p = findById(id);
       if (p && p.__marker && p.__marker.__onClick){ p.__marker.__onClick(); }
     };
     window.__editItem = function(id){ startEdit(id); };
     window.__deleteItem = function(id){ deleteItem(id); };
-
-    // ===== 임장 사진 기능 (InfoWindow 인라인) =====
-    var photoOpenId = null;       // 현재 펼쳐진 단지 id (null이면 접힘)
-    var photoCache = {};          // id -> items 배열 (재조회 최소화)
-
-    // 버튼 클릭 → 토글
-    window.__togglePhotos = function(id){
-      if (!window.__photo){ alert("사진 기능 로딩 중입니다. 잠시 후 다시 시도하세요."); return; }
-      var panel = document.getElementById("photoPanel-"+id);
-      if (!panel) return;
-      if (photoOpenId === id){
-        // 접기
-        panel.style.display = "none";
-        photoOpenId = null;
-        var arr0 = document.getElementById("photoArrow-"+id); if(arr0) arr0.textContent = "▾";
-        return;
-      }
-      photoOpenId = id;
-      panel.style.display = "block";
-      var arr = document.getElementById("photoArrow-"+id); if(arr) arr.textContent = "▴";
-      window.__renderPhotos(id);
-    };
-
-    window.__renderPhotos = async function(id){
-      var panel = document.getElementById("photoPanel-"+id);
-      if (!panel || !window.__photo) return;  // panel 없거나 photo 미준비면 그냥 종료 (tryLoad가 재시도)
-      panel.innerHTML = '<div style="color:#9aa0ab;text-align:center;padding:14px;font-size:11px;">불러오는 중…</div>';
-      var items = await window.__photo.list(id);
-      photoCache[id] = items;
-      var sorted = items.slice().sort(function(a,b){ return (b.ts||0)-(a.ts||0); });
-      var cells = sorted.map(function(it){
-        var enc = encodeURIComponent(JSON.stringify(it));
-        var thumb = it.url.replace("/upload/", "/upload/w_300,h_300,c_fill,q_auto/");
-        return '<div style="position:relative;aspect-ratio:1;border-radius:6px;overflow:hidden;background:#1a1d24;">' +
-                 '<img src="'+thumb+'" loading="lazy" style="width:100%;height:100%;object-fit:cover;cursor:pointer;" onclick="window.__viewPhoto(\''+enc+'\')">' +
-                 '<span onclick="window.__delPhoto(\''+id+'\',\''+enc+'\')" style="position:absolute;top:-2px;right:-2px;width:18px;height:18px;border-radius:50%;background:#c0392b;color:#fff;font-size:14px;line-height:17px;text-align:center;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.6);">−</span>' +
-               '</div>';
-      }).join("");
-      // 추가 버튼 칸
-      var addCell = '<label style="aspect-ratio:1;border-radius:6px;border:1px dashed rgba(255,255,255,0.28);display:flex;align-items:center;justify-content:center;color:#9aa0ab;font-size:22px;cursor:pointer;">＋' +
-        '<input type="file" accept="image/*" multiple capture="environment" style="display:none;" onchange="window.__uploadPhotos(\''+id+'\', this)"></label>';
-      panel.innerHTML =
-        '<div id="photoProg-'+id+'" style="display:none;color:#cfe8db;font-size:11px;padding:4px 0;"></div>' +
-        '<div id="photoDrop-'+id+'" style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:6px;border-radius:8px;transition:background 0.15s,outline 0.15s;outline:2px dashed transparent;outline-offset:2px;">' + cells + addCell + '</div>' +
-        '<div id="photoDropHint-'+id+'" style="display:none;color:#3F9E7E;font-size:10px;text-align:center;padding:4px 0;">여기에 사진을 끌어다 놓으세요</div>';
-      // 버튼 개수 갱신
-      var cnt = document.getElementById("iwPhotoCnt-"+id);
-      if (cnt) cnt.textContent = items.length ? "("+items.length+")" : "";
-      // 드래그앤드롭 연결 (PC)
-      window.__bindDrop(id);
-    };
-
-    // 드래그앤드롭 바인딩
-    window.__bindDrop = function(id){
-      var zone = document.getElementById("photoDrop-"+id);
-      if (!zone) return;
-      var hint = document.getElementById("photoDropHint-"+id);
-      function show(on){
-        zone.style.outlineColor = on ? "#3F9E7E" : "transparent";
-        zone.style.background = on ? "rgba(63,158,126,0.12)" : "transparent";
-        if (hint) hint.style.display = on ? "block" : "none";
-      }
-      ["dragenter","dragover"].forEach(function(ev){
-        zone.addEventListener(ev, function(e){ e.preventDefault(); e.stopPropagation(); show(true); });
-      });
-      ["dragleave","dragend"].forEach(function(ev){
-        zone.addEventListener(ev, function(e){ e.preventDefault(); e.stopPropagation(); show(false); });
-      });
-      zone.addEventListener("drop", function(e){
-        e.preventDefault(); e.stopPropagation(); show(false);
-        var files = Array.from((e.dataTransfer && e.dataTransfer.files) || [])
-          .filter(function(f){ return f.type && f.type.indexOf("image/")===0; });
-        if (files.length) window.__uploadPhotos(id, { files: files, value: "" });
-      });
-    };
-
-    window.__uploadPhotos = async function(id, input){
-      var files = Array.from(input.files || []);
-      input.value = "";
-      if (!files.length) return;
-      var prog = document.getElementById("photoProg-"+id);
-      if (prog){ prog.style.display = "block"; }
-      var done = 0;
-      for (var i=0;i<files.length;i++){
-        if (prog) prog.textContent = "업로드 중… " + (done+1) + "/" + files.length;
-        try{ await window.__photo.add(id, files[i]); done++; }
-        catch(err){ console.error(err); if(prog) prog.textContent = "실패: " + (err.message||err); await new Promise(function(r){ setTimeout(r,1500); }); }
-      }
-      if (prog) prog.textContent = "완료! " + done + "장 추가됨";
-      await window.__renderPhotos(id);
-    };
-
-    window.__delPhoto = async function(id, enc){
-      var it = JSON.parse(decodeURIComponent(enc));
-      if (!confirm("이 사진을 삭제할까요?")) return;
-      try{ await window.__photo.remove(id, it); await window.__renderPhotos(id); }
-      catch(err){ alert("삭제 실패: " + (err.message||err)); }
-    };
-
-    // 사진 크게 보기 (전체화면)
-    window.__viewPhoto = function(enc){
-      var it = JSON.parse(decodeURIComponent(enc));
-      document.getElementById("photoViewImg").src = it.url;
-      document.getElementById("photoView").style.display = "flex";
-    };
-    document.getElementById("photoViewClose").addEventListener("click", function(){
-      document.getElementById("photoView").style.display = "none";
-    });
-    document.getElementById("photoViewImg").addEventListener("click", function(){
-      document.getElementById("photoView").style.display = "none";
-    });
     var trendDeals=[];   // 현재 추세창에 로드된 거래 전체
 
     var trendYears = 5, trendPyVal = null;
@@ -1175,77 +920,45 @@
       var info = infoLine(p);
       var infoEl = info ? '<div class="iw-info">'+esc(info)+'</div>' : '';
       var moreBtns = isAutoPrice(p)
-        ? '<button class="iw-trend iw-action-btn" onclick="window.__showTrend(\''+p.__id+'\')">📈 실거래가 추세</button>'
+        ? '<button class="iw-trend" onclick="window.__showTrend(\''+p.__id+'\')" style="width:100%;margin-top:8px;background:#2c3742;border:0.5px solid rgba(255,255,255,0.2);color:#cfe8db;border-radius:6px;padding:7px;font-size:11px;font-weight:700;cursor:pointer;">📈 실거래가 추세</button>'
         : '';
-      var photoBtn =
-        '<div class="iw-photo-label">📷 임장 사진 <span id="iwPhotoCnt-'+p.__id+'" style="opacity:0.7;"></span></div>' +
-        '<div id="photoPanel-'+p.__id+'"></div>';
       var editDel =
-        '<div class="iw-edit-row">' +
-          '<button class="iw-edit" onclick="window.__editItem(\''+p.__id+'\')">✏ 수정</button>' +
-          '<button class="iw-del" onclick="window.__deleteItem(\''+p.__id+'\')">🗑 삭제</button>' +
+        '<div style="display:flex;gap:6px;margin-top:8px;">' +
+          '<button class="iw-edit" onclick="window.__editItem(\''+p.__id+'\')" style="flex:1;background:#3a3f49;border:none;color:#e8eaed;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;">✏ 수정</button>' +
+          '<button class="iw-del" onclick="window.__deleteItem(\''+p.__id+'\')" style="flex:1;background:#5a3a3a;border:none;color:#f0d6d6;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;">🗑 삭제</button>' +
         '</div>';
       return '<div class="iw"><div class="iw-top">' +
         '<div class="iw-name">'+esc(p.name)+'</div>' +
         '<button class="iw-close" aria-label="닫기" onclick="window.__closeIW()">✕</button></div>' +
         stars + infoEl +
         '<div class="iw-note">'+esc(p.note)+'</div>' +
-        moreBtns + photoBtn + editDel + '</div>';
+        moreBtns + editDel + '</div>';
     }
     function renderAll(){
-      DBG("renderAll 시작 all="+all.length+" markerObjs="+markerObjs.length);
-      var hidden   = loadHidden();
-      var zoomLevel = map.getLevel();
-
+      DBG("renderAll 시작 markerObjs="+markerObjs.length);
+      // 기존 마커 + 정보창 모두 확실히 제거
+      markerObjs.forEach(function(o){ if(o) o.setMap(null); }); markerObjs=[];
+      if (all && all.length){ all.forEach(function(p){ if(p.__marker) p.__marker.setMap(null); if(p.__iw) p.__iw.setMap(null); }); }
+      window.__closeIW();
       buildAll();
-
-      // 데이터가 변했거나 마커가 없으면 전체 재생성
-      var needRebuild = (markerObjs.length === 0) || (markerObjs.length !== all.length);
-      if (needRebuild){
-        // 기존 마커 제거
-        markerObjs.forEach(function(o){ if(o) o.setMap(null); });
-        markerObjs = [];
-        if (all && all.length){
-          all.forEach(function(p){
-            if(p.__marker) p.__marker.setMap(null);
-            if(p.__iw) p.__iw.setMap(null);
-            p.__marker = null; p.__iw = null;
-          });
-        }
-        window.__closeIW();
-        // 전체 마커 생성
-        all.forEach(function(p){ drawMarker(p); });
-        DBG("renderAll: 마커 재생성 "+all.length+"개");
-      }
-
-      applyZoomFilter(hidden, zoomLevel);
+      var hidden = loadHidden();
+      var drawn=0;
+      var zoomLevel = map.getLevel();
+      all.forEach(function(p){
+        var mid=placeGroupMid(p);
+        var big=placeGroupBig(p);
+        var hideKey = mid ? (big+"::"+mid) : ("__ung__"+groupOf(p));
+        if (hidden.indexOf(hideKey)>=0) return;
+        // 줌 레벨별 점수 필터
+        var score = p.score||0;
+        if (zoomLevel >= 7) return; // 레벨 7이상: 전부 숨김
+        if (zoomLevel === 6 && score < 4 && score !== 6) return; // 레벨 6: ★4이상+대장만 (줌5는 전부)
+        drawMarker(p); drawn++;
+      });
+      DBG("renderAll 끝 all="+all.length+" 그림="+drawn);
+      autoFetchPrices();
       renderGroupPanel();
     }
-
-    // 줌/드래그 시 패널 재렌더 없이 마커 show/hide만
-    function applyZoomFilter(hidden, zoomLevel){
-      if (!hidden) hidden = (__hiddenCache || loadHidden());
-      if (zoomLevel == null) zoomLevel = map.getLevel();
-      var hiddenSet = {};
-      hidden.forEach(function(k){ hiddenSet[k]=true; });
-      var drawn = 0;
-      all.forEach(function(p){
-        if (!p.__marker) return;
-        var mid  = placeGroupMid(p);
-        var big  = placeGroupBig(p);
-        var hideKey = mid ? (big+"::"+mid) : ("__ung__"+groupOf(p));
-        var visible = !hiddenSet[hideKey];
-        if (zoomLevel >= 7) visible = false;
-        else if (zoomLevel === 6 && (p.score||0) < 4 && (p.score||0) !== 6) visible = false;
-
-        p.__marker.setMap(visible ? map : null);
-        if (!visible && p.__iw) p.__iw.setMap(null);
-        if (visible) drawn++;
-      });
-      DBG("applyZoomFilter 끝 drawn="+drawn);
-    }
-
-    var __autoPriceTimer = null;
 
     // ===== 레이어 패널: 대분류 > 중분류 트리 (최종) =====
     function renderGroupPanel(){
@@ -1410,7 +1123,7 @@
             });
           }
         });
-        saveAdded(added); saveEdits(edits); forceRebuildMarkers();
+        saveAdded(added); saveEdits(edits); renderAll();
       }; }
 
       if(selAllBtn){ selAllBtn.onclick=function(){ saveHidden([]); renderAll(); }; }
@@ -1465,7 +1178,7 @@
           if(!confirm('"'+sec.big+'" 대분류 전체('+bigCounts[sec.big]+'개)를 삭제할까요?')) return;
           added=added.filter(function(p){return placeGroupBig(p)!==sec.big;});
           all.forEach(function(p){ if(placeGroupBig(p)===sec.big&&p.__id&&p.__id.indexOf("fix:")===0) edits[p.__id]="__deleted__"; });
-          saveAdded(added); saveEdits(edits); forceRebuildMarkers();
+          saveAdded(added); saveEdits(edits); renderAll();
         });
 
         var bigTog=makeToggle("big::"+sec.big, !bigAllHidden, function(checked){
@@ -1646,7 +1359,7 @@
                   edits[p.__id]=cur;
                 }
               });
-              saveEdits(edits); forceRebuildMarkers();
+              saveEdits(edits); renderAll();
             }
             inp.addEventListener("blur", commit);
             inp.addEventListener("keydown", function(e){
@@ -1704,46 +1417,19 @@
       var marker=new kakao.maps.CustomOverlay({position:pos,content:el,xAnchor:0.5,yAnchor:1,clickable:true});
       marker.setMap(map);
 
-      // InfoWindow는 클릭할 때 처음 생성 (지연 생성 = 줌 시 부하 제거)
-      function ensureIW(){
-        if (p.__iw) return p.__iw;
-        var iwEl=document.createElement("div");
-        iwEl.innerHTML=iwHtml(p,scoreColor(p));
-        var iw=new kakao.maps.CustomOverlay({position:marker.getPosition(),content:iwEl,xAnchor:0.5,yAnchor:1.18,clickable:true,zIndex:10});
-        iw.__el=iwEl;
-        bindIwButtons(iwEl, p.__id);
-        p.__iw=iw;
-        return iw;
-      }
-      var __onClickBusy = false;
-      marker.__onClick=function(){
-        if (__onClickBusy) return;
-        __onClickBusy = true;
-        setTimeout(function(){ __onClickBusy = false; }, 500);
-        window.__closeIW();
-        var iw=ensureIW();
-        iw.setPosition(marker.getPosition());
-        iw.setMap(map); openIW=iw;
-        startEdit(p.__id);
-        var _id = p.__id;
-        setTimeout(function(){
-          (function tryLoad(n){
-            var panel = document.getElementById("photoPanel-"+_id);
-            if (panel && window.__photo && window.__renderPhotos){
-              window.__renderPhotos(_id);
-            } else if (n > 0){
-              setTimeout(function(){ tryLoad(n-1); }, 200);
-            }
-          })(25);
-        }, 80);
-      };
-      marker.__ensureIW=ensureIW;
+      var iwEl=document.createElement("div");
+      iwEl.innerHTML=iwHtml(p,color);
+      var iw=new kakao.maps.CustomOverlay({position:pos,content:iwEl,xAnchor:0.5,yAnchor:1.18,clickable:true});
+      marker.__onClick=function(){ window.__closeIW(); iw.setMap(map); openIW=iw; map.panTo(pos); startEdit(p.__id); };
+
+      // 정보창 내부 버튼 클릭
+      bindIwButtons(iwEl, p.__id);
 
       // ===== 마커 직접 드래그 (누르고 끌면 이동, 그냥 떼면 클릭=정보창) =====
       enableMarkerDrag(el, marker, p);
 
-      marker.__el=el;
-      p.__marker=marker;
+      marker.__el=el; iw.__el=iwEl;
+      p.__marker=marker; p.__iw=iw;
       markerObjs.push(marker);
     }
 
@@ -1891,19 +1577,18 @@
       all.forEach(function(p){
         if (!isAutoPrice(p)) return;
         var k = priceKey(p);
-        var cv = getCacheVal(cache, k);
-        if (cv !== undefined){ p.auto = cv; autoCache[p.__id]=cv; refreshMarker(p); }
+        if (cache[k] !== undefined){ p.auto = cache[k]; autoCache[p.__id]=cache[k]; refreshMarker(p); }
       });
-      // 2) 줌 7 이상(축소)에서는 자동 조회 안 함
+      // 2) 줌 7 이상(축소)에서는 자동 조회 안 함 (줌 필터와 동일 기준)
       if (zoomLevel >= 7) return;
-      // 3) 화면 영역 안 + 캐시 없거나 만료된 아파트만 조회
+      // 3) 화면 영역 안 + 캐시 없는 아파트만 조회 대상
       var bounds = map.getBounds();
       var targets = all.filter(function(p){
         if (!isAutoPrice(p)) return false;
         if (p.lat==null || p.lng==null) return false;
         if (!bounds.contain(new kakao.maps.LatLng(p.lat, p.lng))) return false;
         var k = priceKey(p);
-        if (getCacheVal(cache, k) !== undefined) return false;
+        if (cache[k] !== undefined) return false;
         if (__priceFetching[k]) return false;
         return true;
       });
@@ -1964,13 +1649,14 @@
             amountText: d.amountText || (d.amountManwon ? (Math.round(d.amountManwon/1000)/10+"억") : ""),
             pyeong: d.pyeong || "",
             date: d.date || "",
-            approx: !!d.approxMatch
+            approx: !!d.approxMatch   // 마을 단위 근사 매칭이면 true
           };
-          setCacheVal(cache, k, val);
+          cache[k] = val;
           p.auto = val; autoCache[p.__id] = val;
         } else {
+          // 진짜 거래없음 (정상 응답, 거래 0건) → 캐시 저장 (재조회 방지)
           var nv = {none:true};
-          setCacheVal(cache, k, nv);
+          cache[k] = nv;
           p.auto = nv; autoCache[p.__id] = nv;
         }
         savePriceCache(cache);
@@ -1979,64 +1665,6 @@
         delete __priceFetching[k];
       }
     }
-
-    // ===== 전체 실거래가 자동수집 =====
-    var __collectRunning = false;
-    var __collectStop    = false;
-
-    window.__startCollect = async function(){
-      if (__collectRunning){ __collectStop = true; return; }
-      __collectStop    = false;
-      __collectRunning = true;
-      window.__updateCollectBtn();
-
-      var targets = all.filter(function(p){ return isAutoPrice(p) && p.lat!=null && p.lng!=null; });
-      var cache   = loadPriceCache();
-      // 만료됐거나 캐시 없는 것만 (유효 캐시 있는 건 건너뜀)
-      var todo = targets.filter(function(p){
-        var k = priceKey(p);
-        return getCacheVal(cache, k) === undefined && !__priceFetching[k];
-      });
-      var total = todo.length, done = 0;
-      window.__updateCollectStatus("수집 시작… 총 "+total+"개 미조회");
-
-      for (var i = 0; i < todo.length; i++){
-        if (__collectStop) break;
-        var p = todo[i];
-        try{ await fetchOnePrice(p); }catch(e){}
-        done++;
-        if (done % 5 === 0 || done === total){
-          window.__updateCollectStatus("수집 중… "+done+"/"+total);
-        }
-        // 단지 사이 1.2초 대기 (서버 부하 방지)
-        await new Promise(function(r){ setTimeout(r, 1200); });
-      }
-
-      __collectRunning = false;
-      var msg = __collectStop ? "중단 ("+done+"/"+total+")" : "✅ 완료! "+done+"개 수집";
-      window.__updateCollectStatus(msg);
-      window.__updateCollectBtn();
-      setTimeout(function(){ window.__updateCollectStatus(""); }, 5000);
-    };
-
-    window.__updateCollectBtn = function(){
-      var btn = document.getElementById("collectBtn");
-      if (!btn) return;
-      if (__collectRunning){
-        btn.textContent = "⏹ 중지";
-        btn.style.background = "#5a3a3a";
-        btn.style.color = "#f0d6d6";
-      } else {
-        btn.textContent = "▶ 전체 수집";
-        btn.style.background = "#2c5a3a";
-        btn.style.color = "#cfe8db";
-      }
-    };
-    window.__updateCollectStatus = function(msg){
-      var el = document.getElementById("collectStatus");
-      if (el){ el.textContent = msg; el.style.display = msg ? "block" : "none"; }
-    };
-
     renderAll();
 
     // ===== 실패 목록 버튼/모달 =====
@@ -2191,7 +1819,7 @@
         }
         saveAdded(added);
       }
-      forceRebuildMarkers();
+      renderAll();
     }
     function startEdit(id){
       var p = findById(id);
@@ -2218,7 +1846,7 @@
       refreshGroupOptions();
       document.getElementById("f-code").value = p.code||"";
       pendingPos = new kakao.maps.LatLng(p.lat, p.lng);
-      // map.panTo(pendingPos); // 제거 — panTo가 내부적으로 click 이벤트를 유발해 팝업이 닫힘
+      map.panTo(pendingPos);
       var h=document.getElementById("pin-hint"); h.textContent="✏ 수정 중: "+p.name+" (위치는 이동 모드로 변경)"; h.classList.add("on");
       var b=document.getElementById("addBtn"); b.textContent="수정 저장"; b.disabled=false;
       document.getElementById("panel").scrollTop=0;
@@ -2480,16 +2108,9 @@
       });
     }
 
-    // 줌 변경 시 마커 필터만 적용 (패널 재렌더 없음 → 빠름)
-    var __zoomTimer = null;
+    // 줌 변경 시 마커 필터 적용
     kakao.maps.event.addListener(map, "zoom_changed", function(){
-      if (__zoomTimer) clearTimeout(__zoomTimer);
-      __zoomTimer = setTimeout(function(){
-        __zoomTimer = null;
-        applyZoomFilter();
-        if (__autoPriceTimer) clearTimeout(__autoPriceTimer);
-        __autoPriceTimer = setTimeout(function(){ __autoPriceTimer=null; autoFetchPrices(); }, 300);
-      }, 80);
+      renderAll();
     });
     // 지도 이동(드래그) 끝나면 화면 내 아파트 실거래가 자동조회
     kakao.maps.event.addListener(map, "idle", function(){
@@ -2497,9 +2118,8 @@
     });
 
     kakao.maps.event.addListener(map, "click", function(mouseEvent){
-      if (moveMode) return;
-      // 팝업은 X버튼 또는 다른 마커 클릭으로 닫힘 (map click으로는 닫지 않음)
-      // window.__closeIW(); // 제거 — kakao 내부 이벤트 버블링으로 팝업이 닫히는 문제 방지
+      if (moveMode) return;   // 이동 모드에선 지도 클릭 무시
+      window.__closeIW();
       if (typeof refreshGroupOptions==="function") refreshGroupOptions();
       // 추가 패널 펴기
       var pbody=document.getElementById("panelBody");
@@ -3070,7 +2690,6 @@
     document.getElementById("clearPriceBtn").addEventListener("click", function(){
       if (!confirm("저장된 실거래가를 모두 비우고 새로 조회합니다.\n(추가·수정한 데이터는 그대로 유지됩니다)\n계속할까요?")) return;
       try{ localStorage.removeItem(PRICE_KEY); }catch(e){}
-      try{ localStorage.removeItem("budongsan_price_cache_v1"); }catch(e){}
       autoCache={};
       // 모든 항목의 자동 시세값 초기화
       all.forEach(function(p){ if(p.auto!==undefined) p.auto=undefined; });
