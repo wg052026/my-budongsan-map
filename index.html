@@ -468,21 +468,22 @@
         var merged = 0;
         Object.keys(server).forEach(function(k){
           var sv = server[k];
-          var lv = local[k];
-          // 서버 캐시가 더 최신이면 덮어씀
-          if (!lv || !lv.ts || (sv.ts && sv.ts > lv.ts)){
-            local[k] = sv;
+          // prices.json은 {val, ts} 형식 — 기존 앱 캐시는 val 값을 직접 저장
+          var val = (sv && sv.val !== undefined) ? sv.val : sv;
+          if (!val) return;
+          // 로컬에 없을 때만 병합 (로컬 우선)
+          if (local[k] === undefined){
+            local[k] = val;
             merged++;
           }
         });
         if (merged > 0){
           savePriceCache(local);
           console.log('[prices.json] ' + merged + '개 병합 완료');
-          // 마커에 즉시 반영
           if (typeof autoFetchPrices === 'function') autoFetchPrices();
         }
       })
-      .catch(function(){});  // prices.json 없으면 조용히 무시
+      .catch(function(){});
   })();
   function priceKey(p){
     var la = (p.lat!=null) ? Number(p.lat).toFixed(4) : "";
