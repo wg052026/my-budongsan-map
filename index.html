@@ -982,30 +982,22 @@
       var box=document.getElementById("trendBox");
       document.getElementById("trendTitle").textContent = rp.name + " 실거래가 추세";
       document.getElementById("trendPy").innerHTML = "";
-      document.getElementById("trendChart").innerHTML = "";
+      document.getElementById("trendChart").innerHTML = '<div style="color:#9aa0ab;padding:40px;text-align:center;">조회 중…</div>';
       document.getElementById("trendList").innerHTML = "";
-      trendDeals = []; trendPyVal = null;
-      // trendYears는 사용자가 선택한 값 유지 (새 단지 처음 열 때만 5년으로)
-      if(!trendYears) trendYears = 5;
+      document.getElementById("trendCount").textContent = "";
+      // 항상 5년으로 시작
+      trendYears = 5; trendPyVal = null; trendDeals = [];
       document.querySelectorAll("#trendRange .tr-range").forEach(function(b){
-        b.classList.toggle("on", b.getAttribute("data-y")===String(trendYears));
+        b.classList.toggle("on", b.getAttribute("data-y")==="5");
       });
       box.style.display="flex";
 
-      // prices.json 캐시에 deals가 있으면 즉시 사용
+      // 캐시에 deals 있으면 즉시 사용
       var pk = priceKey(rp);
       var cache = loadPriceCache();
-      var cached = cache[pk];
-      var cachedDeals = cache['__deals__'+pk];
-      if(cachedDeals && cachedDeals.deals && cachedDeals.deals.length){
-        document.getElementById("trendCount").textContent = "캐시에서 로드 중…";
-        trendDeals = cachedDeals.deals;
-        renderTrendDeals(trendDeals);
-        return;
-      }
-      if(cached && cached.deals && cached.deals.length){
-        document.getElementById("trendCount").textContent = "캐시에서 로드 중…";
-        trendDeals = cached.deals;
+      var cachedDeals = (cache['__deals__'+pk] || cache[pk] || {}).deals;
+      if(cachedDeals && cachedDeals.length){
+        trendDeals = cachedDeals;
         renderTrendDeals(trendDeals);
         return;
       }
@@ -1016,15 +1008,21 @@
       fetch(url).then(function(r){return r.json();}).then(function(j){
         var deals = (j && j.ok && j.deals) ? j.deals : [];
         trendDeals = deals;
-        if(!deals.length){ document.getElementById("trendCount").textContent="거래 기록이 없습니다."; return; }
-        // 조회한 deals를 캐시에 저장
-        if(cached){ cached.deals = deals; }
-        else{ cache[pk] = {val: cache[pk] ? cache[pk].val : {}, deals: deals, ts: Date.now()/1000}; }
+        if(!deals.length){
+          document.getElementById("trendChart").innerHTML = '<div style="color:#9aa0ab;padding:40px;text-align:center;">거래 기록이 없습니다.</div>';
+          document.getElementById("trendCount").textContent = "";
+          return;
+        }
+        // deals 캐시 저장
+        var entry = cache[pk] || {};
+        cache['__deals__'+pk] = {deals: deals, ts: Date.now()/1000};
         savePriceCache(cache);
         renderTrendDeals(deals);
       }).catch(function(){
-        document.getElementById("trendCount").textContent="조회 실패. 잠시 후 다시 시도하세요.";
+        document.getElementById("trendChart").innerHTML = '<div style="color:#9aa0ab;padding:40px;text-align:center;">조회 실패. 잠시 후 다시 시도하세요.</div>';
+        document.getElementById("trendCount").textContent = "";
       });
+    };
     };
 
     function renderTrendDeals(deals){
