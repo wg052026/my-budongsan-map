@@ -1052,20 +1052,45 @@
       if (minV===maxV){ minV=minV*0.95; maxV=maxV*1.05; }
       var W=520, H=240, pad=40;
       var n=deals.length;
-      function x(i){ return pad + (n<=1?(W-pad*2)/2:(i/(n-1))*(W-pad*2)); }
+      var startDateNum = deals[0].dateNum, endDateNum = deals[n-1].dateNum;
+      var totalRange = endDateNum - startDateNum || 1;
+      function xByDate(dateNum){ return pad + ((dateNum-startDateNum)/totalRange)*(W-pad*2); }
+      function x(i){ return xByDate(deals[i].dateNum); }
       function y(v){ return H-pad - ((v-minV)/(maxV-minV))*(H-pad*2); }
       var pts=deals.map(function(d,i){ return x(i)+","+y(d.amountManwon||0); }).join(" ");
       function eok(m){ return (Math.round(m/1000)/10)+"억"; }
+
+      // x축 눈금 생성 (5년=1년, 3년=6개월, 1년=2개월 간격)
+      var tickMonths = trendYears===5 ? 12 : trendYears===3 ? 6 : 2;
+      var ticks = [];
+      var startYear = Math.floor(startDateNum/10000);
+      var startMon  = Math.floor((startDateNum%10000)/100);
+      var endYear   = Math.floor(endDateNum/10000);
+      var endMon    = Math.floor((endDateNum%10000)/100);
+      for(var yr=startYear; yr<=endYear+1; yr++){
+        for(var mo=1; mo<=12; mo+=tickMonths){
+          var dn = yr*10000 + mo*100 + 1;
+          if(dn < startDateNum) continue;
+          if(dn > endDateNum) break;
+          ticks.push({dn:dn, label: yr+"."+(mo<10?"0":"")+mo});
+        }
+      }
+
       var svg='<svg viewBox="0 0 '+W+' '+H+'" width="100%" xmlns="http://www.w3.org/2000/svg">';
+      // y축 격자선
       [0,0.5,1].forEach(function(t){
         var vy=pad + t*(H-pad*2); var vv=maxV-(t*(maxV-minV));
         svg+='<line x1="'+pad+'" y1="'+vy+'" x2="'+(W-pad)+'" y2="'+vy+'" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>';
         svg+='<text x="4" y="'+(vy+4)+'" fill="#9aa0ab" font-size="10">'+eok(vv)+'</text>';
       });
+      // x축 눈금선 + 라벨
+      ticks.forEach(function(t){
+        var tx = xByDate(t.dn);
+        svg+='<line x1="'+tx+'" y1="'+pad+'" x2="'+tx+'" y2="'+(H-pad)+'" stroke="rgba(255,255,255,0.10)" stroke-width="1" stroke-dasharray="3,3"/>';
+        svg+='<text x="'+tx+'" y="'+(H-6)+'" fill="#9aa0ab" font-size="9" text-anchor="middle">'+t.label+'</text>';
+      });
       svg+='<polyline points="'+pts+'" fill="none" stroke="#3F9E7E" stroke-width="2"/>';
       deals.forEach(function(d,i){ svg+='<circle cx="'+x(i)+'" cy="'+y(d.amountManwon||0)+'" r="2.5" fill="#cfe8db"/>'; });
-      svg+='<text x="'+pad+'" y="'+(H-8)+'" fill="#9aa0ab" font-size="10">'+(deals[0].date||"")+'</text>';
-      svg+='<text x="'+(W-pad)+'" y="'+(H-8)+'" fill="#9aa0ab" font-size="10" text-anchor="end">'+(deals[n-1].date||"")+'</text>';
       svg+='</svg>';
       chart.innerHTML=svg;
 
