@@ -584,7 +584,7 @@
     var u = DEAL_API + "?lawd=" + encodeURIComponent(p.code) +
             "&apt=" + encodeURIComponent(p.name) +
             "&months=" + months;
-    var ad = parseAddr(p.addr);
+    var ad = parseAddr(p.addr || p.note || "");
     if (ad.road) u += "&road=" + encodeURIComponent(ad.road) + "&bun=" + encodeURIComponent(ad.bun);
     else if (ad.jibun) u += "&jibun=" + encodeURIComponent(ad.jibun);
     return u;
