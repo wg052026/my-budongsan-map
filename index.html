@@ -1941,8 +1941,8 @@
       }
     }
     renderAll();
-
-    // ===== 실패 목록 버튼/모달 =====
+    // 초기 로드 시 캐시 즉시 반영 (idle 이벤트 기다리지 않음)
+    setTimeout(function(){ autoFetchPrices(); }, 600);
     function renderFailBtn(){
       var fails=loadFails();
       var btn=document.getElementById("failBtn");
