@@ -1203,6 +1203,11 @@
           if(p.__iw) p.__iw.setMap(null);
         }
       });
+      // 마커 생성/표시 후 캐시 즉시 반영 (디바운스)
+      if(typeof autoFetchPrices === 'function' && map.getLevel() <= 6){
+        if(window.__afpTimer) clearTimeout(window.__afpTimer);
+        window.__afpTimer = setTimeout(function(){ window.__afpTimer=null; autoFetchPrices(); }, 100);
+      }
     }
 
     function forceRebuildMarkers(){
