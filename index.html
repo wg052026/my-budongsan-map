@@ -1087,31 +1087,48 @@
         '<div class="iw-note">'+esc(p.note)+'</div>' +
         moreBtns + photoBtn + editDel + '</div>';
     }
+    var __hiddenCache = null;
+    function loadHidden(){ try{ return (__hiddenCache=JSON.parse(localStorage.getItem(HIDE_KEY)||"[]")); }catch(e){ return []; } }
+    function saveHidden(a){ __hiddenCache=a; try{ localStorage.setItem(HIDE_KEY,JSON.stringify(a)); }catch(e){} }
+
     function renderAll(){
       DBG("renderAll 시작 markerObjs="+markerObjs.length);
-      // 기존 마커 + 정보창 모두 확실히 제거
-      markerObjs.forEach(function(o){ if(o) o.setMap(null); }); markerObjs=[];
-      if (all && all.length){ all.forEach(function(p){ if(p.__marker) p.__marker.setMap(null); if(p.__iw) p.__iw.setMap(null); }); }
-      window.__closeIW();
       buildAll();
-      var hidden = loadHidden();
-      var drawn=0;
+      // 마커 수가 다르면(데이터 변경) 전체 재생성
+      if(markerObjs.length !== all.length){
+        markerObjs.forEach(function(o){ if(o) o.setMap(null); }); markerObjs=[];
+        if(all && all.length){ all.forEach(function(p){ if(p.__marker) p.__marker.setMap(null); if(p.__iw) p.__iw.setMap(null); p.__marker=null; p.__iw=null; }); }
+        window.__closeIW();
+        all.forEach(function(p){ drawMarker(p); });
+        DBG("renderAll: 마커 생성 "+all.length+"개");
+      }
+      applyZoomFilter();
+      renderGroupPanel();
+    }
+
+    // 줌/필터 변경 시 show/hide만 — DOM 재생성 없음
+    function applyZoomFilter(){
+      var hidden = __hiddenCache || loadHidden();
+      var hiddenSet = {}; hidden.forEach(function(k){ hiddenSet[k]=true; });
       var zoomLevel = map.getLevel();
       all.forEach(function(p){
-        var mid=placeGroupMid(p);
-        var big=placeGroupBig(p);
-        var hideKey = mid ? (big+"::"+mid) : ("__ung__"+groupOf(p));
-        if (hidden.indexOf(hideKey)>=0) return;
-        // 줌 레벨별 점수 필터
+        if(!p.__marker) return;
+        var mid=placeGroupMid(p), big=placeGroupBig(p);
+        var hideKey = mid?(big+"::"+mid):("__ung__"+groupOf(p));
         var score = p.score||0;
-        if (zoomLevel >= 7) return; // 레벨 7이상: 전부 숨김
-        if (zoomLevel === 6 && score < 4 && score !== 6) return; // 레벨 6: ★4이상+대장만 (줌5는 전부)
-        drawMarker(p); drawn++;
+        var visible = !hiddenSet[hideKey];
+        if(zoomLevel >= 7) visible=false;
+        else if(zoomLevel===6 && score<4 && score!==6) visible=false;
+        p.__marker.setMap(visible?map:null);
+        if(!visible && p.__iw) p.__iw.setMap(null);
       });
-      DBG("renderAll 끝 all="+all.length+" 그림="+drawn);
-      // prices.json 병합이 먼저 완료되도록 500ms 지연
-      setTimeout(function(){ autoFetchPrices(); }, 500);
-      renderGroupPanel();
+    }
+
+    function forceRebuildMarkers(){
+      markerObjs.forEach(function(o){ if(o) o.setMap(null); }); markerObjs=[];
+      if(all && all.length){ all.forEach(function(p){ if(p.__marker) p.__marker.setMap(null); if(p.__iw) p.__iw.setMap(null); p.__marker=null; p.__iw=null; }); }
+      window.__closeIW();
+      renderAll();
     }
 
     // ===== 레이어 패널: 대분류 > 중분류 트리 (최종) =====
@@ -1277,7 +1294,7 @@
             });
           }
         });
-        saveAdded(added); saveEdits(edits); renderAll();
+        saveAdded(added); saveEdits(edits); forceRebuildMarkers();
       }; }
 
       if(selAllBtn){ selAllBtn.onclick=function(){ saveHidden([]); renderAll(); }; }
@@ -1332,7 +1349,7 @@
           if(!confirm('"'+sec.big+'" 대분류 전체('+bigCounts[sec.big]+'개)를 삭제할까요?')) return;
           added=added.filter(function(p){return placeGroupBig(p)!==sec.big;});
           all.forEach(function(p){ if(placeGroupBig(p)===sec.big&&p.__id&&p.__id.indexOf("fix:")===0) edits[p.__id]="__deleted__"; });
-          saveAdded(added); saveEdits(edits); renderAll();
+          saveAdded(added); saveEdits(edits); forceRebuildMarkers();
         });
 
         var bigTog=makeToggle("big::"+sec.big, !bigAllHidden, function(checked){
@@ -1513,7 +1530,7 @@
                   edits[p.__id]=cur;
                 }
               });
-              saveEdits(edits); renderAll();
+              saveEdits(edits); forceRebuildMarkers();
             }
             inp.addEventListener("blur", commit);
             inp.addEventListener("keydown", function(e){
@@ -1987,7 +2004,7 @@
         }
         saveAdded(added);
       }
-      renderAll();
+      forceRebuildMarkers();
     }
     function startEdit(id){
       var p = findById(id);
@@ -2284,9 +2301,15 @@
       document.getElementById("photoView").style.display="none";
     });
 
-    // 줌 변경 시 마커 필터 적용
+    // 줌 변경 시 show/hide만 (마커 재생성 없음 → 빠름)
+    var __zoomTimer = null;
     kakao.maps.event.addListener(map, "zoom_changed", function(){
-      renderAll();
+      if(__zoomTimer) clearTimeout(__zoomTimer);
+      __zoomTimer = setTimeout(function(){
+        __zoomTimer = null;
+        applyZoomFilter();
+        if(map.getLevel() <= 6) setTimeout(autoFetchPrices, 300);
+      }, 80);
     });
     // 지도 이동(드래그) 끝나면 화면 내 아파트 실거래가 자동조회
     kakao.maps.event.addListener(map, "idle", function(){
