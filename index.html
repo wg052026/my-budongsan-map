@@ -478,6 +478,8 @@
         if (merged > 0){
           savePriceCache(local);
           console.log('[prices.json] ' + merged + '개 병합 완료');
+          // 마커에 즉시 반영
+          if (typeof autoFetchPrices === 'function') autoFetchPrices();
         }
       })
       .catch(function(){});  // prices.json 없으면 조용히 무시
