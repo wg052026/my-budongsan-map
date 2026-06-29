@@ -1094,13 +1094,20 @@
     function renderAll(){
       DBG("renderAll 시작 markerObjs="+markerObjs.length);
       buildAll();
-      // 마커 수가 다르면(데이터 변경) 전체 재생성
       if(markerObjs.length !== all.length){
         markerObjs.forEach(function(o){ if(o) o.setMap(null); }); markerObjs=[];
         if(all && all.length){ all.forEach(function(p){ if(p.__marker) p.__marker.setMap(null); if(p.__iw) p.__iw.setMap(null); p.__marker=null; p.__iw=null; }); }
         window.__closeIW();
-        all.forEach(function(p){ drawMarker(p); });
-        DBG("renderAll: 마커 생성 "+all.length+"개");
+        // 청크 단위로 마커 생성 (UI 블로킹 방지)
+        var CHUNK=200, i=0, total=all.length;
+        function nextChunk(){
+          var end=Math.min(i+CHUNK, total);
+          for(; i<end; i++) drawMarker(all[i]);
+          if(i<total){ setTimeout(nextChunk, 0); }
+          else { applyZoomFilter(); renderGroupPanel(); setTimeout(function(){ autoFetchPrices(); },500); }
+        }
+        nextChunk();
+        return; // applyZoomFilter는 청크 완료 후 호출
       }
       applyZoomFilter();
       renderGroupPanel();
