@@ -1099,23 +1099,27 @@
         if(all && all.length){ all.forEach(function(p){ if(p.__marker) p.__marker.setMap(null); if(p.__iw) p.__iw.setMap(null); p.__marker=null; p.__iw=null; }); }
         window.__closeIW();
         var zoomLevel = map.getLevel();
-        // 1단계: 현재 줌에 보일 것만 먼저 즉시 생성
-        var visible=[], hidden=[];
+        var bounds = map.getBounds();
+        // 1단계: 화면에 보이는 것만 즉시 생성
+        var deferred=[];
         all.forEach(function(p){
+          if(p.lat==null||p.lng==null){ deferred.push(p); return; }
           var score=p.score||0;
-          var show = !(zoomLevel>=7) && !(zoomLevel===6 && score<4 && score!==6);
-          if(show) visible.push(p); else hidden.push(p);
+          var inBounds = bounds.contain(new kakao.maps.LatLng(p.lat,p.lng));
+          var passScore = !(zoomLevel>=7) && !(zoomLevel===6 && score<4 && score!==6);
+          if(inBounds && passScore) drawMarker(p);
+          else deferred.push(p);
         });
-        visible.forEach(function(p){ drawMarker(p); });
         applyZoomFilter(); renderGroupPanel(); setTimeout(function(){ autoFetchPrices(); },500);
-        // 2단계: 나머지를 청크로 백그라운드 생성
+        // 2단계: 나머지 백그라운드
         var i=0;
         function nextChunk(){
-          var end=Math.min(i+300, hidden.length);
-          for(; i<end; i++) drawMarker(hidden[i]);
-          if(i<hidden.length) setTimeout(nextChunk,0);
+          var end=Math.min(i+200, deferred.length);
+          for(; i<end; i++) drawMarker(deferred[i]);
+          if(i<deferred.length) setTimeout(nextChunk,0);
+          else applyZoomFilter();
         }
-        setTimeout(nextChunk, 100);
+        setTimeout(nextChunk, 200);
         return;
       }
       applyZoomFilter();
