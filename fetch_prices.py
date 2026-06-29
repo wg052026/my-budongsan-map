@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-실거래가 자동 수집 스크립트
+실거래가 자동 수집 스크립트 (5년치)
 매일 GitHub Actions에서 실행 — 국토부 API → prices.json 업데이트
 """
 import json, re, time, urllib.request, urllib.parse
@@ -11,9 +11,10 @@ SERVICE_KEY = "b7f3b1b7a845ff366c079f48081a3732b4b3f9174e1df76a999e4350637bd3e7"
 ENDPOINT    = "https://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev"
 PRICES_FILE = Path("prices.json")
 PLACES_FILE = Path("data.js")
-MAX_PER_RUN = 200
-MONTHS      = 12
-DELAY_SEC   = 0.5
+MAX_PER_RUN = 50      # 5년치(60개월)라 요청이 많아서 줄임
+MONTHS      = 60      # 5년치
+DELAY_SEC   = 0.4
+TTL_DAYS    = 15
 
 def norm(s):
     s = re.sub(r'[\s().·\-_,]', '', str(s or ''))
@@ -59,10 +60,11 @@ def fetch_month(lawd, ym):
             'jibun':  g('jibun'),
             'date':   f"{y}.{mo.zfill(2)}.{dd.zfill(2)}",
             'dateNum': int(y+mo.zfill(2)+dd.zfill(2)) if y else 0,
+            'amountText': amt_text,
         })
     return deals
 
-def match_price(deals, name, road, bun, jibun):
+def match_deals(deals, name, road, bun, jibun):
     if road and bun:
         r, b = road.replace(' ',''), re.sub(r'^0+','',bun)
         m = [d for d in deals if d['roadNm'].replace(' ','') == r and d['roadBon'] == b]
@@ -79,45 +81,31 @@ def match_price(deals, name, road, bun, jibun):
     return []
 
 def load_places():
-    """data.js 파일을 읽어서 places 배열 반환"""
     if not PLACES_FILE.exists():
         print(f"[ERROR] {PLACES_FILE} 없음"); return []
-
     text = PLACES_FILE.read_text(encoding='utf-8')
     print(f"[INFO] data.js 크기: {len(text)} bytes")
-
     m = re.search(r'window\.PLACES\s*=\s*\[', text)
     if not m:
-        print(f"[ERROR] window.PLACES 없음\n[DEBUG] 앞 200자: {text[:200]}"); return []
-
+        print("[ERROR] window.PLACES 없음"); return []
     arr_start = m.end() - 1
-    # 배열 끝 ']' 찾기 (중첩 고려)
     depth, arr_end = 0, -1
     for i in range(arr_start, len(text)):
         if text[i] == '[': depth += 1
         elif text[i] == ']':
             depth -= 1
             if depth == 0: arr_end = i; break
-
     if arr_end < 0:
         print("[ERROR] 배열 끝 없음"); return []
-
     raw = text[arr_start:arr_end+1]
-
-    # JS 키에 따옴표 추가: kind: → "kind":
-    # 이미 따옴표 있는 경우("kind":) 제외
     raw = re.sub(r'(?<!")(\b(?:kind|name|disp|score|py|price|land|jong|stage|sub|spottype|note|group|seq|lat|lng|code|addr)\b)\s*:', r'"\1":', raw)
-    # 후행 콤마 제거
     raw = re.sub(r',\s*([}\]])', r'\1', raw)
-
     try:
         places = json.loads(raw)
-        print(f"[INFO] places 파싱 성공: {len(places)}개")
+        print(f"[INFO] places: {len(places)}개")
         return places
     except Exception as e:
-        print(f"[ERROR] JSON 파싱 실패: {e}")
-        print(f"[DEBUG] 앞 500자: {raw[:500]}")
-        return []
+        print(f"[ERROR] 파싱 실패: {e}"); return []
 
 def price_key(p):
     name = str(p.get('name') or '')
@@ -139,7 +127,7 @@ def main():
         try: cache = json.loads(PRICES_FILE.read_text(encoding='utf-8'))
         except: cache = {}
 
-    TTL = 15 * 24 * 3600
+    TTL = TTL_DAYS * 24 * 3600
     now_ts = time.time()
 
     todo = [p for p in apts
@@ -163,6 +151,7 @@ def main():
         jibun_m = re.search(r'(\d+(?:-\d+)?)', addr)
         jibun = jibun_m.group(1) if (jibun_m and not road) else ''
 
+        # 5년치 월별 수집
         all_deals = []
         for ym in recent_yms(MONTHS):
             k = (lawd, ym)
@@ -171,20 +160,31 @@ def main():
                 time.sleep(DELAY_SEC)
             all_deals.extend(month_cache[k])
 
-        matched = sorted(match_price(all_deals, name, road, bun, jibun),
-                         key=lambda d: d['dateNum'], reverse=True)
+        matched = match_deals(all_deals, name, road, bun, jibun)
+        matched.sort(key=lambda d: d['dateNum'], reverse=True)
+
         pk = price_key(p)
         if matched:
-            d = matched[0]
-            cache[pk] = {'val': {'amountText': d['text'], 'pyeong': d['pyeong'], 'date': d['date']}, 'ts': now_ts}
-            print(f"  ✓ {name}: {d['text']} {d['pyeong']}평 ({d['date']})")
+            latest = matched[0]
+            # val: 최신 거래 (마커 표시용)
+            # deals: 전체 매칭 거래 목록 (차트용) — 최대 200건
+            cache[pk] = {
+                'val': {
+                    'amountText': latest['text'],
+                    'pyeong': latest['pyeong'],
+                    'date': latest['date'],
+                },
+                'deals': matched[:200],  # 차트용 5년치 전체
+                'ts': now_ts
+            }
+            print(f"  ✓ {name}: {latest['text']} {latest['pyeong']}평 ({latest['date']}) [{len(matched)}건]")
         else:
-            cache[pk] = {'val': {'none': True}, 'ts': now_ts}
+            cache[pk] = {'val': {'none': True}, 'deals': [], 'ts': now_ts}
             print(f"  - {name}: 거래 없음")
         done += 1
 
     PRICES_FILE.write_text(json.dumps(cache, ensure_ascii=False, indent=1), encoding='utf-8')
-    print(f"\n[INFO] 완료: {done}개 수집, 캐시 총 {len(cache)}개 → {PRICES_FILE}")
+    print(f"\n[INFO] 완료: {done}개 수집, 캐시 총 {len(cache)}개")
 
 if __name__ == '__main__':
     main()
