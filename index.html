@@ -1109,8 +1109,8 @@
         svg+='<line x1="'+tx+'" y1="'+pad+'" x2="'+tx+'" y2="'+(H-pad)+'" stroke="rgba(255,255,255,0.10)" stroke-width="1" stroke-dasharray="3,3"/>';
         svg+='<text x="'+tx+'" y="'+(H-6)+'" fill="#9aa0ab" font-size="9" text-anchor="middle">'+t.label+'</text>';
       });
-      svg+='<polyline points="'+pts+'" fill="none" stroke="#3F9E7E" stroke-width="2"/>';
-      deals.forEach(function(d,i){ svg+='<circle cx="'+x(i)+'" cy="'+y(d.amountManwon||0)+'" r="2.5" fill="#cfe8db"/>'; });
+      svg+='<polyline points="'+pts+'" fill="none" stroke="none" stroke-width="0"/>';
+      deals.forEach(function(d,i){ svg+='<circle cx="'+x(i)+'" cy="'+y(d.amountManwon||0)+'" r="3.5" fill="#3F9E7E"/>'; });
       svg+='</svg>';
       chart.innerHTML=svg;
 
