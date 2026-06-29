@@ -1076,15 +1076,16 @@
       var tickMonths = trendYears===5 ? 12 : trendYears===3 ? 6 : 2;
       var ticks = [];
       var startYear = Math.floor(startDateNum/10000);
-      var startMon  = Math.floor((startDateNum%10000)/100);
       var endYear   = Math.floor(endDateNum/10000);
-      var endMon    = Math.floor((endDateNum%10000)/100);
       for(var yr=startYear; yr<=endYear+1; yr++){
         for(var mo=1; mo<=12; mo+=tickMonths){
           var dn = yr*10000 + mo*100 + 1;
           if(dn < startDateNum) continue;
           if(dn > endDateNum) break;
-          ticks.push({dn:dn, label: yr+"."+(mo<10?"0":"")+mo});
+          var tx = xByDate(dn);
+          // 양 끝 여백(30px) 안에 들어오는 라벨만 표시
+          if(tx < pad+30 || tx > W-pad-30) continue;
+          ticks.push({dn:dn, tx:tx, label: yr+"."+(mo<10?"0":"")+mo});
         }
       }
 
@@ -1097,7 +1098,7 @@
       });
       // x축 눈금선 + 라벨
       ticks.forEach(function(t){
-        var tx = xByDate(t.dn);
+        var tx = t.tx;
         svg+='<line x1="'+tx+'" y1="'+pad+'" x2="'+tx+'" y2="'+(H-pad)+'" stroke="rgba(255,255,255,0.10)" stroke-width="1" stroke-dasharray="3,3"/>';
         svg+='<text x="'+tx+'" y="'+(H-6)+'" fill="#9aa0ab" font-size="9" text-anchor="middle">'+t.label+'</text>';
       });
