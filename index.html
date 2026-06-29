@@ -45,6 +45,8 @@
     .iw-stars { margin:6px 0 8px; font-size:13px; }
     .iw-info { font-size:13px; font-weight:700; color:#fff; margin-bottom:8px; }
     .iw-note { font-size:12.5px; color:#c5c9d1; line-height:1.5; border-top:0.5px solid rgba(255,255,255,0.12); padding-top:8px; white-space:pre-wrap; }
+    .iw-action-btn { box-sizing:border-box;display:block;width:100%;margin-top:8px;background:#2c3742;border:0.5px solid rgba(255,255,255,0.2);color:#cfe8db;border-radius:6px;padding:7px;font-size:11px;font-weight:700;cursor:pointer; }
+    .iw-photo-label { margin-top:8px;font-size:11px;font-weight:700;color:#cfe8db; }
 
     /* ===== 추가 패널 ===== */
     #panel { position:absolute; top:12px; left:12px; z-index:20; width:230px;
@@ -342,6 +344,12 @@
     </div>
   </div>
 
+  <!-- 사진 확대 뷰 -->
+  <div id="photoView" style="display:none;position:absolute;inset:0;z-index:49;background:rgba(0,0,0,0.95);align-items:center;justify-content:center;flex-direction:column;">
+    <img id="photoViewImg" style="max-width:96%;max-height:84%;object-fit:contain;border-radius:8px;cursor:pointer;">
+    <button id="photoViewClose" style="margin-top:16px;background:#3a3f49;border:none;color:#e8eaed;border-radius:8px;padding:10px 22px;font-size:13px;cursor:pointer;">닫기</button>
+  </div>
+
   <div id="failBox">
     <div class="inner">
       <h3>주소 변환 실패 목록</h3>
@@ -419,6 +427,72 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
   <script src="data.js?v=1"></script>
+
+  <!-- ===== Firebase (사진 목록 동기화) + Cloudinary (사진 저장) ===== -->
+  <script>
+    window.__fbAppReady = false;
+    window.__fbFsReady  = false;
+    window.__tryInitFirebase = function(){
+      if (!window.__fbAppReady || !window.__fbFsReady) return;
+      if (window.__photo) return;
+      try {
+        var cfg = {
+          apiKey: "AIzaSyBjxTup5SwqTn8nVfQ1eC1cvybhPTwktLg",
+          authDomain: "budongsan-map.firebaseapp.com",
+          projectId: "budongsan-map",
+          storageBucket: "budongsan-map.firebasestorage.app",
+          messagingSenderId: "213449798110",
+          appId: "1:213449798110:web:8afa776f3f7b35c9622d4f"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(cfg);
+        var db = firebase.firestore();
+        window.__photo = {
+          CLOUD_NAME: "dmony4wej",
+          UPLOAD_PRESET: "budongsan",
+          async list(id){
+            try{ var s=await db.collection("photos").doc(id).get(); return s.exists?(s.data().items||[]):[];}
+            catch(e){ return []; }
+          },
+          async add(id, file){
+            var blob = await window.__photo._resize(file, 1280, 0.8);
+            var fd = new FormData(); fd.append("file",blob); fd.append("upload_preset",window.__photo.UPLOAD_PRESET);
+            var res = await fetch("https://api.cloudinary.com/v1_1/"+window.__photo.CLOUD_NAME+"/image/upload",{method:"POST",body:fd});
+            if(!res.ok) throw new Error("업로드 실패");
+            var data = await res.json();
+            var item = {url:data.secure_url, public_id:data.public_id, ts:Date.now()};
+            var ref = db.collection("photos").doc(id);
+            var snap = await ref.get();
+            if(snap.exists) await ref.update({items:firebase.firestore.FieldValue.arrayUnion(item)});
+            else await ref.set({items:[item]});
+            return item;
+          },
+          async remove(id, item){
+            await db.collection("photos").doc(id).update({items:firebase.firestore.FieldValue.arrayRemove(item)});
+          },
+          _resize(file, maxW, quality){
+            return new Promise(function(resolve,reject){
+              var img=new Image(), url=URL.createObjectURL(file);
+              img.onload=function(){
+                URL.revokeObjectURL(url);
+                var w=img.width, h=img.height;
+                if(w>maxW){h=Math.round(h*maxW/w);w=maxW;}
+                var cv=document.createElement("canvas"); cv.width=w; cv.height=h;
+                cv.getContext("2d").drawImage(img,0,0,w,h);
+                cv.toBlob(function(b){b?resolve(b):reject(new Error("리사이즈 실패"));},"image/jpeg",quality);
+              };
+              img.onerror=function(){URL.revokeObjectURL(url);reject(new Error("로드 실패"));};
+              img.src=url;
+            });
+          }
+        };
+        window.__photoReady = true;
+      } catch(e){ console.error("Firebase 초기화 실패:",e); }
+    };
+  </script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"
+    onload="window.__fbAppReady=true; window.__tryInitFirebase();"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"
+    onload="window.__fbFsReady=true; window.__tryInitFirebase();"></script>
 
   <script>
   // =======================================================================
@@ -785,6 +859,80 @@
     var autoCache={};   // __id -> 자동 실거래가값 (재렌더에도 유지)
 
     window.__closeIW = function(){ if(openIW){ openIW.setMap(null); openIW=null; } };
+
+    // ===== 임장 사진 기능 =====
+    var photoCache = {};
+
+    window.__renderPhotos = async function(id){
+      var panel = document.getElementById("photoPanel-"+id);
+      if (!panel || !window.__photo) return;
+      panel.innerHTML = '<div style="color:#9aa0ab;text-align:center;padding:10px;font-size:11px;">불러오는 중…</div>';
+      var items = await window.__photo.list(id);
+      photoCache[id] = items;
+      var sorted = items.slice().sort(function(a,b){ return (b.ts||0)-(a.ts||0); });
+      var cells = sorted.map(function(it){
+        var enc = encodeURIComponent(JSON.stringify(it));
+        var thumb = it.url.replace("/upload/","/upload/w_300,h_300,c_fill,q_auto/");
+        return '<div style="position:relative;aspect-ratio:1;border-radius:6px;overflow:hidden;background:#1a1d24;">' +
+               '<img src="'+thumb+'" loading="lazy" style="width:100%;height:100%;object-fit:cover;cursor:pointer;" onclick="window.__viewPhoto(\''+enc+'\')">' +
+               '<span onclick="window.__delPhoto(\''+id+'\',\''+enc+'\')" style="position:absolute;top:-2px;right:-2px;width:18px;height:18px;border-radius:50%;background:#c0392b;color:#fff;font-size:14px;line-height:17px;text-align:center;cursor:pointer;">−</span>' +
+               '</div>';
+      }).join("");
+      var addCell = '<label style="aspect-ratio:1;border-radius:6px;border:1px dashed rgba(255,255,255,0.28);display:flex;align-items:center;justify-content:center;color:#9aa0ab;font-size:22px;cursor:pointer;">＋' +
+        '<input type="file" accept="image/*" multiple capture="environment" style="display:none;" onchange="window.__uploadPhotos(\''+id+'\',this)"></label>';
+      panel.innerHTML =
+        '<div id="photoProg-'+id+'" style="display:none;color:#cfe8db;font-size:11px;padding:4px 0;"></div>' +
+        '<div id="photoDrop-'+id+'" style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:6px;border-radius:8px;outline:2px dashed transparent;outline-offset:2px;transition:outline 0.15s,background 0.15s;">' + cells + addCell + '</div>';
+      var cnt = document.getElementById("iwPhotoCnt-"+id);
+      if(cnt) cnt.textContent = items.length ? "("+items.length+")" : "";
+      window.__bindDrop(id);
+    };
+
+    window.__uploadPhotos = async function(id, input){
+      var files = Array.from(input.files||[]);
+      input.value = "";
+      if(!files.length) return;
+      var prog = document.getElementById("photoProg-"+id);
+      if(prog) prog.style.display="block";
+      var done=0;
+      for(var i=0;i<files.length;i++){
+        if(prog) prog.textContent="업로드 중… "+(done+1)+"/"+files.length;
+        try{ await window.__photo.add(id,files[i]); done++; }
+        catch(err){ console.error(err); }
+      }
+      if(prog) prog.textContent="완료! "+done+"장 추가됨";
+      await window.__renderPhotos(id);
+      setTimeout(function(){ if(prog) prog.style.display="none"; },1500);
+    };
+
+    window.__delPhoto = async function(id, enc){
+      var it = JSON.parse(decodeURIComponent(enc));
+      if(!confirm("이 사진을 삭제할까요?")) return;
+      try{ await window.__photo.remove(id,it); await window.__renderPhotos(id); }
+      catch(err){ alert("삭제 실패: "+(err.message||err)); }
+    };
+
+    window.__viewPhoto = function(enc){
+      var it = JSON.parse(decodeURIComponent(enc));
+      document.getElementById("photoViewImg").src = it.url;
+      document.getElementById("photoView").style.display = "flex";
+    };
+
+    window.__bindDrop = function(id){
+      var zone = document.getElementById("photoDrop-"+id);
+      if(!zone) return;
+      function show(on){
+        zone.style.outlineColor = on?"#3F9E7E":"transparent";
+        zone.style.background = on?"rgba(63,158,126,0.12)":"transparent";
+      }
+      ["dragenter","dragover"].forEach(function(ev){ zone.addEventListener(ev,function(e){e.preventDefault();e.stopPropagation();show(true);}); });
+      ["dragleave","dragend"].forEach(function(ev){ zone.addEventListener(ev,function(e){e.preventDefault();e.stopPropagation();show(false);}); });
+      zone.addEventListener("drop",function(e){
+        e.preventDefault();e.stopPropagation();show(false);
+        var files=Array.from((e.dataTransfer&&e.dataTransfer.files)||[]).filter(function(f){return f.type&&f.type.indexOf("image/")===0;});
+        if(files.length) window.__uploadPhotos(id,{files:files,value:""});
+      });
+    };
     window.__mkClick = function(id){
       var p = findById(id);
       if (p && p.__marker && p.__marker.__onClick){ p.__marker.__onClick(); }
@@ -922,8 +1070,11 @@
       var info = infoLine(p);
       var infoEl = info ? '<div class="iw-info">'+esc(info)+'</div>' : '';
       var moreBtns = isAutoPrice(p)
-        ? '<button class="iw-trend" onclick="window.__showTrend(\''+p.__id+'\')" style="width:100%;margin-top:8px;background:#2c3742;border:0.5px solid rgba(255,255,255,0.2);color:#cfe8db;border-radius:6px;padding:7px;font-size:11px;font-weight:700;cursor:pointer;">📈 실거래가 추세</button>'
+        ? '<button class="iw-trend iw-action-btn" onclick="window.__showTrend(\''+p.__id+'\')">📈 실거래가 추세</button>'
         : '';
+      var photoBtn =
+        '<div class="iw-photo-label">📷 임장 사진 <span id="iwPhotoCnt-'+p.__id+'" style="opacity:0.7;"></span></div>' +
+        '<div id="photoPanel-'+p.__id+'"></div>';
       var editDel =
         '<div style="display:flex;gap:6px;margin-top:8px;">' +
           '<button class="iw-edit" onclick="window.__editItem(\''+p.__id+'\')" style="flex:1;background:#3a3f49;border:none;color:#e8eaed;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;">✏ 수정</button>' +
@@ -934,7 +1085,7 @@
         '<button class="iw-close" aria-label="닫기" onclick="window.__closeIW()">✕</button></div>' +
         stars + infoEl +
         '<div class="iw-note">'+esc(p.note)+'</div>' +
-        moreBtns + editDel + '</div>';
+        moreBtns + photoBtn + editDel + '</div>';
     }
     function renderAll(){
       DBG("renderAll 시작 markerObjs="+markerObjs.length);
@@ -1423,7 +1574,21 @@
       var iwEl=document.createElement("div");
       iwEl.innerHTML=iwHtml(p,color);
       var iw=new kakao.maps.CustomOverlay({position:pos,content:iwEl,xAnchor:0.5,yAnchor:1.18,clickable:true});
-      marker.__onClick=function(){ window.__closeIW(); iw.setMap(map); openIW=iw; map.panTo(pos); startEdit(p.__id); };
+      var __onClickBusy = false;
+      marker.__onClick=function(){
+        if(__onClickBusy) return;
+        __onClickBusy=true; setTimeout(function(){__onClickBusy=false;},500);
+        window.__suppressCloseUntil = Date.now()+600;
+        window.__closeIW(); iw.setMap(map); openIW=iw; startEdit(p.__id);
+        var _id=p.__id;
+        setTimeout(function(){
+          (function tryLoad(n){
+            var panel=document.getElementById("photoPanel-"+_id);
+            if(panel && window.__photo && window.__renderPhotos){ window.__renderPhotos(_id); }
+            else if(n>0){ setTimeout(function(){tryLoad(n-1);},200); }
+          })(25);
+        },80);
+      };
 
       // 정보창 내부 버튼 클릭
       bindIwButtons(iwEl, p.__id);
@@ -2111,6 +2276,14 @@
       });
     }
 
+    // 사진 확대 뷰 닫기
+    document.getElementById("photoViewClose").addEventListener("click", function(){
+      document.getElementById("photoView").style.display="none";
+    });
+    document.getElementById("photoViewImg").addEventListener("click", function(){
+      document.getElementById("photoView").style.display="none";
+    });
+
     // 줌 변경 시 마커 필터 적용
     kakao.maps.event.addListener(map, "zoom_changed", function(){
       renderAll();
@@ -2121,7 +2294,8 @@
     });
 
     kakao.maps.event.addListener(map, "click", function(mouseEvent){
-      if (moveMode) return;   // 이동 모드에선 지도 클릭 무시
+      if (moveMode) return;
+      if (window.__suppressCloseUntil && Date.now() < window.__suppressCloseUntil) return;
       window.__closeIW();
       if (typeof refreshGroupOptions==="function") refreshGroupOptions();
       // 추가 패널 펴기
