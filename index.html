@@ -1114,11 +1114,11 @@
     // 기간 버튼 (5/3/1년) — 다시 조회 안 하고 받아둔 데이터에서 거르기만
     document.querySelectorAll("#trendRange .tr-range").forEach(function(b){
       b.addEventListener("click", function(){
-        if(!trendDeals || !trendDeals.length) return; // 아직 로딩 중이면 무시
         document.querySelectorAll("#trendRange .tr-range").forEach(function(x){ x.classList.remove("on"); });
         this.classList.add("on");
         trendYears = parseInt(this.getAttribute("data-y"),10);
-        drawTrend();
+        // 데이터 있으면 즉시 필터, 없으면 trendYears만 바꿔두고 로드 완료 후 자동으로 반영
+        if(trendDeals && trendDeals.length) drawTrend();
       });
     });
 
