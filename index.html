@@ -1582,21 +1582,32 @@
     }
     function drawMarker(p){
       var color=scoreColor(p), pos=new kakao.maps.LatLng(p.lat,p.lng);
-      // content를 실제 DOM 엘리먼트로 만들어 클릭을 직접 바인딩
       var el=document.createElement("div");
       el.innerHTML=markerHtml(p,color);
       var marker=new kakao.maps.CustomOverlay({position:pos,content:el,xAnchor:0.5,yAnchor:1,clickable:true});
       marker.setMap(map);
 
-      var iwEl=document.createElement("div");
-      iwEl.innerHTML=iwHtml(p,color);
-      var iw=new kakao.maps.CustomOverlay({position:pos,content:iwEl,xAnchor:0.5,yAnchor:1.18,clickable:true});
+      // InfoWindow는 클릭 시 처음 생성 (지연 생성 — 초기 부하 제거)
+      function ensureIW(){
+        if(p.__iw) return p.__iw;
+        var iwEl=document.createElement("div");
+        iwEl.innerHTML=iwHtml(p,scoreColor(p));
+        var iw=new kakao.maps.CustomOverlay({position:marker.getPosition(),content:iwEl,xAnchor:0.5,yAnchor:1.18,clickable:true,zIndex:10});
+        iw.__el=iwEl;
+        bindIwButtons(iwEl, p.__id);
+        p.__iw=iw;
+        return iw;
+      }
+
       var __onClickBusy = false;
       marker.__onClick=function(){
         if(__onClickBusy) return;
         __onClickBusy=true; setTimeout(function(){__onClickBusy=false;},500);
         window.__suppressCloseUntil = Date.now()+600;
-        window.__closeIW(); iw.setMap(map); openIW=iw; startEdit(p.__id);
+        window.__closeIW();
+        var iw=ensureIW();
+        iw.setPosition(marker.getPosition());
+        iw.setMap(map); openIW=iw; startEdit(p.__id);
         var _id=p.__id;
         setTimeout(function(){
           (function tryLoad(n){
@@ -1607,14 +1618,11 @@
         },80);
       };
 
-      // 정보창 내부 버튼 클릭
-      bindIwButtons(iwEl, p.__id);
-
       // ===== 마커 직접 드래그 (누르고 끌면 이동, 그냥 떼면 클릭=정보창) =====
       enableMarkerDrag(el, marker, p);
 
-      marker.__el=el; iw.__el=iwEl;
-      p.__marker=marker; p.__iw=iw;
+      marker.__el=el;
+      p.__marker=marker;
       markerObjs.push(marker);
     }
 
