@@ -1072,26 +1072,32 @@
       // x축 눈금: 절대 날짜 기준 일정 간격 (5년=1년, 3년=6개월, 1년=2개월)
       var tickMonths = trendYears===5 ? 12 : trendYears===3 ? 6 : 2;
       var ticks = [];
-      // 현재 날짜에서 역산해서 고정 눈금 생성
       var now2 = new Date();
       var curY = now2.getFullYear(), curM = now2.getMonth()+1;
-      // tickMonths 배수인 달로 올림
       var baseM = Math.ceil(curM / tickMonths) * tickMonths;
       var baseY = curY;
       if(baseM > 12){ baseM -= 12; baseY++; }
-      // 과거로 거슬러 올라가며 눈금 생성
+      var minTickGap = 40; // 최소 px 간격
+      var lastTx = -9999;
+      var tickList = [];
       for(var step=0; step<=trendYears*12/tickMonths+1; step++){
         var m2 = baseM - step*tickMonths;
         var y2 = baseY;
         while(m2 <= 0){ m2+=12; y2--; }
         while(m2 > 12){ m2-=12; y2++; }
         var dn = y2*10000 + m2*100 + 1;
-        if(dn < startDateNum - tickMonths*100) break; // 범위 밖이면 중단
         if(dn > endDateNum) continue;
-        var tx = xByDate(dn);
-        if(tx < pad+20 || tx > W-pad-20) continue; // 양 끝 여백
-        ticks.push({dn:dn, tx:tx, label: y2+"."+(m2<10?"0":"")+m2});
+        if(dn < startDateNum - tickMonths*100) break;
+        tickList.push({dn:dn, y2:y2, m2:m2});
       }
+      tickList.reverse();
+      tickList.forEach(function(t){
+        var tx = xByDate(t.dn);
+        if(tx < pad+20 || tx > W-pad-20) return;
+        if(tx - lastTx < minTickGap) return; // 너무 가까우면 건너뜀
+        ticks.push({dn:t.dn, tx:tx, label: t.y2+"."+(t.m2<10?"0":"")+t.m2});
+        lastTx = tx;
+      });
 
       var svg='<svg viewBox="0 0 '+W+' '+H+'" width="100%" xmlns="http://www.w3.org/2000/svg">';
       // y축 격자선
