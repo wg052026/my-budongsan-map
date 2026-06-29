@@ -1092,63 +1092,46 @@
     function saveHidden(a){ __hiddenCache=a; try{ localStorage.setItem(HIDE_KEY,JSON.stringify(a)); }catch(e){} }
 
     function renderAll(){
-      DBG("renderAll 시작 markerObjs="+markerObjs.length);
+      DBG("renderAll 시작");
       buildAll();
-      if(markerObjs.length !== all.length){
-        markerObjs.forEach(function(o){ if(o) o.setMap(null); }); markerObjs=[];
-        if(all && all.length){ all.forEach(function(p){ if(p.__marker) p.__marker.setMap(null); if(p.__iw) p.__iw.setMap(null); p.__marker=null; p.__iw=null; }); }
-        window.__closeIW();
-        var zoomLevel = map.getLevel();
-        var bounds = map.getBounds();
-        // 1단계: 화면에 보이는 것만 즉시 생성
-        var deferred=[];
-        all.forEach(function(p){
-          if(p.lat==null||p.lng==null){ deferred.push(p); return; }
-          var score=p.score||0;
-          var inBounds = bounds.contain(new kakao.maps.LatLng(p.lat,p.lng));
-          var passScore = !(zoomLevel>=7) && !(zoomLevel===6 && score<4 && score!==6);
-          if(inBounds && passScore) drawMarker(p);
-          else deferred.push(p);
-        });
-        applyZoomFilter(); renderGroupPanel(); setTimeout(function(){ autoFetchPrices(); },500);
-        // 2단계: 나머지 백그라운드
-        var i=0;
-        function nextChunk(){
-          var end=Math.min(i+200, deferred.length);
-          for(; i<end; i++) drawMarker(deferred[i]);
-          if(i<deferred.length) setTimeout(nextChunk,0);
-          else applyZoomFilter();
-        }
-        setTimeout(nextChunk, 200);
-        return;
-      }
+      window.__closeIW();
       applyZoomFilter();
       renderGroupPanel();
     }
 
-    // 줌/필터 변경 시 show/hide만 — DOM 재생성 없음
+    // 줌/드래그 완료 시 화면에 보이는 마커만 생성+표시, 벗어난 건 숨김
     function applyZoomFilter(){
-      var hidden = __hiddenCache || loadHidden();
-      var hiddenSet = {}; hidden.forEach(function(k){ hiddenSet[k]=true; });
+      var hiddenGrps = __hiddenCache || loadHidden();
+      var hiddenSet = {}; hiddenGrps.forEach(function(k){ hiddenSet[k]=true; });
       var zoomLevel = map.getLevel();
+      var bounds = map.getBounds();
+
       all.forEach(function(p){
-        if(!p.__marker) return;
+        if(p.lat==null||p.lng==null) return;
         var mid=placeGroupMid(p), big=placeGroupBig(p);
-        var hideKey = mid?(big+"::"+mid):("__ung__"+groupOf(p));
-        var score = p.score||0;
-        var visible = !hiddenSet[hideKey];
-        if(zoomLevel >= 7) visible=false;
-        else if(zoomLevel===6 && score<4 && score!==6) visible=false;
-        p.__marker.setMap(visible?map:null);
-        if(!visible && p.__iw) p.__iw.setMap(null);
+        var hideKey=mid?(big+"::"+mid):("__ung__"+groupOf(p));
+        var score=p.score||0;
+        var visible = !hiddenSet[hideKey]
+          && !(zoomLevel>=7)
+          && !(zoomLevel===6 && score<4 && score!==6)
+          && bounds.contain(new kakao.maps.LatLng(p.lat,p.lng));
+
+        if(visible){
+          if(!p.__marker) drawMarker(p);   // 처음 보일 때만 생성
+          else p.__marker.setMap(map);
+        } else {
+          if(p.__marker) p.__marker.setMap(null);
+          if(p.__iw) p.__iw.setMap(null);
+        }
       });
     }
 
     function forceRebuildMarkers(){
-      markerObjs.forEach(function(o){ if(o) o.setMap(null); }); markerObjs=[];
-      if(all && all.length){ all.forEach(function(p){ if(p.__marker) p.__marker.setMap(null); if(p.__iw) p.__iw.setMap(null); p.__marker=null; p.__iw=null; }); }
-      window.__closeIW();
-      renderAll();
+      if(all && all.length){ all.forEach(function(p){
+        if(p.__marker){ p.__marker.setMap(null); p.__marker=null; }
+        if(p.__iw){ p.__iw.setMap(null); p.__iw=null; }
+      }); }
+      markerObjs=[]; window.__closeIW(); renderAll();
     }
 
     // ===== 레이어 패널: 대분류 > 중분류 트리 (최종) =====
@@ -2329,7 +2312,7 @@
       document.getElementById("photoView").style.display="none";
     });
 
-    // 줌 변경 시 show/hide만 (마커 재생성 없음 → 빠름)
+    // 줌 변경 시 마커 필터 (가상화 - 화면 밖 숨김, 안 것만 생성)
     var __zoomTimer = null;
     kakao.maps.event.addListener(map, "zoom_changed", function(){
       if(__zoomTimer) clearTimeout(__zoomTimer);
@@ -2339,9 +2322,10 @@
         if(map.getLevel() <= 6) setTimeout(autoFetchPrices, 300);
       }, 80);
     });
-    // 지도 이동(드래그) 끝나면 화면 내 아파트 실거래가 자동조회
+    // 드래그 완료 시 새 영역 마커 생성 + 실거래가 조회
     kakao.maps.event.addListener(map, "idle", function(){
-      if (map.getLevel() <= 6) autoFetchPrices();
+      applyZoomFilter();
+      if(map.getLevel() <= 6) autoFetchPrices();
     });
 
     kakao.maps.event.addListener(map, "click", function(mouseEvent){
