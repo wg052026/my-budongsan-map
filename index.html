@@ -2014,7 +2014,7 @@
       refreshGroupOptions();
       document.getElementById("f-code").value = p.code||"";
       pendingPos = new kakao.maps.LatLng(p.lat, p.lng);
-      map.panTo(pendingPos);
+      // map.panTo(pendingPos); // 제거 — panTo가 카카오맵 내부 click 이벤트를 유발해 팝업이 닫힘
       var h=document.getElementById("pin-hint"); h.textContent="✏ 수정 중: "+p.name+" (위치는 이동 모드로 변경)"; h.classList.add("on");
       var b=document.getElementById("addBtn"); b.textContent="수정 저장"; b.disabled=false;
       document.getElementById("panel").scrollTop=0;
