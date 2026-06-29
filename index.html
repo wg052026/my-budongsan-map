@@ -984,8 +984,12 @@
       document.getElementById("trendPy").innerHTML = "";
       document.getElementById("trendChart").innerHTML = "";
       document.getElementById("trendList").innerHTML = "";
-      trendYears = 5; trendPyVal = null;
-      document.querySelectorAll("#trendRange .tr-range").forEach(function(b){ b.classList.toggle("on", b.getAttribute("data-y")==="5"); });
+      trendDeals = []; trendPyVal = null;
+      // trendYears는 사용자가 선택한 값 유지 (새 단지 처음 열 때만 5년으로)
+      if(!trendYears) trendYears = 5;
+      document.querySelectorAll("#trendRange .tr-range").forEach(function(b){
+        b.classList.toggle("on", b.getAttribute("data-y")===String(trendYears));
+      });
       box.style.display="flex";
 
       // prices.json 캐시에 deals가 있으면 즉시 사용
