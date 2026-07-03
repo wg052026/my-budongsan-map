@@ -503,7 +503,7 @@
   // =======================================================================
   //  실거래가 자동조회 서버 (STEP 2에서 배포한 웹앱 URL)
   // =======================================================================
-  var DEAL_API = "https://script.google.com/macros/s/AKfycby6YzPDBSgiWfx2Qgs2LYL6cfDo3RH27-Bxqhwtg-qh_Z1aHfxwFOmFiMeMv7-GFAUlUA/exec";
+  var DEAL_API = "https://script.google.com/macros/s/AKfycbyS_xDJJzwjPwvj3rD_PUhKhQEHdfYa6dpb1qfwcQvmRw16QyySGDwpGbUAXS89d3OIVQ/exec";
 
   // =======================================================================
   //  ↓↓↓ 아래는 건드리지 않아도 됩니다 ↓↓↓
@@ -1868,8 +1868,9 @@
         if (p.lat==null || p.lng==null) return false;
         if (!bounds.contain(new kakao.maps.LatLng(p.lat, p.lng))) return false;
         var k = priceKey(p);
-        if (cache[k] !== undefined) return false;
-        if (__priceFetching[k]) return false;
+        if (cache[k] !== undefined) return false;       // localStorage 캐시 있음
+        if (autoCache[p.__id] !== undefined) return false; // 메모리 캐시 있음
+        if (__priceFetching[k]) return false;           // 조회 중
         return true;
       });
       if (!targets.length) return;
