@@ -2838,7 +2838,7 @@ window.PLACES = [
     note:"", group:"기타", seq:945, lat:37.268111, lng:126.995098, code:"" },
   { kind:"apt", name:"평동동남(2)", disp:"", score:5,
     py:"", price:"", land:14.36, jong:"", stage:"", sub:"", spottype:"",
-    note:"", group:"기타", seq:946, lat:37.262247, lng:127.000537, code:"41113" },
+    note:"권선로436번길 21", group:"기타", seq:946, lat:37.262247, lng:127.000537, code:"41113" },
   { kind:"apt", name:"수원역해모로", disp:"", score:3,
     py:"", price:"", land:0, jong:"", stage:"", sub:"", spottype:"",
     note:"", group:"기타", seq:947, lat:37.264702, lng:127.009005, code:"" },
