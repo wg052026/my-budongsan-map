@@ -2661,7 +2661,7 @@ window.PLACES = [
     note:"", group:"기타", seq:886, lat:37.364893, lng:127.120242, code:"41135" },
   { kind:"apt", name:"한솔마을1단지청구", disp:"", score:3,
     py:"", price:"", land:19.13, jong:"", stage:"", sub:"", spottype:"",
-    note:"", group:"기타", seq:887, lat:37.364870, lng:127.122369, code:"41135" },
+    note:"", group:"기타", seq:887, lat:37.364870, lng:127.122369, code:"" },
   { kind:"apt", name:"느티마을경남,선경(1)", disp:"", score:5,
     py:"", price:"", land:56.38, jong:"", stage:"", sub:"", spottype:"",
     note:"", group:"기타", seq:888, lat:37.373912, lng:127.111929, code:"41135" },
