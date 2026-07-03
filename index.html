@@ -1005,7 +1005,7 @@
       // 캐시 없으면 API 호출
       document.getElementById("trendCount").textContent = "조회 중… (최대 5년치)";
       var url = dealUrl(rp, 60);
-      fetch(url).then(function(r){return r.json();}).then(function(j){
+      fetch(url, {redirect:'follow'}).then(function(r){return r.json();}).then(function(j){
         var deals = (j && j.ok && j.deals) ? j.deals : [];
         trendDeals = deals;
         if(!deals.length){
@@ -1908,7 +1908,7 @@
         if (!p.code){ p.auto = {nocode:true}; refreshMarker(p); return; }
 
         var url = dealUrl(p, 12);
-        var j = await fetch(url)
+        var j = await fetch(url, {redirect:'follow'})
           .then(function(r){ return r.ok ? r.json() : "__http"; })
           .catch(function(){ return "__neterr"; });
 
