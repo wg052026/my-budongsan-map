@@ -5665,7 +5665,7 @@ window.PLACES = [
     note:"", group:"기타", seq:1882, lat:37.615335, lng:127.038002, code:"11305" },
   { kind:"redev", name:"신월곡1구역", disp:"", score:5,
     py:"", price:"", land:0, jong:"", stage:"조합전", sub:"", spottype:"",
-    note:"", group:"기타", seq:1883, lat:37.605787, lng:127.029372, code:"11230" },
+    note:"", group:"기타", seq:1883, lat:37.605787, lng:127.029372, code:"11290" },
   { kind:"redev", name:"신길음구역", disp:"", score:5,
     py:"", price:"", land:0, jong:"", stage:"조합전", sub:"", spottype:"",
     note:"", group:"기타", seq:1884, lat:37.60707, lng:127.027285, code:"11230" },
