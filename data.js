@@ -11796,7 +11796,7 @@ window.PLACES = [
     note:"", group:"기타", seq:3931, lat:35.162462, lng:129.038670, code:"26230" },
   { kind:"apt", name:"백양산롯데캐슬골드센트럴", disp:"", score:3,
     py:"", price:"", land:0, jong:"", stage:"", sub:"", spottype:"",
-    note:"(확인필요)", group:"기타", seq:3932, lat:35.171606, lng:129.035755, code:"26230" },
+    note:"(미입주추정)", group:"기타", seq:3932, lat:35.171606, lng:129.035755, code:"26230" },
   { kind:"apt", name:"서면비스타동원", disp:"", score:3,
     py:"", price:"", land:0, jong:"", stage:"", sub:"", spottype:"",
     note:"", group:"기타", seq:3933, lat:35.157257, lng:129.037180, code:"26230" },
