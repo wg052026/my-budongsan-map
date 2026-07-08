@@ -3074,7 +3074,7 @@ window.PLACES = [
   { kind:"apt", name:"청명마을벽산삼익", disp:"", score:3,
     py:"", price:"", land:13.67, jong:"", stage:"", sub:"", spottype:"",
     note:"", group:"기타", seq:1022, lat:37.2577, lng:127.074963, code:"41117" },
-  { kind:"apt", name:"청명마을주공", disp:"", score:1,
+  { kind:"apt", name:"청명마을(주공)", disp:"", score:1,
     py:"", price:"", land:10.27, jong:"", stage:"", sub:"", spottype:"",
     note:"", group:"기타", seq:1023, lat:37.258004, lng:127.0794, code:"41117" },
   { kind:"apt", name:"신나무실신원", disp:"", score:5,
