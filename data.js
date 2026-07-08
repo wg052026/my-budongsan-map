@@ -3059,7 +3059,7 @@ window.PLACES = [
   { kind:"apt", name:"현대", disp:"", score:5,
     py:"", price:"", land:20.29, jong:"", stage:"", sub:"", spottype:"",
     note:"", group:"기타", seq:1017, lat:37.249719, lng:127.071668, code:"41117" },
-  { kind:"apt", name:"살구마을", disp:"", score:5,
+  { kind:"apt", name:"살구골마을진덕서광성지동아", disp:"", score:5,
     py:"", price:"", land:18.8, jong:"", stage:"", sub:"", spottype:"",
     note:"", group:"기타", seq:1018, lat:37.2479, lng:127.070192, code:"41117" },
   { kind:"apt", name:"신나무실건영", disp:"", score:5,
