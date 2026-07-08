@@ -3080,7 +3080,7 @@ window.PLACES = [
   { kind:"apt", name:"신나무실신원", disp:"", score:5,
     py:"", price:"", land:19, jong:"", stage:"", sub:"", spottype:"",
     note:"", group:"기타", seq:1024, lat:37.252198, lng:127.066513, code:"41117" },
-  { kind:"apt", name:"신나무실6단지동보신명", disp:"", score:3,
+  { kind:"apt", name:"신나무실동보", disp:"", score:3,
     py:"", price:"", land:14.09, jong:"", stage:"", sub:"", spottype:"",
     note:"", group:"기타", seq:1025, lat:37.250959, lng:127.065303, code:"41117" },
   { kind:"apt", name:"신나무실마을5단지주공", disp:"", score:1,
