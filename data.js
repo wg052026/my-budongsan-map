@@ -3023,7 +3023,7 @@ window.PLACES = [
     py:"", price:"", land:0, jong:"", stage:"", sub:"", spottype:"",
     note:"", group:"기타", seq:1005, lat:37.242533, lng:127.040258, code:"41117" },
   
-  { kind:"apt", name:"영통롯데캐슬엘클래스2BL", disp:"", score:5,
+  { kind:"apt", name:"영통롯데캐슬엘클래스2단지", disp:"", score:5,
     py:"", price:"", land:0, jong:"", stage:"", sub:"", spottype:"",
     note:"", group:"기타", seq:1006, lat:37.240382, lng:127.039112, code:"41117" },
   { kind:"apt", name:"반정아이파크캐슬4단지", disp:"", score:3,
