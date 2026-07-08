@@ -4861,7 +4861,7 @@ window.PLACES = [
     note:"", group:"기타", seq:1614, lat:37.663912, lng:127.057041, code:"11350" },
   { kind:"apt", name:"상계주공11단지", disp:"", score:5,
     py:"", price:"", land:14.04, jong:"", stage:"", sub:"", spottype:"",
-    note:"", group:"기타", seq:1615, lat:37.66583, lng:127.055823, code:"41360" },
+    note:"", group:"기타", seq:1615, lat:37.66583, lng:127.055823, code:"11350" },
   { kind:"apt", name:"상계주공12단지", disp:"", score:3,
     py:"", price:"", land:10.68, jong:"", stage:"", sub:"", spottype:"",
     note:"", group:"기타", seq:1616, lat:37.666167, lng:127.059318, code:"41360" },
