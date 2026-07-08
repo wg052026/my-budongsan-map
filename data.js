@@ -12906,7 +12906,7 @@ window.PLACES = [
     note:"", group:"기타", seq:4301, lat:35.236293, lng:128.649607, code:"48123" },
   { kind:"apt", name:"창원센트럴파크에일린의뜰", disp:"", score:4,
     py:"", price:"", land:0, jong:"", stage:"", sub:"", spottype:"",
-    note:"(확인필요)", group:"기타", seq:4302, lat:35.234813, lng:128.652920, code:"48123" },
+    note:"", group:"기타", seq:4302, lat:35.234813, lng:128.652920, code:"48123" },
   { kind:"apt", name:"노블파크", disp:"", score:3,
     py:"", price:"", land:0, jong:"", stage:"", sub:"", spottype:"",
     note:"", group:"기타", seq:4303, lat:35.236452, lng:128.667449, code:"48123" },
