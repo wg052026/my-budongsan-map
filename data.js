@@ -12984,7 +12984,7 @@ window.PLACES = [
     note:"", group:"기타", seq:4327, lat:35.253021, lng:128.644672, code:"48121" },
   { kind:"apt", name:"창원롯데캐슬포레스트1단지", disp:"", score:5,
     py:"", price:"", land:0, jong:"", stage:"", sub:"", spottype:"",
-    note:"(확인필요)", group:"기타", seq:4328, lat:35.240045, lng:128.638215, code:"48121" },
+    note:"(미입주추정)", group:"기타", seq:4328, lat:35.240045, lng:128.638215, code:"48121" },
   { kind:"apt", name:"창원중동유니시티1단지", disp:"", score:5,
     py:"", price:"", land:0, jong:"", stage:"", sub:"", spottype:"",
     note:"", group:"기타", seq:4329, lat:35.254126, lng:128.625327, code:"48121" },
