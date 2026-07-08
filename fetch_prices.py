@@ -65,20 +65,25 @@ def fetch_month(lawd, ym):
     return deals
 
 def match_deals(deals, name, road, bun, jibun):
+    """반환: (matched_list, matched) - matched=True면 매칭 성공(거래가 0건이어도 진짜 거래없음)"""
     if road and bun:
         r, b = road.replace(' ',''), re.sub(r'^0+','',bun)
         m = [d for d in deals if d['roadNm'].replace(' ','') == r and d['roadBon'] == b]
-        if m: return m
+        return m, True  # 도로명 매칭은 항상 "매칭 성공" (거래 0건이어도 그 주소엔 그 아파트가 있다는 뜻은 아니지만, 주소 기준이라 신뢰)
     if jibun:
         m = [d for d in deals if d['jibun'].replace(' ','') == jibun.replace(' ','')]
-        if m: return m
+        if m: return m, True
     if name:
         qn = norm(name)
         m = [d for d in deals if qn in norm(d['apt'])]
-        if m: return m
+        if m: return m, True
         m = [d for d in deals if len(norm(d['apt'])) >= 3 and norm(d['apt']) in qn]
-        if m: return m
-    return []
+        if m: return m, True
+        # 이름이 국토부 목록에 아예 안 보이면 매칭 실패
+        all_apt_names = set(norm(d['apt']) for d in deals)
+        found_name = any(qn in an or an in qn for an in all_apt_names if len(an) >= 3)
+        return [], found_name
+    return [], False
 
 def load_places():
     if not PLACES_FILE.exists():
@@ -168,14 +173,12 @@ def main():
                 time.sleep(DELAY_SEC)
             all_deals.extend(month_cache[k])
 
-        matched = match_deals(all_deals, name, road, bun, jibun)
+        matched, is_matched = match_deals(all_deals, name, road, bun, jibun)
         matched.sort(key=lambda d: d['dateNum'], reverse=True)
 
         pk = price_key(p)
         if matched:
             latest = matched[0]
-            # val: 최신 거래 (마커 표시용)
-            # deals: 전체 매칭 거래 목록 (차트용) — 최대 200건
             cache[pk] = {
                 'val': {
                     'amountText': latest['text'],
@@ -186,9 +189,13 @@ def main():
                 'ts': now_ts
             }
             print(f"  ✓ {name}: {latest['text']} {latest['pyeong']}평 ({latest['date']}) [{len(matched)}건]")
-        else:
+        elif is_matched:
+            # 매칭은 됐는데 거래가 0건 → 진짜 거래없음
             cache[pk] = {'val': {'none': True}, 'deals': [], 'ts': now_ts}
-            print(f"  - {name}: 거래 없음")
+            print(f"  - {name}: 거래 없음 (매칭 확인됨)")
+        else:
+            # 매칭 자체가 안 됨 → 캐시 저장 안 함 (다음 실행에서 재시도, 이름/코드 오류 의심)
+            print(f"  ⚠ {name}: 매칭 실패 (이름/코드 확인 필요, code={lawd})")
         done += 1
 
     PRICES_FILE.write_text(json.dumps(cache, ensure_ascii=False, indent=1), encoding='utf-8')
