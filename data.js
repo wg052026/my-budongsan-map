@@ -5371,7 +5371,7 @@ window.PLACES = [
     note:"", group:"기타", seq:1784, lat:37.590473, lng:127.066491, code:"11230C" },
   { kind:"apt", name:"이문e편한세상", disp:"", score:1,
     py:"", price:"", land:0, jong:"", stage:"", sub:"", spottype:"",
-    note:"", group:"기타", seq:1785, lat:37.604522, lng:127.064972, code:"11230" },
+    note:"", group:"기타", seq:1785, lat:37.604522, lng:127.064972, code:"11230C" },
   { kind:"redev", name:"자양7구역", disp:"", score:5,
     py:"", price:"", land:0, jong:"", stage:"조합", sub:"", spottype:"",
     note:"", group:"기타", seq:1786, lat:37.5318, lng:127.073377, code:"11215" },
