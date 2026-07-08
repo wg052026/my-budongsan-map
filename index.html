@@ -783,6 +783,7 @@
     if (p.auto===undefined) return { txt: "조회중…", color: "" };
     if (p.auto && p.auto.error) return { txt: "조회실패", color: "color:#d9534f;" };
     if (p.auto && p.auto.nocode) return { txt: "코드없음", color: "color:#d9534f;" };
+    if (p.auto && p.auto.unmatched) return { txt: "매칭실패", color: "color:#e67e22;" };
     return { txt: "거래없음", color: "" };
   }
 
@@ -1935,11 +1936,17 @@
           };
           cache[k] = val;
           p.auto = val; autoCache[p.__id] = val;
-        } else {
-          // 진짜 거래없음 (정상 응답, 거래 0건) → 캐시 저장 (재조회 방지)
+        } else if (j.matchBy){
+          // 이름/도로명 매칭은 성공했는데 거래가 0건 → 진짜 거래없음
           var nv = {none:true};
           cache[k] = nv;
           p.auto = nv; autoCache[p.__id] = nv;
+        } else {
+          // 매칭 자체가 안 됨(단지명을 못 찾음) → 미확인으로 표시, 캐시 저장 안 함(재시도 대상)
+          p.auto = {unmatched:true};
+          // autoCache에도 저장 안 해서 다음 idle/줌 때 재조회되게 함
+          refreshMarker(p);
+          return;
         }
         savePriceCache(cache);
         refreshMarker(p);
