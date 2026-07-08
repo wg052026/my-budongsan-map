@@ -11169,7 +11169,7 @@ window.PLACES = [
     note:"", group:"기타", seq:3722, lat:35.159953, lng:126.934023, code:"12210" },
   { kind:"apt", name:"무등산한국아델리움더힐1단지", disp:"", score:1,
     py:"", price:"", land:0, jong:"", stage:"", sub:"", spottype:"",
-    note:"(확인필요)", group:"기타", seq:3723, lat:35.152186, lng:126.938357, code:"12210" },
+    note:"(미입주추정)", group:"기타", seq:3723, lat:35.152186, lng:126.938357, code:"12210" },
   { kind:"apt", name:"삼성", disp:"", score:1,
     py:"", price:"", land:20.37, jong:"", stage:"", sub:"", spottype:"",
     note:"", group:"기타", seq:3724, lat:35.150830, lng:126.938626, code:"12210" },
