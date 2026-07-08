@@ -134,11 +134,13 @@ def main():
             if not (cache.get(price_key(p)) or {}).get('ts')
             or now_ts - cache[price_key(p)]['ts'] >= TTL]
 
-    # 수원 권역(lat 37.20~37.45) 우선 수집
-    def priority(p):
+    # 수원시청과의 거리 기준 정렬 (가까운 곳부터 우선 수집)
+    SUWON_LAT, SUWON_LNG = 37.2636, 127.0286
+    def dist(p):
         lat = float(p.get('lat') or 0)
-        return 0 if 37.20 <= lat <= 37.45 else 1
-    todo.sort(key=priority)
+        lng = float(p.get('lng') or 0)
+        return (lat - SUWON_LAT) ** 2 + (lng - SUWON_LNG) ** 2
+    todo.sort(key=dist)
 
     print(f"[INFO] 수집 필요: {len(todo)}개 / 이번 실행: 최대 {MAX_PER_RUN}개")
     todo = todo[:MAX_PER_RUN]
