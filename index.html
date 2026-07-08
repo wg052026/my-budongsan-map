@@ -332,6 +332,7 @@
       <button id="saveGhBtn">💾 GitHub에 저장</button>
       <button id="clearBtn">🗑 내 추가분 비우기</button>
       <button id="clearPriceBtn">💰 실거래가 캐시 비우기</button>
+      <button id="cacheStatusBtn">📊 실거래가 캐시 상태</button>
       <div style="border-top:0.5px solid rgba(255,255,255,0.15); margin:6px 0 4px;"></div>
       <button id="dbgToggle" style="background:#2c3742;color:#cfe8db;">🐞 디버그 로그 보기</button>
       <div id="dbgWrap" style="display:none; margin-top:4px;">
@@ -2993,6 +2994,54 @@
       renderAll();
       autoFetchPrices();
       alert("실거래가 캐시를 비웠습니다. 화면의 단지부터 다시 조회합니다.");
+    });
+
+    // 캐시 상태 확인
+    document.getElementById("cacheStatusBtn").addEventListener("click", function(){
+      var local = loadPriceCache();
+      var localKeys = Object.keys(local).filter(function(k){ return k.indexOf('__deals__')!==0; });
+      var localCnt = localKeys.length;
+      var localHasVal = localKeys.filter(function(k){ return local[k] && !local[k].none; }).length;
+
+      // 전체 아파트 수 (자동조회 대상)
+      var totalApt = all.filter(function(p){ return isAutoPrice(p); }).length;
+
+      // 현재 화면(bounds) 안 아파트 중 캐시 없는 것
+      var bounds = map.getBounds();
+      var viewportApt = all.filter(function(p){
+        return isAutoPrice(p) && p.lat!=null && p.lng!=null &&
+               bounds.contain(new kakao.maps.LatLng(p.lat,p.lng));
+      });
+      var viewportNoCache = viewportApt.filter(function(p){
+        var k = priceKey(p);
+        return local[k]===undefined && autoCache[p.__id]===undefined;
+      }).length;
+
+      // prices.json 서버캐시 fetch해서 비교
+      fetch('prices.json?v='+Date.now()).then(function(r){ return r.ok ? r.json() : {}; }).then(function(server){
+        var serverKeys = Object.keys(server||{});
+        var serverHasVal = serverKeys.filter(function(k){
+          var v = server[k];
+          return v && v.val && !v.val.none;
+        }).length;
+
+        var msg =
+          "📊 실거래가 캐시 상태\n\n" +
+          "· 전체 자동조회 대상 아파트: " + totalApt + "개\n\n" +
+          "[내 브라우저 캐시]\n" +
+          "· 저장된 항목: " + localCnt + "개\n" +
+          "· 실거래가 있음: " + localHasVal + "개\n\n" +
+          "[서버 캐시 (prices.json)]\n" +
+          "· 저장된 항목: " + serverKeys.length + "개\n" +
+          "· 실거래가 있음: " + serverHasVal + "개\n\n" +
+          "[현재 화면]\n" +
+          "· 화면 안 아파트: " + viewportApt.length + "개\n" +
+          "· 캐시 없어 조회중: " + viewportNoCache + "개";
+
+        alert(msg);
+      }).catch(function(){
+        alert("📊 실거래가 캐시 상태\n\n· 전체 자동조회 대상: " + totalApt + "개\n· 내 브라우저 캐시: " + localCnt + "개 (실거래가 있음 " + localHasVal + "개)\n· 화면 안 조회중: " + viewportNoCache + "개\n\n(서버 캐시 조회 실패)");
+      });
     });
   });
   </script>
