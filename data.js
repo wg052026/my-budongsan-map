@@ -11250,7 +11250,7 @@ window.PLACES = [
     note:"", group:"기타", seq:3749, lat:35.169316, lng:126.906204, code:"12300" },
   { kind:"apt", name:"금남로중흥S-클래스&두산위브더제니스", disp:"", score:4,
     py:"", price:"", land:0, jong:"", stage:"", sub:"", spottype:"",
-    note:"(확인필요)", group:"기타", seq:3750, lat:35.157562, lng:126.901792, code:"12300" },
+    note:"", group:"기타", seq:3750, lat:35.157562, lng:126.901792, code:"12300" },
   { kind:"apt", name:"임동중흥S클래스센텀파크", disp:"", score:3,
     py:"", price:"", land:0, jong:"", stage:"", sub:"", spottype:"",
     note:"", group:"기타", seq:3751, lat:35.161159, lng:126.895365, code:"12300" },
