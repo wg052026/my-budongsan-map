@@ -3299,7 +3299,7 @@ window.PLACES = [
   { kind:"apt", name:"현대", disp:"", score:3,
     py:"", price:"", land:13.37, jong:"", stage:"", sub:"", spottype:"",
     note:"", group:"기타", seq:1097, lat:37.32623, lng:127.09455, code:"41465" },
-  { kind:"apt", name:"한성", disp:"", score:1,
+  { kind:"apt", name:"은행", disp:"", score:1,
     py:"", price:"", land:10.65, jong:"", stage:"", sub:"", spottype:"",
     note:"", group:"기타", seq:1098, lat:37.324815, lng:127.093353, code:"41465" },
   { kind:"apt", name:"한국", disp:"", score:3,
