@@ -1080,9 +1080,17 @@
       if (minV===maxV){ minV=minV*0.95; maxV=maxV*1.05; }
       var W=520, H=240, pad=40;
       var n=deals.length;
-      var startDateNum = deals[0].dateNum, endDateNum = deals[n-1].dateNum;
-      var totalRange = endDateNum - startDateNum || 1;
-      function xByDate(dateNum){ return pad + ((dateNum-startDateNum)/totalRange)*(W-pad*2); }
+      // dateNum(YYYYMMDD 숫자)은 달이 바뀔 때 비선형으로 튀므로(0131→0201이 숫자로는 70차이),
+      // 실제 날짜(Date 객체의 ms)로 변환해서 진짜 일수 간격 기준으로 x좌표를 계산한다.
+      function dateNumToMs_(dn){
+        var s = String(dn);
+        var yy = +s.slice(0,4), mm = +s.slice(4,6), dd = +s.slice(6,8);
+        return new Date(yy, mm-1, dd).getTime();
+      }
+      var dealsMs = deals.map(function(d){ return dateNumToMs_(d.dateNum); });
+      var startMs = dealsMs[0], endMs = dealsMs[n-1];
+      var totalRangeMs = (endMs - startMs) || 1;
+      function xByDate(dateNum){ return pad + ((dateNumToMs_(dateNum)-startMs)/totalRangeMs)*(W-pad*2); }
       function x(i){ return xByDate(deals[i].dateNum); }
       function y(v){ return H-pad - ((v-minV)/(maxV-minV))*(H-pad*2); }
       var pts=deals.map(function(d,i){ return x(i)+","+y(d.amountManwon||0); }).join(" ");
@@ -1105,8 +1113,8 @@
         while(m2 <= 0){ m2+=12; y2--; }
         while(m2 > 12){ m2-=12; y2++; }
         var dn = y2*10000 + m2*100 + 1;
-        if(dn > endDateNum) continue;
-        if(dn < startDateNum - tickMonths*100) break;
+        if(dn > deals[n-1].dateNum) continue;
+        if(dn < deals[0].dateNum - tickMonths*100) break;
         tickList.push({dn:dn, y2:y2, m2:m2});
       }
       tickList.reverse();
