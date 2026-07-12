@@ -65,6 +65,20 @@ def fetch_month(lawd, ym):
         })
     return deals
 
+def smart_trim(deals, per_year=16):
+    """최근 N건만 남기면 활발한 단지는 최근 몇달치로 5년치가 다 채워져버리므로,
+    연도별로 최대 per_year건씩 남겨서 오래된 단지도 5년 추세를 유지하게 함."""
+    from collections import defaultdict
+    by_year = defaultdict(list)
+    for d in deals:
+        by_year[d['dateNum'] // 10000].append(d)
+    out = []
+    for yr, lst in by_year.items():
+        lst.sort(key=lambda d: d['dateNum'], reverse=True)
+        out.extend(lst[:per_year])
+    out.sort(key=lambda d: d['dateNum'], reverse=True)
+    return out
+
 def match_deals(deals, name, road, bun, jibun):
     """반환: (matched_list, matched) - matched=True면 매칭 성공(거래가 0건이어도 진짜 거래없음)"""
     if road and bun:
@@ -186,7 +200,7 @@ def main():
                     'pyeong': latest['pyeong'],
                     'date': latest['date'],
                 },
-                'deals': matched[:80],  # 차트용 (용량 관리를 위해 최근 80건까지)
+                'deals': smart_trim(matched),  # 차트용 (연도별 균등 샘플링으로 용량 관리 + 5년추세 유지)
                 'ts': now_ts
             }
             print(f"  ✓ {name}: {latest['text']} {latest['pyeong']}평 ({latest['date']}) [{len(matched)}건]")
