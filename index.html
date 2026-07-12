@@ -973,10 +973,9 @@
     window.__openNaverLand = function(id){
       var rp = findById(id);
       if (!rp) return;
-      var q = String(rp.name||"").trim();
-      if (!q) return;
-      // 네이버부동산은 정확한 단지ID 딥링크가 없어 이름 검색으로 연결 (좌표는 지도 중심 이동에 참고용)
-      var url = "https://new.land.naver.com/search?query=" + encodeURIComponent(q);
+      if (rp.lat==null || rp.lng==null) return;
+      // 이름 검색은 네이버부동산이 제대로 안 받아서, 좌표 기반으로 정확한 위치의 부동산 지도를 바로 열도록 함
+      var url = "https://m.land.naver.com/map/" + rp.lat + ":" + rp.lng + ":17";
       window.open(url, "_blank");
     };
     var trendDeals=[];   // 현재 추세창에 로드된 거래 전체
