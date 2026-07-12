@@ -186,7 +186,7 @@ def main():
                     'pyeong': latest['pyeong'],
                     'date': latest['date'],
                 },
-                'deals': matched[:200],  # 차트용 5년치 전체
+                'deals': matched[:80],  # 차트용 (용량 관리를 위해 최근 80건까지)
                 'ts': now_ts
             }
             print(f"  ✓ {name}: {latest['text']} {latest['pyeong']}평 ({latest['date']}) [{len(matched)}건]")
