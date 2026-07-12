@@ -55,6 +55,7 @@ def fetch_month(lawd, ym):
         deals.append({
             'apt':    g('aptNm') or g('aptName'),
             'manwon': manwon, 'text': amt_text, 'pyeong': pyeong,
+            'amountManwon': manwon,
             'roadNm': g('roadNm'),
             'roadBon': re.sub(r'^0+', '', g('roadNmBonbun') or '0'),
             'jibun':  g('jibun'),
