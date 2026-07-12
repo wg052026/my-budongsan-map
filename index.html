@@ -970,6 +970,15 @@
     };
     window.__editItem = function(id){ startEdit(id); };
     window.__deleteItem = function(id){ deleteItem(id); };
+    window.__openNaverLand = function(id){
+      var rp = findById(id);
+      if (!rp) return;
+      var q = String(rp.name||"").trim();
+      if (!q) return;
+      // 네이버부동산은 정확한 단지ID 딥링크가 없어 이름 검색으로 연결 (좌표는 지도 중심 이동에 참고용)
+      var url = "https://new.land.naver.com/search?query=" + encodeURIComponent(q);
+      window.open(url, "_blank");
+    };
     var trendDeals=[];   // 현재 추세창에 로드된 거래 전체
 
     var trendYears = 5, trendPyVal = null;
@@ -1178,6 +1187,9 @@
       var moreBtns = isAutoPrice(p)
         ? '<button class="iw-trend iw-action-btn" onclick="window.__showTrend(\''+p.__id+'\')">📈 실거래가 추세</button>'
         : '';
+      var naverBtn = (p.kind==="apt"||p.kind==="redev")
+        ? '<button class="iw-naver iw-action-btn" onclick="window.__openNaverLand(\''+p.__id+'\')" style="margin-top:6px;background:#03c75a1a;border:0.5px solid #03c75a66;color:#03c75a;">🏠 네이버부동산 바로가기</button>'
+        : '';
       var photoBtn =
         '<div class="iw-photo-label">📷 임장 사진 <span id="iwPhotoCnt-'+p.__id+'" style="opacity:0.7;"></span></div>' +
         '<div id="photoPanel-'+p.__id+'"></div>';
@@ -1191,7 +1203,7 @@
         '<button class="iw-close" aria-label="닫기" onclick="window.__closeIW()">✕</button></div>' +
         stars + infoEl +
         '<div class="iw-note">'+esc(p.note)+'</div>' +
-        moreBtns + photoBtn + editDel + '</div>';
+        moreBtns + naverBtn + photoBtn + editDel + '</div>';
     }
     var __hiddenCache = null;
     function loadHidden(){ try{ return (__hiddenCache=JSON.parse(localStorage.getItem(HIDE_KEY)||"[]")); }catch(e){ return []; } }
