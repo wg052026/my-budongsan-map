@@ -534,31 +534,35 @@
   function savePriceCache(o){ try{ localStorage.setItem(PRICE_KEY, JSON.stringify(o)); }catch(e){} }
 
   // prices.json (GitHub Actions 서버 수집분) → localStorage 캐시에 병합
+  // 서버 데이터가 로컬보다 최신이면(또는 로컬에 타임스탬프가 없으면) 덮어써서 주기적으로 갱신되게 함
   (function loadServerPrices(){
     fetch('prices.json?v=' + Date.now())
       .then(function(r){ return r.ok ? r.json() : null; })
       .then(function(server){
         if (!server || typeof server !== 'object') return;
         var local = loadPriceCache();
-        var merged = 0;
+        var merged = 0, refreshed = 0;
         Object.keys(server).forEach(function(k){
           var sv = server[k];
           // prices.json은 {val, deals, ts} 형식
           var val = (sv && sv.val !== undefined) ? sv.val : sv;
           if (!val) return;
-          // 로컬에 없을 때만 병합 (로컬 우선)
-          if (local[k] === undefined){
+          var localTs = local['__ts__'+k];
+          var isNew = (local[k] === undefined);
+          var isNewer = (!isNew) && sv.ts && (!localTs || sv.ts > localTs);
+          if (isNew || isNewer){
             local[k] = val;
+            local['__ts__'+k] = sv.ts || (Date.now()/1000);
             // deals(차트 5년치)도 함께 저장
             if(sv.deals && sv.deals.length){
               local['__deals__'+k] = {deals: sv.deals, ts: sv.ts};
             }
-            merged++;
+            if (isNew) merged++; else refreshed++;
           }
         });
-        if (merged > 0){
+        if (merged > 0 || refreshed > 0){
           savePriceCache(local);
-          console.log('[prices.json] ' + merged + '개 병합 완료');
+          console.log('[prices.json] 신규 ' + merged + '개, 갱신 ' + refreshed + '개 병합 완료');
           if (typeof autoFetchPrices === 'function') autoFetchPrices();
         }
       })
@@ -1935,11 +1939,13 @@
             approx: !!d.approxMatch   // 마을 단위 근사 매칭이면 true
           };
           cache[k] = val;
+          cache['__ts__'+k] = Date.now()/1000;
           p.auto = val; autoCache[p.__id] = val;
         } else if (j.matchBy){
           // 이름/도로명 매칭은 성공했는데 거래가 0건 → 진짜 거래없음
           var nv = {none:true};
           cache[k] = nv;
+          cache['__ts__'+k] = Date.now()/1000;
           p.auto = nv; autoCache[p.__id] = nv;
         } else {
           // 매칭 자체가 안 됨(단지명을 못 찾음) → 미확인으로 표시, 캐시 저장 안 함(재시도 대상)
