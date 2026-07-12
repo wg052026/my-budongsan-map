@@ -973,12 +973,10 @@
     window.__openNaverLand = function(id){
       var rp = findById(id);
       if (!rp) return;
-      var q = String(rp.name||"").trim();
-      // 이름으로 검색하되, 좌표로 지도 중심을 이동시켜 정확도를 높임 (map.naver.com 새지도 검색 URL 형식)
-      var url = "https://map.naver.com/p/search/" + encodeURIComponent(q);
-      if (rp.lat!=null && rp.lng!=null){
-        url += "?c=" + rp.lng + "," + rp.lat + ",17,0,0,0,dh";
-      }
+      if (rp.lat==null || rp.lng==null) return;
+      // 네이버부동산(new.land.naver.com) 매물지도를 해당 좌표로 바로 열기 (아파트 단지 고유ID가 없어 정확한 단지페이지 딥링크는 불가,
+      // 대신 그 위치의 부동산 지도로 이동 → 지도에서 해당 단지 클릭하면 상세정보 확인 가능)
+      var url = "https://new.land.naver.com/complexes?ms=" + rp.lat + "," + rp.lng + ",17&a=APT:PRE:ABYG:JGC";
       window.open(url, "_blank");
     };
     var trendDeals=[];   // 현재 추세창에 로드된 거래 전체
