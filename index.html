@@ -1171,13 +1171,18 @@
       });
       kakao.maps.event.addListener(map, "zoom_changed", updateAdminBoundaryDisplay);
       kakao.maps.event.addListener(map, "idle", function(){ __dragHidden=false; if (__adminVisibleTier && __adminVisibleTier!=="do") renderViewport(__adminVisibleTier); });
-      // 드래그(팬) 중에는 경계선을 잠깐 숨겨서 끌기 자체가 버벅이지 않게 함 — 놓으면(idle) 바로 다시 그림
-      kakao.maps.event.addListener(map, "dragstart", function(){
-        if (!adminChk.checked || __adminVisibleTier==="do") return;
+      // 드래그(팬)나 줌(휠/더블클릭/핀치) 시작 시 경계선을 잠깐 숨겨서 조작 자체가 버벅이지 않게 함 — 놓으면(idle) 바로 다시 그림
+      function hideAdminForInteraction(){
+        if (!adminChk.checked || __adminVisibleTier==="do" || !__adminVisibleTier) return;
         __dragHidden = true;
         var tier = __adminVisibleTier;
         if (tier && __viewportFeatures[tier]) __viewportFeatures[tier].forEach(function(item){ if (item.poly) item.poly.setMap(null); });
-      });
+      }
+      kakao.maps.event.addListener(map, "dragstart", hideAdminForInteraction);
+      var mapElForZoom = document.getElementById("map");
+      mapElForZoom.addEventListener("wheel", hideAdminForInteraction, { passive:true });
+      mapElForZoom.addEventListener("dblclick", hideAdminForInteraction);
+      mapElForZoom.addEventListener("touchstart", hideAdminForInteraction, { passive:true }); // 모바일 핀치줌 대비
     })();
 
     var geocoder = new kakao.maps.services.Geocoder();
