@@ -200,6 +200,20 @@
     .rp-item .rp-del { background:none; border:none; color:#e08a8a; cursor:pointer; font-size:12px; padding:2px 4px; }
     .rp-actions { display:flex; gap:6px; }
     .rp-actions button { border:none; border-radius:6px; padding:7px 0; font-size:11px; font-weight:700; cursor:pointer; }
+    .rp-style-row { display:flex; align-items:center; gap:6px; margin-bottom:8px; }
+    .rp-eyedrop { width:22px; height:22px; border-radius:5px; border:0.5px solid rgba(255,255,255,0.3); background:#2c3742; color:#cfe8db; cursor:pointer; font-size:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .rp-dash-toggle { display:flex; gap:4px; flex-shrink:0; }
+    .rp-dash-btn { width:26px; height:22px; border-radius:5px; border:0.5px solid rgba(255,255,255,0.3); background:#2c3742; cursor:pointer; padding:0; }
+    .rp-dash-btn.on { background:#3F9E7E; border-color:#3F9E7E; }
+    .rp-weight-wrap { display:flex; align-items:center; gap:4px; flex-shrink:0; }
+    .rp-weight-wrap input { width:34px; background:#1a1d24; color:#e8eaed; border:0.5px solid rgba(255,255,255,0.2); border-radius:5px; padding:2px 4px; font-size:11px; text-align:center; }
+    .rp-weight-wrap span { color:#9aa0ab; font-size:10px; }
+    .rp-memo-bubble { cursor:grab; user-select:none; }
+    .rp-memo-bubble:active { cursor:grabbing; }
+    #subwayPanel { display:none; position:absolute; top:12px; left:250px; z-index:46; background:rgba(28,31,38,0.97);
+      border:0.5px solid rgba(255,255,255,0.2); border-radius:12px; padding:12px; width:220px;
+      box-shadow:0 4px 24px rgba(0,0,0,0.6); }
+    #subwayPanel .rp-head { color:#f2f3f5; font-size:13px; font-weight:700; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; }
     .gp-row .gp-cnt { color:#9aa0ab; font-size:11px; flex-shrink:0; }
     .gp-row .gp-del { background:#5a3a3a; border:none; color:#f0d6d6; border-radius:5px;
       padding:2px 6px; font-size:11px; cursor:pointer; flex-shrink:0; }
@@ -361,6 +375,7 @@
       <button id="exportBtn">⟱ 코드 내보내기</button>
       <button id="saveGhBtn">💾 GitHub에 저장</button>
       <button id="routeToggleBtn">✏️ 임장동선 그리기</button>
+      <button id="subwayToggleBtn">🚇 지하철노선 그리기</button>
       <button id="clearBtn">🗑 내 추가분 비우기</button>
       <button id="clearPriceBtn">💰 실거래가 캐시 비우기</button>
       <button id="cacheStatusBtn">📊 실거래가 캐시 상태</button>
@@ -423,6 +438,14 @@
       <button class="rp-tool" data-type="polygon" title="면">⬠ 면</button>
     </div>
     <div class="rp-colors" id="rpColors"></div>
+    <div class="rp-style-row">
+      <button class="rp-eyedrop" id="rpEyedrop" title="화면에서 색 추출">💧</button>
+      <div class="rp-dash-toggle">
+        <button class="rp-dash-btn on" id="rpSolidBtn" title="실선"><svg width="20" height="8"><line x1="1" y1="4" x2="19" y2="4" stroke="#cfe8db" stroke-width="2"/></svg></button>
+        <button class="rp-dash-btn" id="rpDashBtn" title="점선"><svg width="20" height="8"><line x1="1" y1="4" x2="19" y2="4" stroke="#cfe8db" stroke-width="2" stroke-dasharray="3,2"/></svg></button>
+      </div>
+      <div class="rp-weight-wrap"><input type="number" id="rpWeight" value="3.5" min="1" max="12" step="0.5"><span>px</span></div>
+    </div>
     <div class="rp-hint" id="rpHint">도구를 선택하고 지도를 클릭해 점을 찍으세요.</div>
     <div class="rp-tools" id="rpFinishRow" style="display:none;">
       <button id="rpFinishBtn" style="flex:1;background:#3F9E7E;color:#fff;">✓ 완성</button>
@@ -436,6 +459,40 @@
     <div class="rp-actions">
       <button id="rpClearAll" style="flex:1;background:#5a3a3a;color:#f0d6d6;">🗑 전체 삭제</button>
       <button id="rpSaveGh" style="flex:1;background:#3F9E7E;color:#fff;">💾 저장</button>
+    </div>
+  </div>
+
+  <div id="subwayPanel" style="display:none;">
+    <div class="rp-head">
+      <span>🚇 지하철노선</span>
+      <button id="subwayCloseBtn" title="닫기">✕</button>
+    </div>
+    <div class="rp-tools">
+      <button class="rp-tool" id="swLineBtn" data-type="line" title="노선 그리기">🚇 노선 그리기</button>
+    </div>
+    <div class="rp-colors" id="swColors"></div>
+    <div class="rp-style-row">
+      <button class="rp-eyedrop" id="swEyedrop" title="화면에서 색 추출">💧</button>
+      <div class="rp-dash-toggle">
+        <button class="rp-dash-btn on" id="swSolidBtn" title="실선"><svg width="20" height="8"><line x1="1" y1="4" x2="19" y2="4" stroke="#cfe8db" stroke-width="2"/></svg></button>
+        <button class="rp-dash-btn" id="swDashBtn" title="점선"><svg width="20" height="8"><line x1="1" y1="4" x2="19" y2="4" stroke="#cfe8db" stroke-width="2" stroke-dasharray="3,2"/></svg></button>
+      </div>
+      <div class="rp-weight-wrap"><input type="number" id="swWeight" value="4" min="1" max="12" step="0.5"><span>px</span></div>
+    </div>
+    <div class="rp-hint" id="swHint">역 위치를 클릭해 점을 찍으세요. 점마다 나중에 메모를 달 수 있습니다.</div>
+    <div class="rp-tools" id="swFinishRow" style="display:none;">
+      <button id="swFinishBtn" style="flex:1;background:#3F9E7E;color:#fff;">✓ 완성</button>
+      <button id="swCancelBtn" style="flex:1;background:#5a3a3a;color:#f0d6d6;">✕ 취소</button>
+    </div>
+    <div class="rp-tools" id="swEditRow" style="display:none;">
+      <button id="swEditDone" style="flex:1;background:#3F9E7E;color:#fff;">✓ 수정완료</button>
+      <button id="swEditCancel" style="flex:1;background:#5a3a3a;color:#f0d6d6;">✕ 취소</button>
+    </div>
+    <div class="rp-hint" id="swEditHint" style="display:none;">점을 드래그하면 위치 이동, 클릭하면 메모 입력, 우클릭하면 삭제됩니다.</div>
+    <div class="rp-list" id="swList"></div>
+    <div class="rp-actions">
+      <button id="swClearAll" style="flex:1;background:#5a3a3a;color:#f0d6d6;">🗑 전체 삭제</button>
+      <button id="swSaveGh" style="flex:1;background:#3F9E7E;color:#fff;">💾 저장</button>
     </div>
   </div>
 
@@ -2549,6 +2606,12 @@
         renderEditHandles(); renderEditPreview();
         return;
       }
+      if (swDrawing){ swHandleClick(mouseEvent.latLng); return; }
+      if (swEditingId){
+        swEditPoints.push({lat:mouseEvent.latLng.getLat(), lng:mouseEvent.latLng.getLng(), memo:"", memoPos:null});
+        swRenderEditHandles(); swRenderEditPreview(); swRenderEditMemos();
+        return;
+      }
       if (moveMode) return;
       if (window.__suppressCloseUntil && Date.now() < window.__suppressCloseUntil) return;
       window.__closeIW();
@@ -3004,6 +3067,49 @@
     var drawTempOverlays = [];  // 그리는 중 임시 표시
     var routeMapOverlays = {};  // id -> [overlay, overlay, ...]
     var drawColor = ROUTE_COLORS[0];
+    var drawDash = false;
+    var drawWeight = 3.5;
+
+    // 드래그 가능한 커스텀오버레이(메모 말풍선 등) 생성 - 카카오맵 공식 드래그 예제 패턴 사용
+    function makeDraggableOverlay(pos, contentHtml, onMoved, opts){
+      opts = opts || {};
+      var el = document.createElement("div");
+      el.className = "rp-memo-bubble";
+      el.innerHTML = contentHtml;
+      var ov = new kakao.maps.CustomOverlay({
+        position: new kakao.maps.LatLng(pos.lat, pos.lng), content: el,
+        xAnchor: opts.xAnchor!=null?opts.xAnchor:0.5, yAnchor: opts.yAnchor!=null?opts.yAnchor:1.3, zIndex: opts.zIndex||25
+      });
+      var startClientX, startClientY, startOverlayPoint, dragging=false;
+      function onMouseMove(e){
+        if (!dragging) return;
+        var proj = map.getProjection();
+        var deltaX = startClientX - e.clientX, deltaY = startClientY - e.clientY;
+        var newPoint = new kakao.maps.Point(startOverlayPoint.x - deltaX, startOverlayPoint.y - deltaY);
+        var newPos = proj.coordsFromContainerPoint(newPoint);
+        ov.setPosition(newPos);
+      }
+      function onMouseUp(){
+        if (!dragging) return;
+        dragging = false;
+        document.removeEventListener("mousemove", onMouseMove);
+        document.removeEventListener("mouseup", onMouseUp);
+        var p = ov.getPosition();
+        onMoved({lat:p.getLat(), lng:p.getLng()});
+      }
+      el.addEventListener("mousedown", function(e){
+        e.stopPropagation();
+        if (e.preventDefault) e.preventDefault();
+        kakao.maps.event.preventMap();
+        var proj = map.getProjection();
+        startClientX = e.clientX; startClientY = e.clientY;
+        startOverlayPoint = proj.containerPointFromCoords(ov.getPosition());
+        dragging = true;
+        document.addEventListener("mousemove", onMouseMove);
+        document.addEventListener("mouseup", onMouseUp);
+      });
+      return ov;
+    }
 
     function loadRoutesLocal(){
       try{ return JSON.parse(localStorage.getItem(ROUTE_KEY)||"[]"); }catch(e){ return []; }
@@ -3036,12 +3142,14 @@
     function renderRoute(route){
       var ovs = [];
       var path = toPath(route.points);
+      var weight = route.weight || 3.5;
+      var dashStyle = route.dash ? "shortdash" : "solid";
       if (route.type === "polygon"){
-        var poly = new kakao.maps.Polygon({ path: path, strokeWeight:2, strokeColor:route.color, strokeOpacity:0.9, strokeStyle:"solid", fillColor:route.color, fillOpacity:0.22 });
+        var poly = new kakao.maps.Polygon({ path: path, strokeWeight:weight, strokeColor:route.color, strokeOpacity:0.9, strokeStyle:dashStyle, fillColor:route.color, fillOpacity:0.22 });
         poly.setMap(map);
         ovs.push(poly);
       } else {
-        var line = new kakao.maps.Polyline({ path: path, strokeWeight:3.5, strokeColor:route.color, strokeOpacity:0.9, strokeStyle:"solid" });
+        var line = new kakao.maps.Polyline({ path: path, strokeWeight:weight, strokeColor:route.color, strokeOpacity:0.9, strokeStyle:dashStyle });
         line.setMap(map);
         ovs.push(line);
         if (route.type === "arrow" && route.points.length>=2){
@@ -3051,12 +3159,12 @@
         }
       }
       if (route.label && route.label.trim()){
-        var mid = route.points[Math.floor(route.points.length/2)];
-        var labelOv = new kakao.maps.CustomOverlay({
-          position: new kakao.maps.LatLng(mid.lat, mid.lng),
-          content: '<div style="background:'+route.color+';color:#111;font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.4);border:1.5px solid #fff;">'+esc(route.label)+'</div>',
-          xAnchor:0.5, yAnchor:1.8, zIndex:15
-        });
+        var labelPos = route.labelPos || route.points[Math.floor(route.points.length/2)];
+        var content = '<div style="background:'+route.color+';color:#111;font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.4);border:1.5px solid #fff;">'+esc(route.label)+'</div>';
+        var labelOv = makeDraggableOverlay(labelPos, content, function(newPos){
+          route.labelPos = newPos;
+          saveRoutesLocal();
+        }, {yAnchor:1.8, zIndex:15});
         labelOv.setMap(map);
         ovs.push(labelOv);
       }
@@ -3083,7 +3191,7 @@
         var poly = new kakao.maps.Polygon({ path:path, strokeWeight:2, strokeColor:drawColor, strokeOpacity:0.9, fillColor:drawColor, fillOpacity:0.22 });
         poly.setMap(map); drawTempOverlays.push(poly);
       } else if (drawPoints.length>=2){
-        var line = new kakao.maps.Polyline({ path:path, strokeWeight:3.5, strokeColor:drawColor, strokeOpacity:0.9, strokeStyle:"shortdash" });
+        var line = new kakao.maps.Polyline({ path:path, strokeWeight:drawWeight, strokeColor:drawColor, strokeOpacity:0.9, strokeStyle:"shortdash" });
         line.setMap(map); drawTempOverlays.push(line);
         if (drawMode==="arrow"){
           var ah = makeArrowHead(drawPoints[drawPoints.length-2], drawPoints[drawPoints.length-1], drawColor);
@@ -3129,7 +3237,7 @@
       if (!drawMode) return;
       var minPts = drawMode==="polygon" ? 3 : 2;
       if (drawPoints.length < minPts){ cancelDrawShape(); return; }
-      var route = { id:"route_"+Date.now(), type:drawMode, points:drawPoints.slice(), color:drawColor, label:"" };
+      var route = { id:"route_"+Date.now(), type:drawMode, points:drawPoints.slice(), color:drawColor, dash:drawDash, weight:drawWeight, label:"" };
       window.ROUTES.push(route);
       saveRoutesLocal();
       clearTempOverlays();
@@ -3245,7 +3353,7 @@
         var poly = new kakao.maps.Polygon({ path:path, strokeWeight:2, strokeColor:r.color, strokeOpacity:0.9, fillColor:r.color, fillOpacity:0.22 });
         poly.setMap(map); editPreviewOv.push(poly);
       } else if (editPoints.length>=2){
-        var line = new kakao.maps.Polyline({ path:path, strokeWeight:3.5, strokeColor:r.color, strokeOpacity:0.9 });
+        var line = new kakao.maps.Polyline({ path:path, strokeWeight:(r.weight||3.5), strokeColor:r.color, strokeOpacity:0.9, strokeStyle:r.dash?"shortdash":"solid" });
         line.setMap(map); editPreviewOv.push(line);
         if (r.type==="arrow"){
           var ah = makeArrowHead(editPoints[editPoints.length-2], editPoints[editPoints.length-1], r.color);
@@ -3337,6 +3445,30 @@
         });
       });
     })();
+    document.getElementById("rpSolidBtn").addEventListener("click", function(){
+      drawDash = false;
+      document.getElementById("rpSolidBtn").classList.add("on");
+      document.getElementById("rpDashBtn").classList.remove("on");
+    });
+    document.getElementById("rpDashBtn").addEventListener("click", function(){
+      drawDash = true;
+      document.getElementById("rpDashBtn").classList.add("on");
+      document.getElementById("rpSolidBtn").classList.remove("on");
+    });
+    document.getElementById("rpWeight").addEventListener("change", function(){
+      var v = parseFloat(this.value);
+      drawWeight = (!isNaN(v) && v>0) ? v : 3.5;
+      this.value = drawWeight;
+    });
+    document.getElementById("rpEyedrop").addEventListener("click", async function(){
+      if (!window.EyeDropper){ alert("이 브라우저는 스포이드 기능을 지원하지 않습니다 (크롬/엣지 최신버전에서 가능)."); return; }
+      try {
+        var ed = new EyeDropper();
+        var result = await ed.open();
+        drawColor = result.sRGBHex;
+        document.querySelectorAll("#rpColors .rp-color").forEach(function(x){ x.classList.remove("on"); });
+      } catch(e){ /* 사용자가 취소함 */ }
+    });
     document.getElementById("routeToggleBtn").addEventListener("click", function(){
       var panel = document.getElementById("routePanel");
       panel.style.display = (panel.style.display==="none") ? "block" : "none";
@@ -3360,17 +3492,17 @@
     // Ctrl+Z: 마지막 찍은 점 취소 / Ctrl+Y, Ctrl+Shift+Z: 재실행
     document.addEventListener("keydown", function(e){
       if (e.key === "Escape" && editingId){ cancelEditRoute(); return; }
-      if (!drawMode) return;
-      if (e.key === "Escape"){
-        cancelDrawShape();
-        setDrawMode(drawMode);
-        return;
-      }
+      if (e.key === "Escape" && swEditingId){ swCancelEditLine(); return; }
       var mod = e.ctrlKey || e.metaKey;
-      if (mod && !e.shiftKey && e.key.toLowerCase()==="z"){
-        e.preventDefault(); undoDrawPoint();
-      } else if (mod && ((e.shiftKey && e.key.toLowerCase()==="z") || e.key.toLowerCase()==="y")){
-        e.preventDefault(); redoDrawPoint();
+      if (drawMode){
+        if (e.key === "Escape"){ cancelDrawShape(); setDrawMode(drawMode); return; }
+        if (mod && !e.shiftKey && e.key.toLowerCase()==="z"){ e.preventDefault(); undoDrawPoint(); return; }
+        if (mod && ((e.shiftKey && e.key.toLowerCase()==="z") || e.key.toLowerCase()==="y")){ e.preventDefault(); redoDrawPoint(); return; }
+      }
+      if (swDrawing){
+        if (e.key === "Escape"){ swCancelDraw(); swSetDrawing(false); return; }
+        if (mod && !e.shiftKey && e.key.toLowerCase()==="z"){ e.preventDefault(); swUndo(); return; }
+        if (mod && ((e.shiftKey && e.key.toLowerCase()==="z") || e.key.toLowerCase()==="y")){ e.preventDefault(); swRedo(); return; }
       }
     });
 
@@ -3421,6 +3553,345 @@
     }
     document.getElementById("rpSaveGh").addEventListener("click", function(){
       saveRoutesToGithub(this);
+    });
+
+    // ===== 지하철노선(역+메모) 그리기 기능 =====
+    var SUBWAY_KEY = "budongsan_subway_v1";
+    var SUBWAY_COLORS = ["#00A5DE","#0052A4","#EF7C1C","#009D3E","#996CAC","#F5A200"]; // 임장동선과 안 겹치는 팔레트
+    window.SUBWAY = [];
+    var swDrawing = false;
+    var swPoints = [];       // {lat,lng,memo:"",memoPos:null}
+    var swRedoStack = [];
+    var swTempOverlays = [];
+    var swMapOverlays = {};  // id -> [overlay,...]
+    var swColor = SUBWAY_COLORS[0];
+    var swDash = false;
+    var swWeight = 4;
+    var swEditingId = null;
+    var swEditPoints = [];
+    var swEditHandles = [];
+    var swEditPreviewOv = [];
+    var swEditMemoOv = [];   // 편집중 표시되는 메모 말풍선들
+
+    function loadSubwayLocal(){
+      try{ return JSON.parse(localStorage.getItem(SUBWAY_KEY)||"[]"); }catch(e){ return []; }
+    }
+    function saveSubwayLocal(){
+      try{ localStorage.setItem(SUBWAY_KEY, JSON.stringify(window.SUBWAY)); }catch(e){}
+    }
+    function swMemoOverlaysFor(line){
+      var ovs = [];
+      (line.points||[]).forEach(function(pt){
+        if (!pt.memo || !pt.memo.trim()) return;
+        var pos = pt.memoPos || pt;
+        var content = '<div style="background:#fff;color:#111;font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:8px;white-space:nowrap;box-shadow:0 1px 5px rgba(0,0,0,0.5);border:2px solid '+line.color+';max-width:160px;white-space:normal;">'+esc(pt.memo)+'</div>';
+        var ov = makeDraggableOverlay(pos, content, function(newPos){ pt.memoPos = newPos; saveSubwayLocal(); }, {yAnchor:1.6, zIndex:16});
+        ov.setMap(map);
+        ovs.push(ov);
+      });
+      return ovs;
+    }
+    function renderSubwayLine(line){
+      var ovs = [];
+      var path = toPath(line.points);
+      var l = new kakao.maps.Polyline({ path: path, strokeWeight:(line.weight||4), strokeColor:line.color, strokeOpacity:0.95, strokeStyle: line.dash?"shortdash":"solid" });
+      l.setMap(map);
+      ovs.push(l);
+      line.points.forEach(function(p){
+        var d = makeDot(p, line.color); d.setMap(map); ovs.push(d);
+      });
+      ovs = ovs.concat(swMemoOverlaysFor(line));
+      swMapOverlays[line.id] = ovs;
+    }
+    function removeSubwayOverlays(id){
+      (swMapOverlays[id]||[]).forEach(function(o){ o.setMap(null); });
+      delete swMapOverlays[id];
+    }
+    function renderAllSubway(){
+      Object.keys(swMapOverlays).forEach(removeSubwayOverlays);
+      window.SUBWAY.forEach(renderSubwayLine);
+    }
+    function swClearTemp(){
+      swTempOverlays.forEach(function(o){ o.setMap(null); });
+      swTempOverlays = [];
+    }
+    function swRenderTemp(){
+      swClearTemp();
+      if (!swPoints.length) return;
+      if (swPoints.length>=2){
+        var line = new kakao.maps.Polyline({ path:toPath(swPoints), strokeWeight:swWeight, strokeColor:swColor, strokeOpacity:0.9, strokeStyle:"shortdash" });
+        line.setMap(map); swTempOverlays.push(line);
+      }
+      swPoints.forEach(function(p){ var d=makeDot(p,swColor); d.setMap(map); swTempOverlays.push(d); });
+      document.getElementById("swFinishRow").style.display = (swPoints.length>=2) ? "flex" : "none";
+    }
+    function swHandleClick(latLng){
+      var p = {lat:latLng.getLat(), lng:latLng.getLng(), memo:"", memoPos:null};
+      var now = Date.now();
+      var last = swPoints[swPoints.length-1];
+      if (last && (now - (window.__lastSwClickTs||0)) < 350 &&
+          Math.abs(last.lat-p.lat) < 0.00003 && Math.abs(last.lng-p.lng) < 0.00003){
+        window.__lastSwClickTs = now; return;
+      }
+      window.__lastSwClickTs = now;
+      swPoints.push(p);
+      swRedoStack = [];
+      swRenderTemp();
+    }
+    function swUndo(){ if (!swDrawing || !swPoints.length) return; swRedoStack.push(swPoints.pop()); swRenderTemp(); }
+    function swRedo(){ if (!swDrawing || !swRedoStack.length) return; swPoints.push(swRedoStack.pop()); swRenderTemp(); }
+    function swCancelDraw(){
+      swClearTemp(); swPoints = []; swRedoStack = [];
+      document.getElementById("swFinishRow").style.display = "none";
+    }
+    function swFinish(){
+      if (!swDrawing || swPoints.length<2){ swCancelDraw(); return; }
+      var line = { id:"sw_"+Date.now(), points:swPoints.slice(), color:swColor, dash:swDash, weight:swWeight, label:"" };
+      window.SUBWAY.push(line);
+      saveSubwayLocal();
+      swClearTemp();
+      renderSubwayLine(line);
+      renderSubwayList();
+      swPoints = []; swRedoStack = [];
+      document.getElementById("swFinishRow").style.display = "none";
+      swSetDrawing(false);
+    }
+    function swSetDrawing(on){
+      if (swDrawing && swPoints.length){
+        if (swPoints.length>=2){ swFinish(); return; }
+        else if (!confirm("그리던 노선이 완성되지 않았습니다. 취소할까요? (점이 2개 이상 필요합니다)")) return;
+        else swCancelDraw();
+      }
+      swDrawing = !!on;
+      document.getElementById("swLineBtn").classList.toggle("on", swDrawing);
+      var mapEl = document.getElementById("map");
+      if (mapEl) mapEl.style.cursor = swDrawing ? "crosshair" : "";
+      document.getElementById("swHint").textContent = swDrawing
+        ? "역 위치를 클릭해 점을 찍으세요. 다 찍으면 '완성' 버튼을 누르세요."
+        : "역 위치를 클릭해 점을 찍으세요. 점마다 나중에 메모를 달 수 있습니다.";
+    }
+    document.getElementById("swLineBtn").addEventListener("click", function(){ swSetDrawing(!swDrawing); });
+    document.getElementById("swFinishBtn").addEventListener("click", swFinish);
+    document.getElementById("swCancelBtn").addEventListener("click", swCancelDraw);
+
+    function deleteSubwayLine(id){
+      if (swEditingId===id) swCancelEditLine();
+      removeSubwayOverlays(id);
+      window.SUBWAY = window.SUBWAY.filter(function(x){ return x.id!==id; });
+      saveSubwayLocal();
+      renderSubwayList();
+    }
+    function renderSubwayList(){
+      var listEl = document.getElementById("swList");
+      if (!window.SUBWAY.length){ listEl.innerHTML = '<div style="color:#6b7280;font-size:10.5px;">아직 그린 노선이 없습니다.</div>'; return; }
+      listEl.innerHTML = window.SUBWAY.map(function(line,i){
+        var editing = (swEditingId===line.id);
+        var memoCnt = (line.points||[]).filter(function(p){ return p.memo && p.memo.trim(); }).length;
+        return '<div class="rp-item" style="'+(editing?'background:rgba(0,165,222,0.15);border-radius:6px;':'')+'">' +
+          '<span class="rp-swatch" style="background:'+line.color+';"></span>' +
+          '<span class="rp-label" title="클릭하면 위치로 이동" onclick="window.__focusSubway(\''+line.id+'\')">🚇 '+(line.label||("노선 "+(i+1)))+(memoCnt?(' <span style="color:#9aa0ab;">('+memoCnt+'개 메모)</span>'):'')+'</span>' +
+          '<button class="rp-del" title="수정(점 이동/메모)" onclick="window.__editSubway(\''+line.id+'\')">'+(editing?'✏️':'✏')+'</button>' +
+          '<button class="rp-del" onclick="window.__deleteSubway(\''+line.id+'\')">🗑</button>' +
+        '</div>';
+      }).join("");
+    }
+    window.__deleteSubway = deleteSubwayLine;
+    window.__focusSubway = function(id){
+      var l = window.SUBWAY.find(function(x){ return x.id===id; });
+      if (!l || !l.points.length) return;
+      map.setCenter(new kakao.maps.LatLng(l.points[0].lat, l.points[0].lng));
+    };
+
+    // ---- 지하철노선 수정(점 이동/추가/삭제 + 점별 메모) ----
+    function swClearEditOverlays(){
+      swEditHandles.forEach(function(m){ m.setMap(null); }); swEditHandles = [];
+      swEditPreviewOv.forEach(function(o){ o.setMap(null); }); swEditPreviewOv = [];
+      swEditMemoOv.forEach(function(o){ o.setMap(null); }); swEditMemoOv = [];
+    }
+    function swRenderEditPreview(){
+      swEditPreviewOv.forEach(function(o){ o.setMap(null); }); swEditPreviewOv = [];
+      var l = window.SUBWAY.find(function(x){ return x.id===swEditingId; });
+      if (!l || swEditPoints.length<2) return;
+      var line = new kakao.maps.Polyline({ path:toPath(swEditPoints), strokeWeight:(l.weight||4), strokeColor:l.color, strokeOpacity:0.9, strokeStyle:l.dash?"shortdash":"solid" });
+      line.setMap(map); swEditPreviewOv.push(line);
+    }
+    function swRenderEditMemos(){
+      swEditMemoOv.forEach(function(o){ o.setMap(null); }); swEditMemoOv = [];
+      var l = window.SUBWAY.find(function(x){ return x.id===swEditingId; });
+      if (!l) return;
+      swEditMemoOv = swMemoOverlaysFor({color:l.color, points:swEditPoints});
+    }
+    function swRenderEditHandles(){
+      swEditHandles.forEach(function(m){ m.setMap(null); }); swEditHandles = [];
+      var l = window.SUBWAY.find(function(x){ return x.id===swEditingId; });
+      if (!l) return;
+      var icon = new kakao.maps.MarkerImage(handleIcon(l.color), new kakao.maps.Size(18,18), {offset:new kakao.maps.Point(9,9)});
+      swEditPoints.forEach(function(p, idx){
+        var marker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(p.lat,p.lng), image: icon, draggable: true, zIndex: 30 });
+        marker.setMap(map);
+        var moved = false;
+        kakao.maps.event.addListener(marker, "dragstart", function(){ moved = true; });
+        kakao.maps.event.addListener(marker, "dragend", function(){
+          var pos = marker.getPosition();
+          swEditPoints[idx].lat = pos.getLat(); swEditPoints[idx].lng = pos.getLng();
+          swRenderEditPreview(); swRenderEditMemos();
+        });
+        kakao.maps.event.addListener(marker, "click", function(){
+          if (moved){ moved=false; return; } // 드래그 끝난 직후 클릭 오발동 방지
+          var v = prompt("이 역(점)의 메모를 입력하세요", swEditPoints[idx].memo||"");
+          if (v===null) return;
+          swEditPoints[idx].memo = v.trim();
+          swRenderEditMemos();
+          renderSubwayList();
+        });
+        kakao.maps.event.addListener(marker, "rightclick", function(){
+          if (swEditPoints.length<=2){ alert("점이 최소 2개는 있어야 합니다."); return; }
+          swEditPoints.splice(idx,1);
+          swRenderEditHandles(); swRenderEditPreview(); swRenderEditMemos();
+        });
+        swEditHandles.push(marker);
+      });
+    }
+    window.__editSubway = function(id){
+      if (swEditingId && swEditingId!==id) swFinishEditLine();
+      if (swDrawing) swSetDrawing(false);
+      swEditingId = id;
+      var l = window.SUBWAY.find(function(x){ return x.id===id; });
+      if (!l) return;
+      swEditPoints = l.points.map(function(p){ return {lat:p.lat, lng:p.lng, memo:p.memo||"", memoPos:p.memoPos?{lat:p.memoPos.lat,lng:p.memoPos.lng}:null}; });
+      removeSubwayOverlays(id);
+      swRenderEditHandles(); swRenderEditPreview(); swRenderEditMemos();
+      document.getElementById("swEditRow").style.display = "flex";
+      document.getElementById("swEditHint").style.display = "block";
+      renderSubwayList();
+    };
+    function swFinishEditLine(){
+      if (!swEditingId) return;
+      var l = window.SUBWAY.find(function(x){ return x.id===swEditingId; });
+      if (!l || swEditPoints.length<2){ alert("점이 최소 2개는 있어야 합니다."); return; }
+      l.points = swEditPoints.map(function(p){ return {lat:p.lat, lng:p.lng, memo:p.memo||"", memoPos:p.memoPos}; });
+      saveSubwayLocal();
+      swClearEditOverlays();
+      renderSubwayLine(l);
+      swEditingId = null; swEditPoints = [];
+      document.getElementById("swEditRow").style.display = "none";
+      document.getElementById("swEditHint").style.display = "none";
+      renderSubwayList();
+    }
+    function swCancelEditLine(){
+      if (!swEditingId) return;
+      var l = window.SUBWAY.find(function(x){ return x.id===swEditingId; });
+      swClearEditOverlays();
+      if (l) renderSubwayLine(l);
+      swEditingId = null; swEditPoints = [];
+      document.getElementById("swEditRow").style.display = "none";
+      document.getElementById("swEditHint").style.display = "none";
+      renderSubwayList();
+    }
+    document.getElementById("swEditDone").addEventListener("click", swFinishEditLine);
+    document.getElementById("swEditCancel").addEventListener("click", swCancelEditLine);
+
+    (function initSwColors(){
+      var wrap = document.getElementById("swColors");
+      wrap.innerHTML = SUBWAY_COLORS.map(function(c,i){
+        return '<div class="rp-color'+(i===0?' on':'')+'" data-color="'+c+'" style="background:'+c+';"></div>';
+      }).join("");
+      wrap.querySelectorAll(".rp-color").forEach(function(el){
+        el.addEventListener("click", function(){
+          swColor = el.getAttribute("data-color");
+          wrap.querySelectorAll(".rp-color").forEach(function(x){ x.classList.remove("on"); });
+          el.classList.add("on");
+        });
+      });
+    })();
+    document.getElementById("swSolidBtn").addEventListener("click", function(){
+      swDash = false;
+      document.getElementById("swSolidBtn").classList.add("on");
+      document.getElementById("swDashBtn").classList.remove("on");
+    });
+    document.getElementById("swDashBtn").addEventListener("click", function(){
+      swDash = true;
+      document.getElementById("swDashBtn").classList.add("on");
+      document.getElementById("swSolidBtn").classList.remove("on");
+    });
+    document.getElementById("swWeight").addEventListener("change", function(){
+      var v = parseFloat(this.value);
+      swWeight = (!isNaN(v) && v>0) ? v : 4;
+      this.value = swWeight;
+    });
+    document.getElementById("swEyedrop").addEventListener("click", async function(){
+      if (!window.EyeDropper){ alert("이 브라우저는 스포이드 기능을 지원하지 않습니다 (크롬/엣지 최신버전에서 가능)."); return; }
+      try {
+        var ed = new EyeDropper();
+        var result = await ed.open();
+        swColor = result.sRGBHex;
+        document.querySelectorAll("#swColors .rp-color").forEach(function(x){ x.classList.remove("on"); });
+      } catch(e){}
+    });
+    document.getElementById("subwayToggleBtn").addEventListener("click", function(){
+      var panel = document.getElementById("subwayPanel");
+      panel.style.display = (panel.style.display==="none") ? "block" : "none";
+      document.getElementById("settingsMenu").style.display = "none";
+    });
+    document.getElementById("subwayCloseBtn").addEventListener("click", function(){
+      document.getElementById("subwayPanel").style.display = "none";
+      if (swDrawing) swSetDrawing(false);
+      if (swEditingId) swCancelEditLine();
+    });
+    document.getElementById("swClearAll").addEventListener("click", function(){
+      if (!window.SUBWAY.length) return;
+      if (!confirm("그린 지하철노선을 전부 삭제할까요?")) return;
+      if (swEditingId){ swClearEditOverlays(); swEditingId=null; swEditPoints=[]; document.getElementById("swEditRow").style.display="none"; }
+      Object.keys(swMapOverlays).forEach(removeSubwayOverlays);
+      window.SUBWAY = [];
+      saveSubwayLocal();
+      renderSubwayList();
+    });
+
+    // 초기 로드
+    (function initSubway(){
+      window.SUBWAY = loadSubwayLocal();
+      renderAllSubway();
+      renderSubwayList();
+      fetch("subway.json?v="+Date.now()).then(function(r){ return r.ok ? r.json() : null; }).then(function(server){
+        if (Array.isArray(server) && server.length && !window.SUBWAY.length){
+          window.SUBWAY = server;
+          saveSubwayLocal();
+          renderAllSubway();
+          renderSubwayList();
+        }
+      }).catch(function(){});
+    })();
+
+    async function saveSubwayToGithub(btn, attempt){
+      attempt = attempt || 1;
+      var token = ghToken();
+      if (!token){ return; }
+      var apiBase = "https://api.github.com/repos/"+GH_OWNER+"/"+GH_REPO+"/contents/subway.json";
+      var headers = { "Authorization":"Bearer "+token, "Accept":"application/vnd.github+json" };
+      var orig = btn.getAttribute("data-orig") || btn.textContent;
+      btn.setAttribute("data-orig", orig);
+      btn.disabled=true; btn.textContent = attempt>1 ? "재시도 중…("+attempt+")" : "저장 중…";
+      try {
+        var sha=null;
+        var getRes = await fetch(apiBase+"?ref="+GH_BRANCH, { headers: headers, cache:"no-store" });
+        if (getRes.status===200){ var info=await getRes.json(); sha=info.sha; }
+        else if (getRes.status===401){ throw new Error("토큰이 거부됨(401)."); }
+        var body = { message:"지하철노선 저장 ("+window.SUBWAY.length+"개) — "+new Date().toISOString(), content: toB64(JSON.stringify(window.SUBWAY)), branch: GH_BRANCH };
+        if (sha) body.sha = sha;
+        var putRes = await fetch(apiBase, { method:"PUT", headers: headers, body: JSON.stringify(body) });
+        if (putRes.status===200 || putRes.status===201){
+          btn.textContent="저장됨 ✓"; setTimeout(function(){ btn.textContent=orig; btn.disabled=false; }, 2000);
+        } else if (putRes.status===409 && attempt<3){
+          await new Promise(function(res){ setTimeout(res, 400*attempt); });
+          return saveSubwayToGithub(btn, attempt+1);
+        } else { throw new Error("저장 실패 ("+putRes.status+")"); }
+      } catch(e){
+        btn.textContent=orig; btn.disabled=false; alert("저장 실패: "+e.message+(attempt>1?" (재시도 "+attempt+"회 후에도 실패, 다시 눌러주세요)":""));
+      }
+    }
+    document.getElementById("swSaveGh").addEventListener("click", function(){
+      saveSubwayToGithub(this);
     });
 
     document.getElementById("saveGhBtn").addEventListener("click", async function(){
