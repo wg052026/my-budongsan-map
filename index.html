@@ -423,7 +423,11 @@
       <button class="rp-tool" data-type="polygon" title="면">⬠ 면</button>
     </div>
     <div class="rp-colors" id="rpColors"></div>
-    <div class="rp-hint" id="rpHint">도구를 선택하고 지도를 클릭해 점을 찍으세요. 더블클릭하면 완성됩니다.</div>
+    <div class="rp-hint" id="rpHint">도구를 선택하고 지도를 클릭해 점을 찍으세요.</div>
+    <div class="rp-tools" id="rpFinishRow" style="display:none;">
+      <button id="rpFinishBtn" style="flex:1;background:#3F9E7E;color:#fff;">✓ 완성</button>
+      <button id="rpCancelBtn" style="flex:1;background:#5a3a3a;color:#f0d6d6;">✕ 취소</button>
+    </div>
     <div class="rp-list" id="rpList"></div>
     <div class="rp-actions">
       <button id="rpClearAll" style="flex:1;background:#5a3a3a;color:#f0d6d6;">🗑 전체 삭제</button>
@@ -3067,6 +3071,12 @@
         }
       }
       drawPoints.forEach(function(p){ var d=makeDot(p,drawColor); d.setMap(map); drawTempOverlays.push(d); });
+      updateFinishRow();
+    }
+    function updateFinishRow(){
+      var row = document.getElementById("rpFinishRow");
+      var minPts = drawMode==="polygon" ? 3 : 2;
+      row.style.display = (drawMode && drawPoints.length>=minPts) ? "flex" : "none";
     }
 
     function handleDrawClick(latLng){
@@ -3095,15 +3105,33 @@
       renderRoute(route);
       renderRouteList();
       drawPoints = [];
+      document.getElementById("rpFinishRow").style.display = "none";
       // 완성되면 자동으로 그리기 모드 종료 (계속 이어지는 문제 방지). 다음 도형은 도구를 다시 눌러 시작
-      setDrawMode(drawMode);
+      var finishedType = drawMode;
+      drawMode = null;
+      document.querySelectorAll(".rp-tool").forEach(function(b){ b.classList.remove("on"); });
+      var mapEl = document.getElementById("map");
+      if (mapEl) mapEl.style.cursor = "";
+      document.getElementById("rpHint").textContent = "도구를 선택하고 지도를 클릭해 점을 찍으세요.";
     }
     function cancelDrawShape(){
       clearTempOverlays();
       drawPoints = [];
+      var row = document.getElementById("rpFinishRow");
+      if (row) row.style.display = "none";
     }
     function setDrawMode(type){
-      cancelDrawShape();
+      // 그리던 중(점이 이미 찍힌 상태)이면 함부로 지우지 않음: 완성 가능하면 자동완성, 아니면 확인받고 취소
+      if (drawMode && drawPoints.length){
+        var minPts = drawMode==="polygon" ? 3 : 2;
+        if (drawPoints.length >= minPts){
+          finishDraw();
+        } else if (!confirm("그리던 도형이 완성되지 않았습니다. 취소할까요? (점이 "+minPts+"개 이상 필요합니다)")){
+          return; // 취소를 취소 → 도구 전환도 취소하고 계속 그리게 둠
+        } else {
+          cancelDrawShape();
+        }
+      }
       drawMode = (drawMode===type) ? null : type;
       document.querySelectorAll(".rp-tool").forEach(function(b){
         b.classList.toggle("on", b.getAttribute("data-type")===drawMode);
@@ -3111,9 +3139,14 @@
       var mapEl = document.getElementById("map");
       if (mapEl) mapEl.style.cursor = drawMode ? "crosshair" : "";
       document.getElementById("rpHint").textContent = drawMode
-        ? "지도를 클릭해 점을 찍으세요. 더블클릭하면 완성됩니다."
+        ? "지도를 클릭해 점을 찍으세요. 다 찍으면 '완성' 버튼을 누르세요."
         : "도구를 선택하고 지도를 클릭해 점을 찍으세요.";
+      updateFinishRow();
     }
+    document.getElementById("rpFinishBtn").addEventListener("click", finishDraw);
+    document.getElementById("rpCancelBtn").addEventListener("click", function(){
+      cancelDrawShape();
+    });
     function deleteRoute(id){
       removeRouteOverlays(id);
       window.ROUTES = window.ROUTES.filter(function(r){ return r.id!==id; });
