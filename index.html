@@ -2991,6 +2991,7 @@
     window.ROUTES = [];
     var drawMode = null;        // 'line' | 'arrow' | 'polygon' | null
     var drawPoints = [];
+    var drawRedoStack = [];     // 실행취소된 점들 (재실행용)
     var drawTempOverlays = [];  // 그리는 중 임시 표시
     var routeMapOverlays = {};  // id -> [overlay, overlay, ...]
     var drawColor = ROUTE_COLORS[0];
@@ -3092,6 +3093,17 @@
       }
       window.__lastDrawClickTs = now;
       drawPoints.push(p);
+      drawRedoStack = []; // 새 점을 찍으면 재실행 이력은 무효화
+      renderTempShape();
+    }
+    function undoDrawPoint(){
+      if (!drawMode || !drawPoints.length) return;
+      drawRedoStack.push(drawPoints.pop());
+      renderTempShape();
+    }
+    function redoDrawPoint(){
+      if (!drawMode || !drawRedoStack.length) return;
+      drawPoints.push(drawRedoStack.pop());
       renderTempShape();
     }
     function finishDraw(){
@@ -3105,6 +3117,7 @@
       renderRoute(route);
       renderRouteList();
       drawPoints = [];
+      drawRedoStack = [];
       document.getElementById("rpFinishRow").style.display = "none";
       // 완성되면 자동으로 그리기 모드 종료 (계속 이어지는 문제 방지). 다음 도형은 도구를 다시 눌러 시작
       var finishedType = drawMode;
@@ -3117,6 +3130,7 @@
     function cancelDrawShape(){
       clearTempOverlays();
       drawPoints = [];
+      drawRedoStack = [];
       var row = document.getElementById("rpFinishRow");
       if (row) row.style.display = "none";
     }
@@ -3207,10 +3221,19 @@
       renderRouteList();
     });
     // ESC: 그리는 중이면 현재 도형만 취소, 그리기 모드 자체도 종료
+    // Ctrl+Z: 마지막 찍은 점 취소 / Ctrl+Y, Ctrl+Shift+Z: 재실행
     document.addEventListener("keydown", function(e){
-      if (e.key === "Escape" && drawMode){
+      if (!drawMode) return;
+      if (e.key === "Escape"){
         cancelDrawShape();
         setDrawMode(drawMode);
+        return;
+      }
+      var mod = e.ctrlKey || e.metaKey;
+      if (mod && !e.shiftKey && e.key.toLowerCase()==="z"){
+        e.preventDefault(); undoDrawPoint();
+      } else if (mod && ((e.shiftKey && e.key.toLowerCase()==="z") || e.key.toLowerCase()==="y")){
+        e.preventDefault(); redoDrawPoint();
       }
     });
 
