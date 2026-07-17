@@ -986,13 +986,13 @@
       });
 
       // 행정구역 경계: 줌 레벨에 따라 도(넓게)→시군구→동(좁게) 단계로 자동 전환, 라인만 표시(채우기 없음)
-      // 저장소에 내장된 파일 사용 + localStorage 캐시 (외부 사이트 의존 제거, 빠른 재로딩)
+      // 저장소에 내장된 파일(단순화·경량화 완료) 사용 + localStorage 캐시
       var ADMIN_TIERS = {
-        do:      { url:"./admin_boundary_do.json",      cacheKey:"budongsan_admin_boundary_do_v1",
+        do:      { url:"./admin_boundary_do.json",      cacheKey:"budongsan_admin_boundary_do_v2",
                    style:{ strokeWeight:3,   strokeColor:"#000000", strokeOpacity:0.9,  strokeStyle:"solid"   }, label:"도" },
-        sigungu: { url:"./admin_boundary_sigungu.json", cacheKey:"budongsan_admin_boundary_sigungu_v1",
+        sigungu: { url:"./admin_boundary_sigungu.json", cacheKey:"budongsan_admin_boundary_sigungu_v2",
                    style:{ strokeWeight:1,   strokeColor:"#000000", strokeOpacity:0.75, strokeStyle:"solid"   }, label:"시군구" },
-        dong:    { url:"./admin_boundary_dong.json",    cacheKey:"budongsan_admin_boundary_dong_v1",
+        dong:    { url:"./admin_boundary_dong.json",    cacheKey:"budongsan_admin_boundary_dong_v2",
                    style:{ strokeWeight:1,   strokeColor:"#000000", strokeOpacity:0.6,  strokeStyle:"shortdot" }, label:"동" }
       };
       // 수원시 권선구처럼 "구가 있는 시"는 개별 구 경계가 시군구 단계에서 화성시 같은 일반 시와 같은 굵기로 보여서
@@ -1000,13 +1000,27 @@
       var CITY_MERGE_STYLE = { strokeWeight:2.2, strokeColor:"#000000", strokeOpacity:0.9, strokeStyle:"solid" };
       var CITY_GROUP_RE = /^(.+?시)(.+구)$/;
 
-      var __adminPolys = { do:null, sigungu:null };   // do/sigungu: 미리 다 만들어서 토글만 (개수 적어서 가벼움)
+      // do 단계는 개수(103)가 적어 항상 전부 그려도 가벼움. sigungu/dong은 개수가 많아
+      // 화면에 실제로 보이는 범위의 것만 그때그때 폴리곤을 만들어 표시함(뷰포트 렌더링)으로 드래그/줌 버벅임을 줄임.
+      var __doPolys = null;
+      var __cityMergedPolys = null;   // 시 통합 경계(시군구 단계에서 같이 표시)
+      var __viewportFeatures = { sigungu:null, dong:null };  // [{ring, bbox, poly}]
       var __adminLoading = { do:false, sigungu:false, dong:false };
       var __adminVisibleTier = null;
+      var __dragHidden = false;
       var adminChk = document.getElementById("mtAdminBoundary");
       var adminLabel = document.getElementById("mtAdminLabel");
 
-      function buildAdminPolys(topo, style){
+      function bboxOf(ring){
+        var minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+        for (var i=0;i<ring.length;i++){
+          var x=ring[i][0], y=ring[i][1];
+          if (x<minX)minX=x; if (x>maxX)maxX=x;
+          if (y<minY)minY=y; if (y>maxY)maxY=y;
+        }
+        return { minX:minX, minY:minY, maxX:maxX, maxY:maxY };
+      }
+      function buildPolys(topo, style){
         var key = Object.keys(topo.objects)[0];
         var geo = topojson.feature(topo, topo.objects[key]);
         var polys = [];
@@ -1020,6 +1034,21 @@
           });
         });
         return polys;
+      }
+      function buildFeatureList(topo){
+        var key = Object.keys(topo.objects)[0];
+        var geo = topojson.feature(topo, topo.objects[key]);
+        var list = [];
+        geo.features.forEach(function(f){
+          var geom = f.geometry;
+          if (!geom) return;
+          var polyList = geom.type==="Polygon" ? [geom.coordinates] : geom.coordinates;
+          polyList.forEach(function(rings){
+            var ring = rings[0];
+            list.push({ ring:ring, bbox:bboxOf(ring), poly:null });
+          });
+        });
+        return list;
       }
       function buildCityMergedPolys(topo){
         var key = Object.keys(topo.objects)[0];
@@ -1041,45 +1070,21 @@
         });
         return polys;
       }
-      // 동 단위는 3500여개로 많아서, 미리 좌표(bbox)만 계산해두고
-      // 화면에 실제로 보이는 범위의 것만 그때그때 폴리곤을 만들어 표시함 (뷰포트 렌더링)
-      var __dongFeatures = null;  // [{ring, bbox, poly(생성 후 캐시)}]
-      function bboxOf(ring){
-        var minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
-        for (var i=0;i<ring.length;i++){
-          var x=ring[i][0], y=ring[i][1];
-          if (x<minX)minX=x; if (x>maxX)maxX=x;
-          if (y<minY)minY=y; if (y>maxY)maxY=y;
-        }
-        return { minX:minX, minY:minY, maxX:maxX, maxY:maxY };
-      }
-      function buildDongFeatureList(topo){
-        var key = Object.keys(topo.objects)[0];
-        var geo = topojson.feature(topo, topo.objects[key]);
-        var list = [];
-        geo.features.forEach(function(f){
-          var geom = f.geometry;
-          if (!geom) return;
-          var polyList = geom.type==="Polygon" ? [geom.coordinates] : geom.coordinates;
-          polyList.forEach(function(rings){
-            var ring = rings[0];
-            list.push({ ring:ring, bbox:bboxOf(ring), poly:null });
-          });
-        });
-        return list;
-      }
-      function renderDongViewport(){
-        if (!__dongFeatures || __adminVisibleTier!=="dong" || !adminChk.checked) return;
+      // 화면에 보이는 범위의 것만 그려서(뷰포트 렌더링) 항상 지도 위에 있는 폴리곤 개수를 적게 유지
+      function renderViewport(tier){
+        var list = __viewportFeatures[tier];
+        if (!list || __adminVisibleTier!==tier || !adminChk.checked || __dragHidden) return;
         var b = map.getBounds();
         var sw = b.getSouthWest(), ne = b.getNorthEast();
         var minX=sw.getLng(), maxX=ne.getLng(), minY=sw.getLat(), maxY=ne.getLat();
-        __dongFeatures.forEach(function(item){
+        var style = ADMIN_TIERS[tier].style;
+        list.forEach(function(item){
           var bx = item.bbox;
           var visible = !(bx.maxX<minX || bx.minX>maxX || bx.maxY<minY || bx.minY>maxY);
           if (visible){
             if (!item.poly){
               var path = item.ring.map(function(c){ return new kakao.maps.LatLng(c[1], c[0]); });
-              item.poly = new kakao.maps.Polygon(Object.assign({ path:path, fillOpacity:0 }, ADMIN_TIERS.dong.style));
+              item.poly = new kakao.maps.Polygon(Object.assign({ path:path, fillOpacity:0 }, style));
             }
             if (!item.poly.getMap()) item.poly.setMap(map);
           } else if (item.poly && item.poly.getMap()){
@@ -1099,24 +1104,23 @@
         });
       }
       function loadTier(tier, cb){
-        if (tier==="dong"){
-          if (__dongFeatures){ cb(); return; }
-          if (__adminLoading.dong) return;
-          __adminLoading.dong = true;
-          fetchTopo(ADMIN_TIERS.dong, function(topo){
-            __dongFeatures = buildDongFeatureList(topo);
-            __adminLoading.dong = false;
+        if (tier==="do"){
+          if (__doPolys){ cb(); return; }
+          if (__adminLoading.do) return;
+          __adminLoading.do = true;
+          fetchTopo(ADMIN_TIERS.do, function(topo){
+            __doPolys = buildPolys(topo, ADMIN_TIERS.do.style);
+            __adminLoading.do = false;
             cb();
           });
           return;
         }
-        if (__adminPolys[tier]){ cb(); return; }
+        if (__viewportFeatures[tier]){ cb(); return; }
         if (__adminLoading[tier]) return;
         __adminLoading[tier] = true;
         fetchTopo(ADMIN_TIERS[tier], function(topo){
-          var polys = buildAdminPolys(topo, ADMIN_TIERS[tier].style);
-          if (tier==="sigungu") polys = polys.concat(buildCityMergedPolys(topo)); // 시 통합 경계 추가
-          __adminPolys[tier] = polys;
+          __viewportFeatures[tier] = buildFeatureList(topo);
+          if (tier==="sigungu") __cityMergedPolys = buildCityMergedPolys(topo); // 시 통합 경계
           __adminLoading[tier] = false;
           cb();
         });
@@ -1127,19 +1131,23 @@
         return "dong";
       }
       function hideAllAdminTiers(exceptTier){
-        ["do","sigungu"].forEach(function(t){
+        if (exceptTier!=="do" && __doPolys) __doPolys.forEach(function(p){ p.setMap(null); });
+        if (exceptTier!=="sigungu" && __cityMergedPolys) __cityMergedPolys.forEach(function(p){ p.setMap(null); });
+        ["sigungu","dong"].forEach(function(t){
           if (t===exceptTier) return;
-          if (__adminPolys[t]) __adminPolys[t].forEach(function(p){ p.setMap(null); });
+          if (__viewportFeatures[t]) __viewportFeatures[t].forEach(function(item){ if (item.poly) item.poly.setMap(null); });
         });
-        if (exceptTier!=="dong" && __dongFeatures){
-          __dongFeatures.forEach(function(item){ if (item.poly) item.poly.setMap(null); });
-        }
+      }
+      function showTier(tier){
+        if (tier==="do"){ __doPolys.forEach(function(p){ p.setMap(map); }); return; }
+        if (tier==="sigungu" && __cityMergedPolys) __cityMergedPolys.forEach(function(p){ p.setMap(map); });
+        renderViewport(tier);
       }
       function updateAdminBoundaryDisplay(){
         if (!adminChk.checked) return;
         var tier = tierForLevel(map.getLevel());
         if (tier === __adminVisibleTier){
-          if (tier==="dong") renderDongViewport(); // 동 단계에서 이동만 했을 때도 뷰포트 갱신
+          if (tier!=="do") renderViewport(tier); // 같은 단계에서 이동만 했을 때도 뷰포트 갱신
           return;
         }
         __adminVisibleTier = tier;
@@ -1148,8 +1156,7 @@
         loadTier(tier, function(){
           if (!adminChk.checked || __adminVisibleTier!==tier) return; // 로딩 중 꺼졌거나 다른 단계로 바뀜
           adminLabel.textContent = "행정구역 경계 (자동: "+ADMIN_TIERS[tier].label+")";
-          if (tier==="dong") renderDongViewport();
-          else __adminPolys[tier].forEach(function(p){ p.setMap(map); });
+          showTier(tier);
         });
       }
       adminChk.addEventListener("change", function(){
@@ -1163,7 +1170,14 @@
         }
       });
       kakao.maps.event.addListener(map, "zoom_changed", updateAdminBoundaryDisplay);
-      kakao.maps.event.addListener(map, "idle", renderDongViewport); // 동 단계에서 화면 이동 시 뷰포트만 다시 그림
+      kakao.maps.event.addListener(map, "idle", function(){ __dragHidden=false; if (__adminVisibleTier && __adminVisibleTier!=="do") renderViewport(__adminVisibleTier); });
+      // 드래그(팬) 중에는 경계선을 잠깐 숨겨서 끌기 자체가 버벅이지 않게 함 — 놓으면(idle) 바로 다시 그림
+      kakao.maps.event.addListener(map, "dragstart", function(){
+        if (!adminChk.checked || __adminVisibleTier==="do") return;
+        __dragHidden = true;
+        var tier = __adminVisibleTier;
+        if (tier && __viewportFeatures[tier]) __viewportFeatures[tier].forEach(function(item){ if (item.poly) item.poly.setMap(null); });
+      });
     })();
 
     var geocoder = new kakao.maps.services.Geocoder();
