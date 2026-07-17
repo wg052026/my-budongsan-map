@@ -1320,30 +1320,71 @@
         '</div>' +
       '</div>';
     }
+    function openColorPicker(curColor, curWeight){
+      return new Promise(function(resolve){
+        var ov = document.createElement("div");
+        ov.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:80;display:flex;align-items:center;justify-content:center;";
+        var paletteHtml = __subwayColorPalette.map(function(c){
+          return '<button class="cp-sw" data-c="'+c+'" style="width:26px;height:26px;border-radius:50%;border:2px solid '+(c===curColor?'#fff':'rgba(255,255,255,0.15)')+';background:'+c+';cursor:pointer;padding:0;"></button>';
+        }).join("");
+        ov.innerHTML =
+          '<div style="background:#23272f;border:0.5px solid rgba(255,255,255,0.2);border-radius:12px;padding:18px;width:min(300px,90%);box-shadow:0 8px 30px rgba(0,0,0,0.5);">' +
+            '<div style="font-size:13px;font-weight:800;margin-bottom:12px;color:#f2f3f5;">🎨 노선 색상/굵기</div>' +
+            '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">' +
+              '<input type="color" id="cpColorInput" value="'+curColor+'" style="width:44px;height:36px;border:none;border-radius:6px;background:none;cursor:pointer;padding:0;" />' +
+              '<input type="text" id="cpHexInput" value="'+curColor+'" style="flex:1;background:#1a1d24;border:0.5px solid rgba(255,255,255,0.2);color:#e8eaed;border-radius:6px;padding:8px;font-size:12.5px;font-family:monospace;box-sizing:border-box;" />' +
+            '</div>' +
+            '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">'+paletteHtml+'</div>' +
+            (window.EyeDropper ? '<button id="cpEyedrop" style="width:100%;box-sizing:border-box;margin-bottom:12px;background:#2c3742;border:0.5px solid rgba(255,255,255,0.2);color:#cfe8db;border-radius:6px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;">💧 스포이드로 화면에서 고르기</button>' : '') +
+            '<label style="display:block;font-size:11px;color:#8a909b;margin:0 0 4px;">선 굵기(px)</label>' +
+            '<input type="number" id="cpWeightInput" min="1" max="12" step="0.5" value="'+curWeight+'" style="width:100%;box-sizing:border-box;background:#1a1d24;border:0.5px solid rgba(255,255,255,0.2);color:#e8eaed;border-radius:6px;padding:8px;font-size:12.5px;" />' +
+            '<div style="display:flex;gap:8px;margin-top:14px;">' +
+              '<button id="cpCancel" style="flex:1;background:#3a3f49;border:none;color:#e8eaed;border-radius:6px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;">취소</button>' +
+              '<button id="cpOk" style="flex:1;background:#3F9E7E;border:none;color:#fff;border-radius:6px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;">적용</button>' +
+            '</div>' +
+          '</div>';
+        document.body.appendChild(ov);
+        var colorInput = ov.querySelector("#cpColorInput");
+        var hexInput = ov.querySelector("#cpHexInput");
+        var weightInput = ov.querySelector("#cpWeightInput");
+        colorInput.addEventListener("input", function(){ hexInput.value = colorInput.value; });
+        hexInput.addEventListener("input", function(){
+          var v = hexInput.value.trim();
+          if (/^#[0-9a-fA-F]{6}$/.test(v)) colorInput.value = v;
+        });
+        ov.querySelectorAll(".cp-sw").forEach(function(sw){
+          sw.addEventListener("click", function(){
+            var c = sw.getAttribute("data-c");
+            colorInput.value = c; hexInput.value = c;
+          });
+        });
+        var eyedrop = ov.querySelector("#cpEyedrop");
+        if (eyedrop){
+          eyedrop.addEventListener("click", async function(){
+            try { var ed = new EyeDropper(); var r = await ed.open(); colorInput.value = r.sRGBHex; hexInput.value = r.sRGBHex; }
+            catch(e){ /* 취소됨 */ }
+          });
+        }
+        function close(result){ document.body.removeChild(ov); resolve(result); }
+        ov.querySelector("#cpCancel").addEventListener("click", function(){ close(null); });
+        ov.addEventListener("click", function(e){ if (e.target===ov) close(null); });
+        ov.querySelector("#cpOk").addEventListener("click", function(){
+          var hex = hexInput.value.trim();
+          if (!/^#[0-9a-fA-F]{6}$/.test(hex)) hex = colorInput.value;
+          var w = parseFloat(weightInput.value);
+          if (isNaN(w) || w<=0) w = curWeight;
+          close({ color:hex, weight:w });
+        });
+      });
+    }
     window.__styleSubwayLine = async function(lineName){
       var group = all.filter(function(x){ return x.kind==="spot" && x.spottype==="지하철" && x.sub===lineName; });
       if (!group.length) return;
       var curColor = group[0].lineColor || subwayLineColor(lineName);
       var curWeight = group[0].lineWeight || 4;
-      var newColor = curColor;
-      if (window.EyeDropper){
-        if (confirm("스포이드로 화면에서 색을 고르시겠어요?\n확인=스포이드 / 취소=직접 코드 입력")){
-          try { var ed = new EyeDropper(); var r = await ed.open(); newColor = r.sRGBHex; }
-          catch(e){ return; }
-        } else {
-          var v = prompt("색상 코드를 입력하세요 (예: #00A84D)", curColor);
-          if (v===null) return;
-          newColor = v.trim() || curColor;
-        }
-      } else {
-        var v2 = prompt("색상 코드를 입력하세요 (예: #00A84D)", curColor);
-        if (v2===null) return;
-        newColor = v2.trim() || curColor;
-      }
-      var wv = prompt("선 굵기(px)를 입력하세요", curWeight);
-      if (wv===null) return;
-      var newWeight = parseFloat(wv);
-      if (isNaN(newWeight) || newWeight<=0) newWeight = curWeight;
+      var result = await openColorPicker(curColor, curWeight);
+      if (!result) return;
+      var newColor = result.color, newWeight = result.weight;
       window.__closeIW();
       group.forEach(function(p){
         var updated = {};
