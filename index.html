@@ -45,6 +45,8 @@
     .iw-stars { margin:6px 0 8px; font-size:13px; }
     .iw-info { font-size:13px; font-weight:700; color:#fff; margin-bottom:8px; }
     .iw-note { font-size:12.5px; color:#c5c9d1; line-height:1.5; border-top:0.5px solid rgba(255,255,255,0.12); padding-top:8px; white-space:pre-wrap; }
+    .iw-action-btn { box-sizing:border-box;display:block;width:100%;margin-top:8px;background:#2c3742;border:0.5px solid rgba(255,255,255,0.2);color:#cfe8db;border-radius:6px;padding:7px;font-size:11px;font-weight:700;cursor:pointer; }
+    .iw-photo-label { margin-top:8px;font-size:11px;font-weight:700;color:#cfe8db; }
 
     /* ===== 추가 패널 ===== */
     #panel { position:absolute; top:12px; left:12px; z-index:20; width:230px;
@@ -121,7 +123,7 @@
 
     #trendBox { display:none; position:absolute; inset:0; z-index:55; background:rgba(0,0,0,0.6);
       align-items:center; justify-content:center; }
-    #trendBox .inner { width:min(560px,94%); background:#23272f; border:0.5px solid rgba(255,255,255,0.2);
+    #trendBox .inner { width:min(560px,94%); max-height:90vh; overflow-y:auto; background:#23272f; border:0.5px solid rgba(255,255,255,0.2);
       border-radius:12px; padding:16px; }
     .trend-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
     #trendTitle { color:#f2f3f5; font-size:14px; font-weight:700; }
@@ -132,8 +134,18 @@
     .tr-range { background:#1a1d24; color:#9aa0ab; border:0.5px solid rgba(255,255,255,0.2); border-radius:6px; padding:5px 9px; font-size:12px; cursor:pointer; }
     .tr-range.on { background:#3F9E7E; color:#fff; border-color:#3F9E7E; }
     #trendCount { color:#9aa0ab; font-size:11px; margin-bottom:8px; }
+    #trendChartWrap { position:relative; }
     #trendChart { width:100%; height:240px; background:#1a1d24; border-radius:8px; }
-    #trendList { max-height:140px; overflow-y:auto; margin-top:10px; font-size:11px; color:#cfe8db; }
+    .trend-dot { cursor:pointer; transition:r 0.12s ease, opacity 0.12s ease; }
+    .trend-dot:hover { r:6; }
+    #trendTip { position:absolute; display:none; pointer-events:none; z-index:5;
+      background:#0f1216; border:0.5px solid rgba(63,158,126,0.6); border-radius:8px;
+      padding:6px 10px; font-size:11px; color:#e8eaed; white-space:nowrap;
+      box-shadow:0 4px 14px rgba(0,0,0,0.4); transform:translate(-50%,-115%);
+      transition:opacity 0.1s ease; opacity:0; }
+    #trendTip .tt-price { color:#3F9E7E; font-weight:800; font-size:13px; }
+    #trendTip .tt-date { color:#9aa0ab; margin-top:2px; }
+    #trendList { height:140px; overflow-y:auto; margin-top:10px; font-size:11px; color:#cfe8db; }
     #trendList .tr-row { display:flex; justify-content:space-between; padding:3px 4px; border-bottom:0.5px solid rgba(255,255,255,0.07); }
 
     #progBox { display:none; position:absolute; inset:0; z-index:50; background:rgba(0,0,0,0.6);
@@ -183,6 +195,26 @@
     .gp-row { display:flex; align-items:center; gap:6px; padding:3px 0; }
     .gp-row label { flex:1; display:flex; align-items:center; gap:6px; color:#e8eaed; font-size:12px; cursor:pointer; min-width:0; }
     .gp-row .gp-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+    #routePanel { display:none; position:absolute; top:12px; left:12px; z-index:46; background:rgba(28,31,38,0.97);
+      border:0.5px solid rgba(255,255,255,0.2); border-radius:12px; padding:12px; width:220px;
+      box-shadow:0 4px 24px rgba(0,0,0,0.6); }
+    #routePanel .rp-head { color:#f2f3f5; font-size:13px; font-weight:700; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; }
+    #routeCloseBtn { background:#3a3f49; border:none; color:#e8eaed; border-radius:6px; width:22px; height:22px; cursor:pointer; font-size:12px; }
+    .rp-tools { display:flex; gap:5px; margin-bottom:8px; }
+    .rp-tool { flex:1; background:#2c3742; border:0.5px solid rgba(255,255,255,0.2); color:#cfe8db; border-radius:6px; padding:6px 2px; font-size:11px; cursor:pointer; }
+    .rp-tool.on { background:#3F9E7E; color:#fff; border-color:#3F9E7E; }
+    .rp-colors { display:flex; gap:5px; margin-bottom:8px; flex-wrap:wrap; }
+    .rp-color { width:20px; height:20px; border-radius:50%; cursor:pointer; border:2px solid transparent; box-sizing:border-box; }
+    .rp-color.on { border-color:#fff; }
+    .rp-hint { color:#9aa0ab; font-size:10.5px; line-height:1.4; margin-bottom:8px; }
+    .rp-list { max-height:180px; overflow-y:auto; margin-bottom:8px; }
+    .rp-item { display:flex; align-items:center; gap:6px; padding:4px 2px; border-bottom:0.5px solid rgba(255,255,255,0.07); font-size:11px; color:#e8eaed; }
+    .rp-item .rp-swatch { width:10px; height:10px; border-radius:3px; flex-shrink:0; }
+    .rp-item .rp-label { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; }
+    .rp-item .rp-del { background:none; border:none; color:#e08a8a; cursor:pointer; font-size:12px; padding:2px 4px; }
+    .rp-actions { display:flex; gap:6px; }
+    .rp-actions button { border:none; border-radius:6px; padding:7px 0; font-size:11px; font-weight:700; cursor:pointer; }
     .gp-row .gp-cnt { color:#9aa0ab; font-size:11px; flex-shrink:0; }
     .gp-row .gp-del { background:#5a3a3a; border:none; color:#f0d6d6; border-radius:5px;
       padding:2px 6px; font-size:11px; cursor:pointer; flex-shrink:0; }
@@ -354,8 +386,10 @@
       <input type="file" id="xlsxFile" accept=".xlsx,.xls" style="display:none;" />
       <button id="exportBtn">⟱ 코드 내보내기</button>
       <button id="saveGhBtn">💾 GitHub에 저장</button>
+      <button id="routeToggleBtn">✏️ 임장동선 그리기</button>
       <button id="clearBtn">🗑 내 추가분 비우기</button>
       <button id="clearPriceBtn">💰 실거래가 캐시 비우기</button>
+      <button id="cacheStatusBtn">📊 실거래가 캐시 상태</button>
       <div style="border-top:0.5px solid rgba(255,255,255,0.15); margin:6px 0 4px;"></div>
       <button id="dbgToggle" style="background:#2c3742;color:#cfe8db;">🐞 디버그 로그 보기</button>
       <div id="dbgWrap" style="display:none; margin-top:4px;">
@@ -366,6 +400,12 @@
         <textarea id="dbgBody" readonly style="width:100%; box-sizing:border-box; height:160px; background:#0a0c10; color:#9fe7c8; font-family:monospace; font-size:11px; line-height:1.5; border:0.5px solid rgba(255,255,255,0.2); border-radius:6px; padding:6px; resize:vertical;"></textarea>
       </div>
     </div>
+  </div>
+
+  <!-- 사진 확대 뷰 -->
+  <div id="photoView" style="display:none;position:absolute;inset:0;z-index:49;background:rgba(0,0,0,0.95);align-items:center;justify-content:center;flex-direction:column;">
+    <img id="photoViewImg" style="max-width:96%;max-height:84%;object-fit:contain;border-radius:8px;cursor:pointer;">
+    <button id="photoViewClose" style="margin-top:16px;background:#3a3f49;border:none;color:#e8eaed;border-radius:8px;padding:10px 22px;font-size:13px;cursor:pointer;">닫기</button>
   </div>
 
   <div id="failBox">
@@ -398,6 +438,33 @@
     <div id="gpList"></div>
   </div>
 
+  <div id="routePanel" style="display:none;">
+    <div class="rp-head">
+      <span>✏️ 임장동선</span>
+      <button id="routeCloseBtn" title="닫기">✕</button>
+    </div>
+    <div class="rp-tools">
+      <button class="rp-tool" data-type="line" title="선">📏 선</button>
+      <button class="rp-tool" data-type="arrow" title="화살표">➡️ 화살표</button>
+      <button class="rp-tool" data-type="polygon" title="면">⬠ 면</button>
+    </div>
+    <div class="rp-colors" id="rpColors"></div>
+    <div class="rp-hint" id="rpHint">도구를 선택하고 지도를 클릭해 점을 찍으세요.</div>
+    <div class="rp-tools" id="rpFinishRow" style="display:none;">
+      <button id="rpFinishBtn" style="flex:1;background:#3F9E7E;color:#fff;">✓ 완성</button>
+      <button id="rpCancelBtn" style="flex:1;background:#5a3a3a;color:#f0d6d6;">✕ 취소</button>
+    </div>
+    <div class="rp-tools" id="rpEditRow" style="display:none;">
+      <button id="rpEditDone" style="flex:1;background:#3F9E7E;color:#fff;">✓ 수정완료</button>
+      <button id="rpEditCancel" style="flex:1;background:#5a3a3a;color:#f0d6d6;">✕ 취소</button>
+    </div>
+    <div class="rp-list" id="rpList"></div>
+    <div class="rp-actions">
+      <button id="rpClearAll" style="flex:1;background:#5a3a3a;color:#f0d6d6;">🗑 전체 삭제</button>
+      <button id="rpSaveGh" style="flex:1;background:#3F9E7E;color:#fff;">💾 저장</button>
+    </div>
+  </div>
+
   <div id="trendBox">
     <div class="inner">
       <div class="trend-head">
@@ -414,7 +481,10 @@
         <select id="trendPy"></select>
       </div>
       <div id="trendCount"></div>
-      <div id="trendChart"></div>
+      <div id="trendChartWrap">
+        <div id="trendChart"></div>
+        <div id="trendTip"><div class="tt-price"></div><div class="tt-date"></div></div>
+      </div>
       <div id="trendList"></div>
     </div>
   </div>
@@ -446,6 +516,72 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
   <script src="data.js?v=1"></script>
 
+  <!-- ===== Firebase (사진 목록 동기화) + Cloudinary (사진 저장) ===== -->
+  <script>
+    window.__fbAppReady = false;
+    window.__fbFsReady  = false;
+    window.__tryInitFirebase = function(){
+      if (!window.__fbAppReady || !window.__fbFsReady) return;
+      if (window.__photo) return;
+      try {
+        var cfg = {
+          apiKey: "AIzaSyBjxTup5SwqTn8nVfQ1eC1cvybhPTwktLg",
+          authDomain: "budongsan-map.firebaseapp.com",
+          projectId: "budongsan-map",
+          storageBucket: "budongsan-map.firebasestorage.app",
+          messagingSenderId: "213449798110",
+          appId: "1:213449798110:web:8afa776f3f7b35c9622d4f"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(cfg);
+        var db = firebase.firestore();
+        window.__photo = {
+          CLOUD_NAME: "dmony4wej",
+          UPLOAD_PRESET: "budongsan",
+          async list(id){
+            try{ var s=await db.collection("photos").doc(id).get(); return s.exists?(s.data().items||[]):[];}
+            catch(e){ return []; }
+          },
+          async add(id, file){
+            var blob = await window.__photo._resize(file, 1280, 0.8);
+            var fd = new FormData(); fd.append("file",blob); fd.append("upload_preset",window.__photo.UPLOAD_PRESET);
+            var res = await fetch("https://api.cloudinary.com/v1_1/"+window.__photo.CLOUD_NAME+"/image/upload",{method:"POST",body:fd});
+            if(!res.ok) throw new Error("업로드 실패");
+            var data = await res.json();
+            var item = {url:data.secure_url, public_id:data.public_id, ts:Date.now()};
+            var ref = db.collection("photos").doc(id);
+            var snap = await ref.get();
+            if(snap.exists) await ref.update({items:firebase.firestore.FieldValue.arrayUnion(item)});
+            else await ref.set({items:[item]});
+            return item;
+          },
+          async remove(id, item){
+            await db.collection("photos").doc(id).update({items:firebase.firestore.FieldValue.arrayRemove(item)});
+          },
+          _resize(file, maxW, quality){
+            return new Promise(function(resolve,reject){
+              var img=new Image(), url=URL.createObjectURL(file);
+              img.onload=function(){
+                URL.revokeObjectURL(url);
+                var w=img.width, h=img.height;
+                if(w>maxW){h=Math.round(h*maxW/w);w=maxW;}
+                var cv=document.createElement("canvas"); cv.width=w; cv.height=h;
+                cv.getContext("2d").drawImage(img,0,0,w,h);
+                cv.toBlob(function(b){b?resolve(b):reject(new Error("리사이즈 실패"));},"image/jpeg",quality);
+              };
+              img.onerror=function(){URL.revokeObjectURL(url);reject(new Error("로드 실패"));};
+              img.src=url;
+            });
+          }
+        };
+        window.__photoReady = true;
+      } catch(e){ console.error("Firebase 초기화 실패:",e); }
+    };
+  </script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"
+    onload="window.__fbAppReady=true; window.__tryInitFirebase();"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"
+    onload="window.__fbFsReady=true; window.__tryInitFirebase();"></script>
+
   <script>
   // =======================================================================
   //  고정 항목은 data.js 에서 불러옵니다 (window.PLACES)
@@ -455,7 +591,7 @@
   // =======================================================================
   //  실거래가 자동조회 서버 (STEP 2에서 배포한 웹앱 URL)
   // =======================================================================
-  var DEAL_API = "https://script.google.com/macros/s/AKfycbyS_xDJJzwjPwvj3rD_PUhKhQEHdfYa6dpb1qfwcQvmRw16QyySGDwpGbUAXS89d3OIVQ/exec";
+  var DEAL_API = "https://script.google.com/macros/s/AKfycby6YzPDBSgiWfx2Qgs2LYL6cfDo3RH27-Bxqhwtg-qh_Z1aHfxwFOmFiMeMv7-GFAUlUA/exec";
 
   // =======================================================================
   //  ↓↓↓ 아래는 건드리지 않아도 됩니다 ↓↓↓
@@ -483,6 +619,55 @@
   var PRICE_KEY = "budongsan_price_cache_v1";   // 실거래가 캐시 (코드+이름 → 값)
   function loadPriceCache(){ try{ return JSON.parse(localStorage.getItem(PRICE_KEY)||"{}"); }catch(e){ return {}; } }
   function savePriceCache(o){ try{ localStorage.setItem(PRICE_KEY, JSON.stringify(o)); }catch(e){} }
+  // 예전 버전에서 localStorage에 저장했던 대용량 __deals__ 키 정리 (용량초과로 저장 자체가 실패했을 수도 있지만, 혹시 남아있으면 제거)
+  (function cleanupOldDealsCache(){
+    try{
+      var c = loadPriceCache();
+      var changed = false;
+      Object.keys(c).forEach(function(k){
+        if (k.indexOf('__deals__') === 0){ delete c[k]; changed = true; }
+      });
+      if (changed) savePriceCache(c);
+    }catch(e){}
+  })();
+
+  // prices.json (GitHub Actions 서버 수집분) → localStorage(가격요약) + 메모리(deals 5년치) 캐시
+  // ⚠ deals(5년치 상세내역)는 용량이 커서(수십MB) localStorage에 넣으면 용량초과로 저장이 조용히 실패함
+  //    → 가벼운 val(요약가)만 localStorage에, deals는 메모리 변수(window.__serverDeals)에 보관
+  window.__serverDeals = window.__serverDeals || {};   // key -> {deals, ts}
+  (function loadServerPrices(){
+    fetch('prices.json?v=' + Date.now())
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(server){
+        if (!server || typeof server !== 'object') return;
+        var local = loadPriceCache();
+        var merged = 0, refreshed = 0;
+        Object.keys(server).forEach(function(k){
+          var sv = server[k];
+          // prices.json은 {val, deals, ts} 형식
+          var val = (sv && sv.val !== undefined) ? sv.val : sv;
+          if (!val) return;
+          // deals는 메모리에만 저장 (localStorage 용량초과 방지)
+          if (sv.deals && sv.deals.length){
+            window.__serverDeals[k] = {deals: sv.deals, ts: sv.ts};
+          }
+          var localTs = local['__ts__'+k];
+          var isNew = (local[k] === undefined);
+          var isNewer = (!isNew) && sv.ts && (!localTs || sv.ts > localTs);
+          if (isNew || isNewer){
+            local[k] = val;
+            local['__ts__'+k] = sv.ts || (Date.now()/1000);
+            if (isNew) merged++; else refreshed++;
+          }
+        });
+        if (merged > 0 || refreshed > 0){
+          savePriceCache(local);
+          console.log('[prices.json] 신규 ' + merged + '개, 갱신 ' + refreshed + '개 병합 완료 (deals ' + Object.keys(window.__serverDeals).length + '개는 메모리 캐시)');
+          if (typeof autoFetchPrices === 'function') autoFetchPrices();
+        }
+      })
+      .catch(function(){});
+  })();
   function priceKey(p){
     var la = (p.lat!=null) ? Number(p.lat).toFixed(4) : "";
     var ln = (p.lng!=null) ? Number(p.lng).toFixed(4) : "";
@@ -504,7 +689,7 @@
     var u = DEAL_API + "?lawd=" + encodeURIComponent(p.code) +
             "&apt=" + encodeURIComponent(p.name) +
             "&months=" + months;
-    var ad = parseAddr(p.addr);
+    var ad = parseAddr(p.addr || p.note || "");
     if (ad.road) u += "&road=" + encodeURIComponent(ad.road) + "&bun=" + encodeURIComponent(ad.bun);
     else if (ad.jibun) u += "&jibun=" + encodeURIComponent(ad.jibun);
     return u;
@@ -702,6 +887,7 @@
     if (p.auto===undefined) return { txt: "조회중…", color: "" };
     if (p.auto && p.auto.error) return { txt: "조회실패", color: "color:#d9534f;" };
     if (p.auto && p.auto.nocode) return { txt: "코드없음", color: "color:#d9534f;" };
+    if (p.auto && p.auto.unmatched) return { txt: "매칭실패", color: "color:#e67e22;" };
     return { txt: "거래없음", color: "" };
   }
 
@@ -752,17 +938,25 @@
 
     // 고정항목(fix) + 추가항목(add)을 합치고, 편집/삭제 오버라이드 적용
     function buildAll(){
+      // 기존 __marker, __iw를 __id 기준으로 보존
+      var prevMap = {};
+      if(all && all.length) all.forEach(function(p){ if(p.__id) prevMap[p.__id]=p; });
+
       var list = [];
       places.forEach(function(p, i){
         var id = "fix:" + i;
         if (edits[id] === "__deleted__") return;
         var merged = Object.assign({}, p, edits[id] || {});
         merged.__id = id;
+        var prev = prevMap[id];
+        if(prev){ merged.__marker=prev.__marker; merged.__iw=prev.__iw; merged.auto=prev.auto; }
         list.push(merged);
       });
       added.forEach(function(p, i){
-        if (!p.__id) p.__id = "add_" + i;   // 안전망 (보통 loadAdded에서 이미 부여됨)
+        if (!p.__id) p.__id = "add_" + i;
         var item = Object.assign({}, p);
+        var prev = prevMap[item.__id];
+        if(prev){ item.__marker=prev.__marker; item.__iw=prev.__iw; item.auto=prev.auto; }
         list.push(item);
       });
       all = list;
@@ -771,12 +965,11 @@
     }
     buildAll();
 
-    var center = all.length ? new kakao.maps.LatLng(all[0].lat, all[0].lng)
-                            : new kakao.maps.LatLng(37.4979,127.0276);
+    var center = new kakao.maps.LatLng(37.2636, 127.0286); // 수원시
     var map = new kakao.maps.Map(document.getElementById("map"), { center:center, level:6 });
 
     // ============ 예정 지하철 노선 (GTX-C / 인동선 / 신분당선 연장) ============
-    // 좌표는 카카오 로컬 API로 조회한 인근 랜드마크/역 좌표 기반 근사치입니다 (미개통 노선 → 정확한 선형 아님, 참고용).
+    // 좌표는 카카오 로컬 API로 조회한 기존 역/랜드마크 좌표 + 국토교통부 고시(제2021-1388호, 제2022-250호) 기준 근사치입니다.
     (function(){
       var RAIL_LINES = {
         gtxc: {
@@ -839,7 +1032,6 @@
         var overlays = def.stations.map(function(s){
           var content = document.createElement("div");
           // 앵커는 xAnchor:0(왼쪽) / yAnchor:0.5(세로 중앙) 하나만 사용 — 점(dot)이 좌표에 정확히 위치.
-          // (이전 버전은 yAnchor:1 + CSS transform을 동시에 적용해 위치가 이중으로 밀리는 버그가 있었음)
           content.style.cssText = "display:flex;align-items:center;gap:4px;";
           content.innerHTML =
             '<div style="width:8px;height:8px;border-radius:50%;background:'+def.color+';border:1.5px solid #14161a;flex-shrink:0;"></div>' +
@@ -915,12 +1107,95 @@
     var autoCache={};   // __id -> 자동 실거래가값 (재렌더에도 유지)
 
     window.__closeIW = function(){ if(openIW){ openIW.setMap(null); openIW=null; } };
+
+    // ===== 임장 사진 기능 =====
+    var photoCache = {};
+
+    window.__renderPhotos = async function(id){
+      var panel = document.getElementById("photoPanel-"+id);
+      if (!panel || !window.__photo) return;
+      panel.innerHTML = '<div style="color:#9aa0ab;text-align:center;padding:10px;font-size:11px;">불러오는 중…</div>';
+      var items = await window.__photo.list(id);
+      photoCache[id] = items;
+      var sorted = items.slice().sort(function(a,b){ return (b.ts||0)-(a.ts||0); });
+      var cells = sorted.map(function(it){
+        var enc = encodeURIComponent(JSON.stringify(it));
+        var thumb = it.url.replace("/upload/","/upload/w_300,h_300,c_fill,q_auto/");
+        return '<div style="position:relative;aspect-ratio:1;border-radius:6px;overflow:hidden;background:#1a1d24;">' +
+               '<img src="'+thumb+'" loading="lazy" style="width:100%;height:100%;object-fit:cover;cursor:pointer;" onclick="window.__viewPhoto(\''+enc+'\')">' +
+               '<span onclick="window.__delPhoto(\''+id+'\',\''+enc+'\')" style="position:absolute;top:-2px;right:-2px;width:18px;height:18px;border-radius:50%;background:#c0392b;color:#fff;font-size:14px;line-height:17px;text-align:center;cursor:pointer;">−</span>' +
+               '</div>';
+      }).join("");
+      var addCell = '<label style="aspect-ratio:1;border-radius:6px;border:1px dashed rgba(255,255,255,0.28);display:flex;align-items:center;justify-content:center;color:#9aa0ab;font-size:22px;cursor:pointer;">＋' +
+        '<input type="file" accept="image/*" multiple capture="environment" style="display:none;" onchange="window.__uploadPhotos(\''+id+'\',this)"></label>';
+      panel.innerHTML =
+        '<div id="photoProg-'+id+'" style="display:none;color:#cfe8db;font-size:11px;padding:4px 0;"></div>' +
+        '<div id="photoDrop-'+id+'" style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:6px;border-radius:8px;outline:2px dashed transparent;outline-offset:2px;transition:outline 0.15s,background 0.15s;">' + cells + addCell + '</div>';
+      var cnt = document.getElementById("iwPhotoCnt-"+id);
+      if(cnt) cnt.textContent = items.length ? "("+items.length+")" : "";
+      window.__bindDrop(id);
+    };
+
+    window.__uploadPhotos = async function(id, input){
+      var files = Array.from(input.files||[]);
+      input.value = "";
+      if(!files.length) return;
+      var prog = document.getElementById("photoProg-"+id);
+      if(prog) prog.style.display="block";
+      var done=0;
+      for(var i=0;i<files.length;i++){
+        if(prog) prog.textContent="업로드 중… "+(done+1)+"/"+files.length;
+        try{ await window.__photo.add(id,files[i]); done++; }
+        catch(err){ console.error(err); }
+      }
+      if(prog) prog.textContent="완료! "+done+"장 추가됨";
+      await window.__renderPhotos(id);
+      setTimeout(function(){ if(prog) prog.style.display="none"; },1500);
+    };
+
+    window.__delPhoto = async function(id, enc){
+      var it = JSON.parse(decodeURIComponent(enc));
+      if(!confirm("이 사진을 삭제할까요?")) return;
+      try{ await window.__photo.remove(id,it); await window.__renderPhotos(id); }
+      catch(err){ alert("삭제 실패: "+(err.message||err)); }
+    };
+
+    window.__viewPhoto = function(enc){
+      var it = JSON.parse(decodeURIComponent(enc));
+      document.getElementById("photoViewImg").src = it.url;
+      document.getElementById("photoView").style.display = "flex";
+    };
+
+    window.__bindDrop = function(id){
+      var zone = document.getElementById("photoDrop-"+id);
+      if(!zone) return;
+      function show(on){
+        zone.style.outlineColor = on?"#3F9E7E":"transparent";
+        zone.style.background = on?"rgba(63,158,126,0.12)":"transparent";
+      }
+      ["dragenter","dragover"].forEach(function(ev){ zone.addEventListener(ev,function(e){e.preventDefault();e.stopPropagation();show(true);}); });
+      ["dragleave","dragend"].forEach(function(ev){ zone.addEventListener(ev,function(e){e.preventDefault();e.stopPropagation();show(false);}); });
+      zone.addEventListener("drop",function(e){
+        e.preventDefault();e.stopPropagation();show(false);
+        var files=Array.from((e.dataTransfer&&e.dataTransfer.files)||[]).filter(function(f){return f.type&&f.type.indexOf("image/")===0;});
+        if(files.length) window.__uploadPhotos(id,{files:files,value:""});
+      });
+    };
     window.__mkClick = function(id){
       var p = findById(id);
       if (p && p.__marker && p.__marker.__onClick){ p.__marker.__onClick(); }
     };
     window.__editItem = function(id){ startEdit(id); };
     window.__deleteItem = function(id){ deleteItem(id); };
+    window.__openNaverLand = function(id){
+      var rp = findById(id);
+      if (!rp) return;
+      if (rp.lat==null || rp.lng==null) return;
+      // 네이버부동산(new.land.naver.com) 매물지도를 해당 좌표로 바로 열기 (아파트 단지 고유ID가 없어 정확한 단지페이지 딥링크는 불가,
+      // 대신 그 위치의 부동산 지도로 이동 → 지도에서 해당 단지 클릭하면 상세정보 확인 가능)
+      var url = "https://new.land.naver.com/complexes?ms=" + rp.lat + "," + rp.lng + ",17&a=APT:PRE:ABYG:JGC";
+      window.open(url, "_blank");
+    };
     var trendDeals=[];   // 현재 추세창에 로드된 거래 전체
 
     var trendYears = 5, trendPyVal = null;
@@ -952,37 +1227,64 @@
       var box=document.getElementById("trendBox");
       document.getElementById("trendTitle").textContent = rp.name + " 실거래가 추세";
       document.getElementById("trendPy").innerHTML = "";
-      document.getElementById("trendCount").textContent = "조회 중… (최대 5년치, 처음엔 시간이 걸립니다)";
-      document.getElementById("trendChart").innerHTML = "";
+      document.getElementById("trendChart").innerHTML = '<div style="color:#9aa0ab;padding:40px;text-align:center;">조회 중…</div>';
       document.getElementById("trendList").innerHTML = "";
-      trendYears = 5; trendPyVal = null;
-      // 기간 버튼 5년으로 초기화 표시
-      document.querySelectorAll("#trendRange .tr-range").forEach(function(b){ b.classList.toggle("on", b.getAttribute("data-y")==="5"); });
+      document.getElementById("trendCount").textContent = "";
+      // 항상 5년으로 시작
+      trendYears = 5; trendPyVal = null; trendDeals = [];
+      document.querySelectorAll("#trendRange .tr-range").forEach(function(b){
+        b.classList.toggle("on", b.getAttribute("data-y")==="5");
+      });
       box.style.display="flex";
 
+      // 캐시에 deals 있으면 즉시 사용 (메모리 캐시 우선 → localStorage 순)
+      var pk = priceKey(rp);
+      var cache = loadPriceCache();
+      var memDeals = (window.__serverDeals && window.__serverDeals[pk]) ? window.__serverDeals[pk].deals : null;
+      var cachedDeals = memDeals || (cache['__deals__'+pk] || {}).deals;
+      if(cachedDeals && cachedDeals.length){
+        trendDeals = cachedDeals;
+        renderTrendDeals(trendDeals);
+        return;
+      }
+
+      // 캐시 없으면 API 호출
+      document.getElementById("trendCount").textContent = "조회 중… (최대 5년치)";
       var url = dealUrl(rp, 60);
-      fetch(url).then(function(r){return r.json();}).then(function(j){
+      fetch(url, {redirect:'follow'}).then(function(r){return r.json();}).then(function(j){
         var deals = (j && j.ok && j.deals) ? j.deals : [];
         trendDeals = deals;
-        if (!deals.length){ document.getElementById("trendCount").textContent="거래 기록이 없습니다."; return; }
-        // 평형 드롭다운 (거래 많은 순)
-        var pyMap={};
-        deals.forEach(function(d){ var py=d.pyeong||0; if(py>0) pyMap[py]=(pyMap[py]||0)+1; });
-        var pys=Object.keys(pyMap).map(Number).sort(function(a,b){ return pyMap[b]-pyMap[a]; });
-        var sel=document.getElementById("trendPy");
-        sel.innerHTML="";
-        pys.forEach(function(py){
-          var o=document.createElement("option"); o.value=py;
-          o.textContent=py+"평 ("+pyMap[py]+"건)"; sel.appendChild(o);
-        });
-        trendPyVal = pys.length ? pys[0] : null;
-        sel.value = trendPyVal;
-        sel.onchange=function(){ trendPyVal=parseInt(this.value,10); drawTrend(); };
-        drawTrend();
+        if(!deals.length){
+          document.getElementById("trendChart").innerHTML = '<div style="color:#9aa0ab;padding:40px;text-align:center;">거래 기록이 없습니다.</div>';
+          document.getElementById("trendCount").textContent = "";
+          return;
+        }
+        // deals는 메모리에만 저장 (localStorage 용량초과 방지, 이 세션 동안만 유지)
+        window.__serverDeals = window.__serverDeals || {};
+        window.__serverDeals[pk] = {deals: deals, ts: Date.now()/1000};
+        renderTrendDeals(deals);
       }).catch(function(){
-        document.getElementById("trendCount").textContent="조회 실패. 잠시 후 다시 시도하세요.";
+        document.getElementById("trendChart").innerHTML = '<div style="color:#9aa0ab;padding:40px;text-align:center;">조회 실패. 잠시 후 다시 시도하세요.</div>';
+        document.getElementById("trendCount").textContent = "";
       });
     };
+
+    function renderTrendDeals(deals){
+      if(!deals.length){ document.getElementById("trendCount").textContent="거래 기록이 없습니다."; return; }
+      var pyMap={};
+      deals.forEach(function(d){ var py=d.pyeong||0; if(py>0) pyMap[py]=(pyMap[py]||0)+1; });
+      var pys=Object.keys(pyMap).map(Number).sort(function(a,b){ return pyMap[b]-pyMap[a]; });
+      var sel=document.getElementById("trendPy");
+      sel.innerHTML="";
+      pys.forEach(function(py){
+        var o=document.createElement("option"); o.value=py;
+        o.textContent=py+"평 ("+pyMap[py]+"건)"; sel.appendChild(o);
+      });
+      trendPyVal = pys.length ? pys[0] : null;
+      sel.value = trendPyVal;
+      sel.onchange=function(){ trendPyVal=parseInt(this.value,10); drawTrend(); };
+      drawTrend();
+    }
 
     function drawTrend(){
       var now=new Date(); var cut=new Date(); cut.setFullYear(now.getFullYear()-trendYears);
@@ -1004,24 +1306,92 @@
       if (minV===maxV){ minV=minV*0.95; maxV=maxV*1.05; }
       var W=520, H=240, pad=40;
       var n=deals.length;
-      function x(i){ return pad + (n<=1?(W-pad*2)/2:(i/(n-1))*(W-pad*2)); }
+      // dateNum(YYYYMMDD 숫자)은 달이 바뀔 때 비선형으로 튀므로(0131→0201이 숫자로는 70차이),
+      // 실제 날짜(Date 객체의 ms)로 변환해서 진짜 일수 간격 기준으로 x좌표를 계산한다.
+      function dateNumToMs_(dn){
+        var s = String(dn);
+        var yy = +s.slice(0,4), mm = +s.slice(4,6), dd = +s.slice(6,8);
+        return new Date(yy, mm-1, dd).getTime();
+      }
+      var dealsMs = deals.map(function(d){ return dateNumToMs_(d.dateNum); });
+      var startMs = dealsMs[0], endMs = dealsMs[n-1];
+      var totalRangeMs = (endMs - startMs) || 1;
+      function xByDate(dateNum){ return pad + ((dateNumToMs_(dateNum)-startMs)/totalRangeMs)*(W-pad*2); }
+      function x(i){ return xByDate(deals[i].dateNum); }
       function y(v){ return H-pad - ((v-minV)/(maxV-minV))*(H-pad*2); }
       var pts=deals.map(function(d,i){ return x(i)+","+y(d.amountManwon||0); }).join(" ");
       function eok(m){ return (Math.round(m/1000)/10)+"억"; }
-      var svg='<svg viewBox="0 0 '+W+' '+H+'" width="100%" xmlns="http://www.w3.org/2000/svg">';
+
+      // x축 눈금: 절대 날짜 기준 일정 간격 (5년=1년, 3년=6개월, 1년=2개월)
+      var tickMonths = trendYears===5 ? 12 : trendYears===3 ? 6 : 2;
+      var ticks = [];
+      var now2 = new Date();
+      var curY = now2.getFullYear(), curM = now2.getMonth()+1;
+      var baseM = Math.ceil(curM / tickMonths) * tickMonths;
+      var baseY = curY;
+      if(baseM > 12){ baseM -= 12; baseY++; }
+      var minTickGap = 40; // 최소 px 간격
+      var lastTx = -9999;
+      var tickList = [];
+      for(var step=0; step<=trendYears*12/tickMonths+1; step++){
+        var m2 = baseM - step*tickMonths;
+        var y2 = baseY;
+        while(m2 <= 0){ m2+=12; y2--; }
+        while(m2 > 12){ m2-=12; y2++; }
+        var dn = y2*10000 + m2*100 + 1;
+        if(dn > deals[n-1].dateNum) continue;
+        if(dn < deals[0].dateNum - tickMonths*100) break;
+        tickList.push({dn:dn, y2:y2, m2:m2});
+      }
+      tickList.reverse();
+      tickList.forEach(function(t){
+        var tx = xByDate(t.dn);
+        if(tx < pad+20 || tx > W-pad-20) return;
+        if(tx - lastTx < minTickGap) return; // 너무 가까우면 건너뜀
+        ticks.push({dn:t.dn, tx:tx, label: t.y2+"."+(t.m2<10?"0":"")+t.m2});
+        lastTx = tx;
+      });
+
+      var svg='<svg viewBox="0 0 '+W+' '+H+'" width="100%" height="100%" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">';
+      // y축 격자선
       [0,0.5,1].forEach(function(t){
         var vy=pad + t*(H-pad*2); var vv=maxV-(t*(maxV-minV));
         svg+='<line x1="'+pad+'" y1="'+vy+'" x2="'+(W-pad)+'" y2="'+vy+'" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>';
         svg+='<text x="4" y="'+(vy+4)+'" fill="#9aa0ab" font-size="10">'+eok(vv)+'</text>';
       });
-      svg+='<polyline points="'+pts+'" fill="none" stroke="#3F9E7E" stroke-width="2"/>';
-      deals.forEach(function(d,i){ svg+='<circle cx="'+x(i)+'" cy="'+y(d.amountManwon||0)+'" r="2.5" fill="#cfe8db"/>'; });
-      svg+='<text x="'+pad+'" y="'+(H-8)+'" fill="#9aa0ab" font-size="10">'+(deals[0].date||"")+'</text>';
-      svg+='<text x="'+(W-pad)+'" y="'+(H-8)+'" fill="#9aa0ab" font-size="10" text-anchor="end">'+(deals[n-1].date||"")+'</text>';
+      // x축 눈금선 + 라벨
+      ticks.forEach(function(t){
+        var tx = t.tx;
+        svg+='<line x1="'+tx+'" y1="'+pad+'" x2="'+tx+'" y2="'+(H-pad)+'" stroke="rgba(255,255,255,0.10)" stroke-width="1" stroke-dasharray="3,3"/>';
+        svg+='<text x="'+tx+'" y="'+(H-6)+'" fill="#9aa0ab" font-size="9" text-anchor="middle">'+t.label+'</text>';
+      });
+      svg+='<polyline points="'+pts+'" fill="none" stroke="none" stroke-width="0"/>';
+      deals.forEach(function(d,i){ svg+='<circle class="trend-dot" data-idx="'+i+'" cx="'+x(i)+'" cy="'+y(d.amountManwon||0)+'" r="3.5" fill="#3F9E7E"/>'; });
       svg+='</svg>';
       chart.innerHTML=svg;
 
-      var rows=deals.slice().reverse().slice(0,15).map(function(d){
+      // 점에 마우스 올리면 가격·날짜 툴팁 표시
+      var tip = document.getElementById("trendTip");
+      var wrap = document.getElementById("trendChartWrap");
+      chart.querySelectorAll(".trend-dot").forEach(function(dot){
+        dot.addEventListener("mouseenter", function(){
+          var d = deals[+dot.getAttribute("data-idx")];
+          tip.querySelector(".tt-price").textContent = (d.amountText||eok(d.amountManwon)) + " · " + (d.pyeong||"?") + "평";
+          tip.querySelector(".tt-date").textContent = (d.date||"") + (d.floor?(" · "+d.floor+"층"):"");
+          var cx = parseFloat(dot.getAttribute("cx")), cy = parseFloat(dot.getAttribute("cy"));
+          var leftPct = (cx / W) * 100, topPct = (cy / H) * 100;
+          tip.style.left = leftPct + "%";
+          tip.style.top = topPct + "%";
+          tip.style.display = "block";
+          requestAnimationFrame(function(){ tip.style.opacity = "1"; });
+        });
+        dot.addEventListener("mouseleave", function(){
+          tip.style.opacity = "0";
+          setTimeout(function(){ if(tip.style.opacity==="0") tip.style.display="none"; }, 100);
+        });
+      });
+
+      var rows=deals.slice().reverse().map(function(d){
         return '<div class="tr-row"><span>'+(d.date||"")+(d.floor?(" · "+d.floor+"층"):"")+'</span><span>'+(d.amountText||eok(d.amountManwon))+' · '+(d.pyeong||"?")+'평</span></div>';
       }).join("");
       listEl.innerHTML=rows;
@@ -1036,7 +1406,8 @@
         document.querySelectorAll("#trendRange .tr-range").forEach(function(x){ x.classList.remove("on"); });
         this.classList.add("on");
         trendYears = parseInt(this.getAttribute("data-y"),10);
-        drawTrend();
+        // 데이터 있으면 즉시 필터, 없으면 trendYears만 바꿔두고 로드 완료 후 자동으로 반영
+        if(trendDeals && trendDeals.length) drawTrend();
       });
     });
 
@@ -1052,8 +1423,14 @@
       var info = infoLine(p);
       var infoEl = info ? '<div class="iw-info">'+esc(info)+'</div>' : '';
       var moreBtns = isAutoPrice(p)
-        ? '<button class="iw-trend" onclick="window.__showTrend(\''+p.__id+'\')" style="width:100%;margin-top:8px;background:#2c3742;border:0.5px solid rgba(255,255,255,0.2);color:#cfe8db;border-radius:6px;padding:7px;font-size:11px;font-weight:700;cursor:pointer;">📈 실거래가 추세</button>'
+        ? '<button class="iw-trend iw-action-btn" onclick="window.__showTrend(\''+p.__id+'\')">📈 실거래가 추세</button>'
         : '';
+      var naverBtn = (p.kind==="apt"||p.kind==="redev")
+        ? '<button class="iw-naver iw-action-btn" onclick="window.__openNaverLand(\''+p.__id+'\')" style="margin-top:6px;background:#03c75a1a;border:0.5px solid #03c75a66;color:#03c75a;">🏠 네이버부동산 바로가기</button>'
+        : '';
+      var photoBtn =
+        '<div class="iw-photo-label">📷 임장 사진 <span id="iwPhotoCnt-'+p.__id+'" style="opacity:0.7;"></span></div>' +
+        '<div id="photoPanel-'+p.__id+'"></div>';
       var editDel =
         '<div style="display:flex;gap:6px;margin-top:8px;">' +
           '<button class="iw-edit" onclick="window.__editItem(\''+p.__id+'\')" style="flex:1;background:#3a3f49;border:none;color:#e8eaed;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;">✏ 수정</button>' +
@@ -1064,32 +1441,58 @@
         '<button class="iw-close" aria-label="닫기" onclick="window.__closeIW()">✕</button></div>' +
         stars + infoEl +
         '<div class="iw-note">'+esc(p.note)+'</div>' +
-        moreBtns + editDel + '</div>';
+        moreBtns + naverBtn + photoBtn + editDel + '</div>';
     }
+    var __hiddenCache = null;
+    function loadHidden(){ try{ return (__hiddenCache=JSON.parse(localStorage.getItem(HIDE_KEY)||"[]")); }catch(e){ return []; } }
+    function saveHidden(a){ __hiddenCache=a; try{ localStorage.setItem(HIDE_KEY,JSON.stringify(a)); }catch(e){} }
+
     function renderAll(){
-      DBG("renderAll 시작 markerObjs="+markerObjs.length);
-      // 기존 마커 + 정보창 모두 확실히 제거
-      markerObjs.forEach(function(o){ if(o) o.setMap(null); }); markerObjs=[];
-      if (all && all.length){ all.forEach(function(p){ if(p.__marker) p.__marker.setMap(null); if(p.__iw) p.__iw.setMap(null); }); }
-      window.__closeIW();
+      DBG("renderAll 시작");
       buildAll();
-      var hidden = loadHidden();
-      var drawn=0;
-      var zoomLevel = map.getLevel();
-      all.forEach(function(p){
-        var mid=placeGroupMid(p);
-        var big=placeGroupBig(p);
-        var hideKey = mid ? (big+"::"+mid) : ("__ung__"+groupOf(p));
-        if (hidden.indexOf(hideKey)>=0) return;
-        // 줌 레벨별 점수 필터
-        var score = p.score||0;
-        if (zoomLevel >= 7) return; // 레벨 7이상: 전부 숨김
-        if (zoomLevel === 6 && score < 4 && score !== 6) return; // 레벨 6: ★4이상+대장만 (줌5는 전부)
-        drawMarker(p); drawn++;
-      });
-      DBG("renderAll 끝 all="+all.length+" 그림="+drawn);
-      autoFetchPrices();
+      window.__closeIW();
+      applyZoomFilter();
       renderGroupPanel();
+    }
+
+    // 줌/드래그 완료 시 화면에 보이는 마커만 생성+표시, 벗어난 건 숨김
+    function applyZoomFilter(){
+      var hiddenGrps = __hiddenCache || loadHidden();
+      var hiddenSet = {}; hiddenGrps.forEach(function(k){ hiddenSet[k]=true; });
+      var zoomLevel = map.getLevel();
+      var bounds = map.getBounds();
+
+      all.forEach(function(p){
+        if(p.lat==null||p.lng==null) return;
+        var mid=placeGroupMid(p), big=placeGroupBig(p);
+        var hideKey=mid?(big+"::"+mid):("__ung__"+groupOf(p));
+        var score=p.score||0;
+        var visible = !hiddenSet[hideKey]
+          && !(zoomLevel>=7)
+          && !(zoomLevel===6 && score<4 && score!==6)
+          && bounds.contain(new kakao.maps.LatLng(p.lat,p.lng));
+
+        if(visible){
+          if(!p.__marker) drawMarker(p);   // 처음 보일 때만 생성
+          else p.__marker.setMap(map);
+        } else {
+          if(p.__marker) p.__marker.setMap(null);
+          if(p.__iw) p.__iw.setMap(null);
+        }
+      });
+      // 마커 생성/표시 후 캐시 즉시 반영 (디바운스)
+      if(typeof autoFetchPrices === 'function' && map.getLevel() <= 6){
+        if(window.__afpTimer) clearTimeout(window.__afpTimer);
+        window.__afpTimer = setTimeout(function(){ window.__afpTimer=null; autoFetchPrices(); }, 100);
+      }
+    }
+
+    function forceRebuildMarkers(){
+      if(all && all.length){ all.forEach(function(p){
+        if(p.__marker){ p.__marker.setMap(null); p.__marker=null; }
+        if(p.__iw){ p.__iw.setMap(null); p.__iw=null; }
+      }); }
+      markerObjs=[]; window.__closeIW(); renderAll();
     }
 
     // ===== 레이어 패널: 대분류 > 중분류 트리 (최종) =====
@@ -1255,7 +1658,7 @@
             });
           }
         });
-        saveAdded(added); saveEdits(edits); renderAll();
+        saveAdded(added); saveEdits(edits); forceRebuildMarkers();
       }; }
 
       if(selAllBtn){ selAllBtn.onclick=function(){ saveHidden([]); renderAll(); }; }
@@ -1310,7 +1713,7 @@
           if(!confirm('"'+sec.big+'" 대분류 전체('+bigCounts[sec.big]+'개)를 삭제할까요?')) return;
           added=added.filter(function(p){return placeGroupBig(p)!==sec.big;});
           all.forEach(function(p){ if(placeGroupBig(p)===sec.big&&p.__id&&p.__id.indexOf("fix:")===0) edits[p.__id]="__deleted__"; });
-          saveAdded(added); saveEdits(edits); renderAll();
+          saveAdded(added); saveEdits(edits); forceRebuildMarkers();
         });
 
         var bigTog=makeToggle("big::"+sec.big, !bigAllHidden, function(checked){
@@ -1491,7 +1894,7 @@
                   edits[p.__id]=cur;
                 }
               });
-              saveEdits(edits); renderAll();
+              saveEdits(edits); forceRebuildMarkers();
             }
             inp.addEventListener("blur", commit);
             inp.addEventListener("keydown", function(e){
@@ -1543,25 +1946,47 @@
     }
     function drawMarker(p){
       var color=scoreColor(p), pos=new kakao.maps.LatLng(p.lat,p.lng);
-      // content를 실제 DOM 엘리먼트로 만들어 클릭을 직접 바인딩
       var el=document.createElement("div");
       el.innerHTML=markerHtml(p,color);
       var marker=new kakao.maps.CustomOverlay({position:pos,content:el,xAnchor:0.5,yAnchor:1,clickable:true});
       marker.setMap(map);
 
-      var iwEl=document.createElement("div");
-      iwEl.innerHTML=iwHtml(p,color);
-      var iw=new kakao.maps.CustomOverlay({position:pos,content:iwEl,xAnchor:0.5,yAnchor:1.18,clickable:true});
-      marker.__onClick=function(){ window.__closeIW(); iw.setMap(map); openIW=iw; map.panTo(pos); startEdit(p.__id); };
+      // InfoWindow는 클릭 시 처음 생성 (지연 생성 — 초기 부하 제거)
+      function ensureIW(){
+        if(p.__iw) return p.__iw;
+        var iwEl=document.createElement("div");
+        iwEl.innerHTML=iwHtml(p,scoreColor(p));
+        var iw=new kakao.maps.CustomOverlay({position:marker.getPosition(),content:iwEl,xAnchor:0.5,yAnchor:1.18,clickable:true,zIndex:10});
+        iw.__el=iwEl;
+        bindIwButtons(iwEl, p.__id);
+        p.__iw=iw;
+        return iw;
+      }
 
-      // 정보창 내부 버튼 클릭
-      bindIwButtons(iwEl, p.__id);
+      var __onClickBusy = false;
+      marker.__onClick=function(){
+        if(__onClickBusy) return;
+        __onClickBusy=true; setTimeout(function(){__onClickBusy=false;},500);
+        window.__suppressCloseUntil = Date.now()+600;
+        window.__closeIW();
+        var iw=ensureIW();
+        iw.setPosition(marker.getPosition());
+        iw.setMap(map); openIW=iw; startEdit(p.__id);
+        var _id=p.__id;
+        setTimeout(function(){
+          (function tryLoad(n){
+            var panel=document.getElementById("photoPanel-"+_id);
+            if(panel && window.__photo && window.__renderPhotos){ window.__renderPhotos(_id); }
+            else if(n>0){ setTimeout(function(){tryLoad(n-1);},200); }
+          })(25);
+        },80);
+      };
 
       // ===== 마커 직접 드래그 (누르고 끌면 이동, 그냥 떼면 클릭=정보창) =====
       enableMarkerDrag(el, marker, p);
 
-      marker.__el=el; iw.__el=iwEl;
-      p.__marker=marker; p.__iw=iw;
+      marker.__el=el;
+      p.__marker=marker;
       markerObjs.push(marker);
     }
 
@@ -1720,8 +2145,9 @@
         if (p.lat==null || p.lng==null) return false;
         if (!bounds.contain(new kakao.maps.LatLng(p.lat, p.lng))) return false;
         var k = priceKey(p);
-        if (cache[k] !== undefined) return false;
-        if (__priceFetching[k]) return false;
+        if (cache[k] !== undefined) return false;       // localStorage 캐시 있음
+        if (autoCache[p.__id] !== undefined) return false; // 메모리 캐시 있음
+        if (__priceFetching[k]) return false;           // 조회 중
         return true;
       });
       if (!targets.length) return;
@@ -1760,7 +2186,7 @@
         if (!p.code){ p.auto = {nocode:true}; refreshMarker(p); return; }
 
         var url = dealUrl(p, 12);
-        var j = await fetch(url)
+        var j = await fetch(url, {redirect:'follow'})
           .then(function(r){ return r.ok ? r.json() : "__http"; })
           .catch(function(){ return "__neterr"; });
 
@@ -1784,12 +2210,20 @@
             approx: !!d.approxMatch   // 마을 단위 근사 매칭이면 true
           };
           cache[k] = val;
+          cache['__ts__'+k] = Date.now()/1000;
           p.auto = val; autoCache[p.__id] = val;
-        } else {
-          // 진짜 거래없음 (정상 응답, 거래 0건) → 캐시 저장 (재조회 방지)
+        } else if (j.matchBy){
+          // 이름/도로명 매칭은 성공했는데 거래가 0건 → 진짜 거래없음
           var nv = {none:true};
           cache[k] = nv;
+          cache['__ts__'+k] = Date.now()/1000;
           p.auto = nv; autoCache[p.__id] = nv;
+        } else {
+          // 매칭 자체가 안 됨(단지명을 못 찾음) → 미확인으로 표시, 캐시 저장 안 함(재시도 대상)
+          p.auto = {unmatched:true};
+          // autoCache에도 저장 안 해서 다음 idle/줌 때 재조회되게 함
+          refreshMarker(p);
+          return;
         }
         savePriceCache(cache);
         refreshMarker(p);
@@ -1798,8 +2232,8 @@
       }
     }
     renderAll();
-
-    // ===== 실패 목록 버튼/모달 =====
+    // 초기 로드 시 캐시 즉시 반영 (idle 이벤트 기다리지 않음)
+    setTimeout(function(){ autoFetchPrices(); }, 600);
     function renderFailBtn(){
       var fails=loadFails();
       var btn=document.getElementById("failBtn");
@@ -1951,7 +2385,7 @@
         }
         saveAdded(added);
       }
-      renderAll();
+      forceRebuildMarkers();
     }
     function startEdit(id){
       var p = findById(id);
@@ -1978,7 +2412,7 @@
       refreshGroupOptions();
       document.getElementById("f-code").value = p.code||"";
       pendingPos = new kakao.maps.LatLng(p.lat, p.lng);
-      map.panTo(pendingPos);
+      // map.panTo(pendingPos); // 제거 — panTo가 카카오맵 내부 click 이벤트를 유발해 팝업이 닫힘
       var h=document.getElementById("pin-hint"); h.textContent="✏ 수정 중: "+p.name+" (위치는 이동 모드로 변경)"; h.classList.add("on");
       var b=document.getElementById("addBtn"); b.textContent="수정 저장"; b.disabled=false;
       document.getElementById("panel").scrollTop=0;
@@ -2240,17 +2674,39 @@
       });
     }
 
-    // 줌 변경 시 마커 필터 적용
-    kakao.maps.event.addListener(map, "zoom_changed", function(){
-      renderAll();
+    // 사진 확대 뷰 닫기
+    document.getElementById("photoViewClose").addEventListener("click", function(){
+      document.getElementById("photoView").style.display="none";
     });
-    // 지도 이동(드래그) 끝나면 화면 내 아파트 실거래가 자동조회
+    document.getElementById("photoViewImg").addEventListener("click", function(){
+      document.getElementById("photoView").style.display="none";
+    });
+
+    // 줌 변경 시 마커 필터 (가상화 - 화면 밖 숨김, 안 것만 생성)
+    var __zoomTimer = null;
+    kakao.maps.event.addListener(map, "zoom_changed", function(){
+      if(__zoomTimer) clearTimeout(__zoomTimer);
+      __zoomTimer = setTimeout(function(){
+        __zoomTimer = null;
+        applyZoomFilter();
+        if(map.getLevel() <= 6) setTimeout(autoFetchPrices, 300);
+      }, 80);
+    });
+    // 드래그 완료 시 새 영역 마커 생성 + 실거래가 조회
     kakao.maps.event.addListener(map, "idle", function(){
-      if (map.getLevel() <= 6) autoFetchPrices();
+      applyZoomFilter();
+      if(map.getLevel() <= 6) autoFetchPrices();
     });
 
     kakao.maps.event.addListener(map, "click", function(mouseEvent){
-      if (moveMode) return;   // 이동 모드에선 지도 클릭 무시
+      if (drawMode){ handleDrawClick(mouseEvent.latLng); return; }
+      if (editingId){
+        editPoints.push({lat:mouseEvent.latLng.getLat(), lng:mouseEvent.latLng.getLng()});
+        renderEditHandles(); renderEditPreview();
+        return;
+      }
+      if (moveMode) return;
+      if (window.__suppressCloseUntil && Date.now() < window.__suppressCloseUntil) return;
       window.__closeIW();
       if (typeof refreshGroupOptions==="function") refreshGroupOptions();
       // 추가 패널 펴기
@@ -2276,6 +2732,10 @@
         document.getElementById("addBtn").disabled=false;
         autoDetectKind(pendingPos);
       }
+    });
+
+    kakao.maps.event.addListener(map, "dblclick", function(mouseEvent){
+      if (drawMode){ finishDraw(); }
     });
 
     // 클릭 지점 주변에서 아파트·학교 중 더 가까운 종류로 자동 설정
@@ -2690,6 +3150,424 @@
       return btoa(unescape(encodeURIComponent(str)));
     }
 
+    // ===== 임장동선(선/화살표/면 그리기) 기능 =====
+    var ROUTE_KEY = "budongsan_routes_v1";
+    var ROUTE_COLORS = ["#FF5252","#FFB300","#3F9E7E","#42A5F5","#AB47BC","#FFFFFF"];
+    window.ROUTES = [];
+    var drawMode = null;        // 'line' | 'arrow' | 'polygon' | null
+    var drawPoints = [];
+    var drawRedoStack = [];     // 실행취소된 점들 (재실행용)
+    var drawTempOverlays = [];  // 그리는 중 임시 표시
+    var routeMapOverlays = {};  // id -> [overlay, overlay, ...]
+    var drawColor = ROUTE_COLORS[0];
+
+    function loadRoutesLocal(){
+      try{ return JSON.parse(localStorage.getItem(ROUTE_KEY)||"[]"); }catch(e){ return []; }
+    }
+    function saveRoutesLocal(){
+      try{ localStorage.setItem(ROUTE_KEY, JSON.stringify(window.ROUTES)); }catch(e){}
+    }
+
+    function bearingDeg(p1,p2){
+      var dx = p2.lng-p1.lng, dy = p2.lat-p1.lat;
+      return Math.atan2(dx,dy)*180/Math.PI;
+    }
+    function makeArrowHead(p1,p2,color){
+      var deg = bearingDeg(p1,p2);
+      var html = '<div style="width:0;height:0;transform:rotate('+deg+'deg);' +
+        'border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:14px solid '+color+';"></div>';
+      return new kakao.maps.CustomOverlay({
+        position: new kakao.maps.LatLng(p2.lat,p2.lng), content: html,
+        xAnchor:0.5, yAnchor:0.75, zIndex:20
+      });
+    }
+    function makeDot(p,color){
+      var html = '<div style="width:9px;height:9px;border-radius:50%;background:'+color+';border:2px solid #fff;box-shadow:0 0 3px rgba(0,0,0,0.5);"></div>';
+      return new kakao.maps.CustomOverlay({
+        position: new kakao.maps.LatLng(p.lat,p.lng), content: html, xAnchor:0.5, yAnchor:0.5, zIndex:19
+      });
+    }
+    function toPath(points){ return points.map(function(p){ return new kakao.maps.LatLng(p.lat,p.lng); }); }
+
+    function renderRoute(route){
+      var ovs = [];
+      var path = toPath(route.points);
+      if (route.type === "polygon"){
+        var poly = new kakao.maps.Polygon({ path: path, strokeWeight:2, strokeColor:route.color, strokeOpacity:0.9, strokeStyle:"solid", fillColor:route.color, fillOpacity:0.22 });
+        poly.setMap(map);
+        ovs.push(poly);
+      } else {
+        var line = new kakao.maps.Polyline({ path: path, strokeWeight:3.5, strokeColor:route.color, strokeOpacity:0.9, strokeStyle:"solid" });
+        line.setMap(map);
+        ovs.push(line);
+        if (route.type === "arrow" && route.points.length>=2){
+          var ah = makeArrowHead(route.points[route.points.length-2], route.points[route.points.length-1], route.color);
+          ah.setMap(map);
+          ovs.push(ah);
+        }
+      }
+      if (route.label && route.label.trim()){
+        var mid = route.points[Math.floor(route.points.length/2)];
+        var labelOv = new kakao.maps.CustomOverlay({
+          position: new kakao.maps.LatLng(mid.lat, mid.lng),
+          content: '<div style="background:'+route.color+';color:#111;font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.4);border:1.5px solid #fff;">'+esc(route.label)+'</div>',
+          xAnchor:0.5, yAnchor:1.8, zIndex:15
+        });
+        labelOv.setMap(map);
+        ovs.push(labelOv);
+      }
+      routeMapOverlays[route.id] = ovs;
+    }
+    function removeRouteOverlays(id){
+      (routeMapOverlays[id]||[]).forEach(function(o){ o.setMap(null); });
+      delete routeMapOverlays[id];
+    }
+    function renderAllRoutes(){
+      Object.keys(routeMapOverlays).forEach(removeRouteOverlays);
+      window.ROUTES.forEach(renderRoute);
+    }
+
+    function clearTempOverlays(){
+      drawTempOverlays.forEach(function(o){ o.setMap(null); });
+      drawTempOverlays = [];
+    }
+    function renderTempShape(){
+      clearTempOverlays();
+      if (!drawPoints.length) return;
+      var path = toPath(drawPoints);
+      if (drawMode==="polygon" && drawPoints.length>=3){
+        var poly = new kakao.maps.Polygon({ path:path, strokeWeight:2, strokeColor:drawColor, strokeOpacity:0.9, fillColor:drawColor, fillOpacity:0.22 });
+        poly.setMap(map); drawTempOverlays.push(poly);
+      } else if (drawPoints.length>=2){
+        var line = new kakao.maps.Polyline({ path:path, strokeWeight:3.5, strokeColor:drawColor, strokeOpacity:0.9, strokeStyle:"shortdash" });
+        line.setMap(map); drawTempOverlays.push(line);
+        if (drawMode==="arrow"){
+          var ah = makeArrowHead(drawPoints[drawPoints.length-2], drawPoints[drawPoints.length-1], drawColor);
+          ah.setMap(map); drawTempOverlays.push(ah);
+        }
+      }
+      drawPoints.forEach(function(p){ var d=makeDot(p,drawColor); d.setMap(map); drawTempOverlays.push(d); });
+      updateFinishRow();
+    }
+    function updateFinishRow(){
+      var row = document.getElementById("rpFinishRow");
+      var minPts = drawMode==="polygon" ? 3 : 2;
+      row.style.display = (drawMode && drawPoints.length>=minPts) ? "flex" : "none";
+    }
+
+    function handleDrawClick(latLng){
+      var p = {lat:latLng.getLat(), lng:latLng.getLng()};
+      var now = Date.now();
+      // 더블클릭은 브라우저/카카오맵이 click을 두 번 쏜 뒤 dblclick을 쏘므로,
+      // 짧은 시간 안에 거의 같은 자리를 다시 클릭한 건 중복으로 보고 점을 추가하지 않음
+      var last = drawPoints[drawPoints.length-1];
+      if (last && (now - (window.__lastDrawClickTs||0)) < 350 &&
+          Math.abs(last.lat-p.lat) < 0.00003 && Math.abs(last.lng-p.lng) < 0.00003){
+        window.__lastDrawClickTs = now;
+        return;
+      }
+      window.__lastDrawClickTs = now;
+      drawPoints.push(p);
+      drawRedoStack = []; // 새 점을 찍으면 재실행 이력은 무효화
+      renderTempShape();
+    }
+    function undoDrawPoint(){
+      if (!drawMode || !drawPoints.length) return;
+      drawRedoStack.push(drawPoints.pop());
+      renderTempShape();
+    }
+    function redoDrawPoint(){
+      if (!drawMode || !drawRedoStack.length) return;
+      drawPoints.push(drawRedoStack.pop());
+      renderTempShape();
+    }
+    function finishDraw(){
+      if (!drawMode) return;
+      var minPts = drawMode==="polygon" ? 3 : 2;
+      if (drawPoints.length < minPts){ cancelDrawShape(); return; }
+      var route = { id:"route_"+Date.now(), type:drawMode, points:drawPoints.slice(), color:drawColor, label:"" };
+      window.ROUTES.push(route);
+      saveRoutesLocal();
+      clearTempOverlays();
+      renderRoute(route);
+      renderRouteList();
+      drawPoints = [];
+      drawRedoStack = [];
+      document.getElementById("rpFinishRow").style.display = "none";
+      // 완성되면 자동으로 그리기 모드 종료 (계속 이어지는 문제 방지). 다음 도형은 도구를 다시 눌러 시작
+      var finishedType = drawMode;
+      drawMode = null;
+      document.querySelectorAll(".rp-tool").forEach(function(b){ b.classList.remove("on"); });
+      var mapEl = document.getElementById("map");
+      if (mapEl) mapEl.style.cursor = "";
+      document.getElementById("rpHint").textContent = "도구를 선택하고 지도를 클릭해 점을 찍으세요.";
+    }
+    function cancelDrawShape(){
+      clearTempOverlays();
+      drawPoints = [];
+      drawRedoStack = [];
+      var row = document.getElementById("rpFinishRow");
+      if (row) row.style.display = "none";
+    }
+    function setDrawMode(type){
+      // 그리던 중(점이 이미 찍힌 상태)이면 함부로 지우지 않음: 완성 가능하면 자동완성, 아니면 확인받고 취소
+      if (drawMode && drawPoints.length){
+        var minPts = drawMode==="polygon" ? 3 : 2;
+        if (drawPoints.length >= minPts){
+          finishDraw();
+        } else if (!confirm("그리던 도형이 완성되지 않았습니다. 취소할까요? (점이 "+minPts+"개 이상 필요합니다)")){
+          return; // 취소를 취소 → 도구 전환도 취소하고 계속 그리게 둠
+        } else {
+          cancelDrawShape();
+        }
+      }
+      drawMode = (drawMode===type) ? null : type;
+      document.querySelectorAll(".rp-tool").forEach(function(b){
+        b.classList.toggle("on", b.getAttribute("data-type")===drawMode);
+      });
+      var mapEl = document.getElementById("map");
+      if (mapEl) mapEl.style.cursor = drawMode ? "crosshair" : "";
+      document.getElementById("rpHint").textContent = drawMode
+        ? "지도를 클릭해 점을 찍으세요. 다 찍으면 '완성' 버튼을 누르세요."
+        : "도구를 선택하고 지도를 클릭해 점을 찍으세요.";
+      updateFinishRow();
+    }
+    document.getElementById("rpFinishBtn").addEventListener("click", finishDraw);
+    document.getElementById("rpCancelBtn").addEventListener("click", function(){
+      cancelDrawShape();
+    });
+    function deleteRoute(id){
+      if (editingId===id){ clearEditOverlays(); editingId=null; editPoints=[]; document.getElementById("rpEditRow").style.display="none"; }
+      removeRouteOverlays(id);
+      window.ROUTES = window.ROUTES.filter(function(r){ return r.id!==id; });
+      saveRoutesLocal();
+      renderRouteList();
+    }
+    function renderRouteList(){
+      var listEl = document.getElementById("rpList");
+      if (!window.ROUTES.length){ listEl.innerHTML = '<div style="color:#6b7280;font-size:10.5px;">아직 그린 게 없습니다.</div>'; return; }
+      var typeIcon = {line:"📏", arrow:"➡️", polygon:"⬠"};
+      listEl.innerHTML = window.ROUTES.map(function(r,i){
+        var editing = (editingId===r.id);
+        return '<div class="rp-item" style="'+(editing?'background:rgba(63,158,126,0.15);border-radius:6px;':'')+'">' +
+          '<span class="rp-swatch" style="background:'+r.color+';"></span>' +
+          '<span class="rp-label" title="클릭하면 위치로 이동" onclick="window.__focusRoute(\''+r.id+'\')">'+(typeIcon[r.type]||"")+' '+(r.label||("동선 "+(i+1)))+'</span>' +
+          '<button class="rp-del" title="메모" onclick="window.__memoRoute(\''+r.id+'\')">📝</button>' +
+          '<button class="rp-del" title="수정" onclick="window.__editRoute(\''+r.id+'\')">'+(editing?'✏️':'✏')+'</button>' +
+          '<button class="rp-del" onclick="window.__deleteRoute(\''+r.id+'\')">🗑</button>' +
+        '</div>';
+      }).join("");
+    }
+    window.__memoRoute = function(id){
+      var r = window.ROUTES.find(function(x){ return x.id===id; });
+      if (!r) return;
+      var v = prompt("이 동선의 메모를 입력하세요 (예: 여기서 남향 확인, 소음 심함 등)", r.label||"");
+      if (v===null) return; // 취소
+      r.label = v.trim();
+      saveRoutesLocal();
+      if (editingId!==id){ removeRouteOverlays(id); renderRoute(r); } // 지도 라벨 갱신 (편집중이 아닐 때만)
+      renderRouteList();
+    };
+    window.__deleteRoute = deleteRoute;
+    window.__focusRoute = function(id){
+      var r = window.ROUTES.find(function(x){ return x.id===id; });
+      if (!r || !r.points.length) return;
+      map.setCenter(new kakao.maps.LatLng(r.points[0].lat, r.points[0].lng));
+    };
+
+    // ===== 동선 수정(편집) 기능 =====
+    var editingId = null;
+    var editPoints = [];
+    var editHandles = [];   // 드래그 가능한 꼭짓점 마커들
+    var editPreviewOv = [];
+
+    function handleIcon(color){
+      var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"><circle cx="9" cy="9" r="7" fill="'+color+'" stroke="#fff" stroke-width="2.5"/></svg>';
+      return "data:image/svg+xml;base64," + btoa(svg);
+    }
+    function clearEditOverlays(){
+      editHandles.forEach(function(m){ m.setMap(null); });
+      editHandles = [];
+      editPreviewOv.forEach(function(o){ o.setMap(null); });
+      editPreviewOv = [];
+    }
+    function renderEditPreview(){
+      editPreviewOv.forEach(function(o){ o.setMap(null); });
+      editPreviewOv = [];
+      var r = window.ROUTES.find(function(x){ return x.id===editingId; });
+      if (!r || editPoints.length<2) return;
+      var path = toPath(editPoints);
+      if (r.type==="polygon" && editPoints.length>=3){
+        var poly = new kakao.maps.Polygon({ path:path, strokeWeight:2, strokeColor:r.color, strokeOpacity:0.9, fillColor:r.color, fillOpacity:0.22 });
+        poly.setMap(map); editPreviewOv.push(poly);
+      } else if (editPoints.length>=2){
+        var line = new kakao.maps.Polyline({ path:path, strokeWeight:3.5, strokeColor:r.color, strokeOpacity:0.9 });
+        line.setMap(map); editPreviewOv.push(line);
+        if (r.type==="arrow"){
+          var ah = makeArrowHead(editPoints[editPoints.length-2], editPoints[editPoints.length-1], r.color);
+          ah.setMap(map); editPreviewOv.push(ah);
+        }
+      }
+    }
+    function renderEditHandles(){
+      editHandles.forEach(function(m){ m.setMap(null); });
+      editHandles = [];
+      var r = window.ROUTES.find(function(x){ return x.id===editingId; });
+      if (!r) return;
+      var icon = new kakao.maps.MarkerImage(handleIcon(r.color), new kakao.maps.Size(18,18), {offset:new kakao.maps.Point(9,9)});
+      editPoints.forEach(function(p, idx){
+        var marker = new kakao.maps.Marker({
+          position: new kakao.maps.LatLng(p.lat,p.lng), image: icon, draggable: true, zIndex: 30
+        });
+        marker.setMap(map);
+        kakao.maps.event.addListener(marker, "dragend", function(){
+          var pos = marker.getPosition();
+          editPoints[idx] = {lat: pos.getLat(), lng: pos.getLng()};
+          renderEditPreview();
+        });
+        kakao.maps.event.addListener(marker, "rightclick", function(){
+          var minPts = r.type==="polygon" ? 3 : 2;
+          if (editPoints.length <= minPts){ alert("점이 최소 "+minPts+"개는 있어야 합니다."); return; }
+          editPoints.splice(idx,1);
+          renderEditHandles();
+          renderEditPreview();
+        });
+        editHandles.push(marker);
+      });
+    }
+    window.__editRoute = function(id){
+      if (editingId && editingId!==id) cancelEditRoute();
+      if (drawMode) setDrawMode(drawMode); // 그리기 모드 중이면 종료
+      editingId = id;
+      var r = window.ROUTES.find(function(x){ return x.id===id; });
+      if (!r) return;
+      editPoints = r.points.map(function(p){ return {lat:p.lat, lng:p.lng}; });
+      removeRouteOverlays(id); // 일반 표시는 잠시 숨기고 편집용으로 대체
+      renderEditHandles();
+      renderEditPreview();
+      document.getElementById("rpEditRow").style.display = "flex";
+      document.getElementById("rpHint").textContent = "점을 드래그해서 옮기고, 지도를 클릭하면 점 추가, 점을 우클릭하면 삭제됩니다.";
+      renderRouteList();
+    };
+    function finishEditRoute(){
+      if (!editingId) return;
+      var r = window.ROUTES.find(function(x){ return x.id===editingId; });
+      var minPts = r && r.type==="polygon" ? 3 : 2;
+      if (!r || editPoints.length < minPts){ alert("점이 최소 "+minPts+"개는 있어야 합니다."); return; }
+      r.points = editPoints.map(function(p){ return {lat:p.lat, lng:p.lng}; });
+      saveRoutesLocal();
+      clearEditOverlays();
+      renderRoute(r);
+      editingId = null; editPoints = [];
+      document.getElementById("rpEditRow").style.display = "none";
+      document.getElementById("rpHint").textContent = "도구를 선택하고 지도를 클릭해 점을 찍으세요.";
+      renderRouteList();
+    }
+    function cancelEditRoute(){
+      if (!editingId) return;
+      var r = window.ROUTES.find(function(x){ return x.id===editingId; });
+      clearEditOverlays();
+      if (r) renderRoute(r); // 원래 모양 그대로 복원
+      editingId = null; editPoints = [];
+      document.getElementById("rpEditRow").style.display = "none";
+      document.getElementById("rpHint").textContent = "도구를 선택하고 지도를 클릭해 점을 찍으세요.";
+      renderRouteList();
+    }
+    document.getElementById("rpEditDone").addEventListener("click", finishEditRoute);
+    document.getElementById("rpEditCancel").addEventListener("click", cancelEditRoute);
+
+    // 도구/색상 버튼 초기화
+    document.querySelectorAll(".rp-tool").forEach(function(b){
+      b.addEventListener("click", function(){ setDrawMode(b.getAttribute("data-type")); });
+    });
+    (function initColors(){
+      var wrap = document.getElementById("rpColors");
+      wrap.innerHTML = ROUTE_COLORS.map(function(c,i){
+        return '<div class="rp-color'+(i===0?' on':'')+'" data-color="'+c+'" style="background:'+c+';"></div>';
+      }).join("");
+      wrap.querySelectorAll(".rp-color").forEach(function(el){
+        el.addEventListener("click", function(){
+          drawColor = el.getAttribute("data-color");
+          wrap.querySelectorAll(".rp-color").forEach(function(x){ x.classList.remove("on"); });
+          el.classList.add("on");
+        });
+      });
+    })();
+    document.getElementById("routeToggleBtn").addEventListener("click", function(){
+      var panel = document.getElementById("routePanel");
+      panel.style.display = (panel.style.display==="none") ? "block" : "none";
+      document.getElementById("settingsMenu").style.display = "none";
+    });
+    document.getElementById("routeCloseBtn").addEventListener("click", function(){
+      document.getElementById("routePanel").style.display = "none";
+      if (drawMode) setDrawMode(drawMode); // 켜져 있으면 꺼서 그리기 모드 해제
+      if (editingId) cancelEditRoute();
+    });
+    document.getElementById("rpClearAll").addEventListener("click", function(){
+      if (!window.ROUTES.length) return;
+      if (!confirm("그린 동선을 전부 삭제할까요?")) return;
+      if (editingId){ clearEditOverlays(); editingId=null; editPoints=[]; document.getElementById("rpEditRow").style.display="none"; }
+      Object.keys(routeMapOverlays).forEach(removeRouteOverlays);
+      window.ROUTES = [];
+      saveRoutesLocal();
+      renderRouteList();
+    });
+    // ESC: 그리는 중이면 현재 도형만 취소, 수정 중이면 수정 취소, 그리기 모드 자체도 종료
+    // Ctrl+Z: 마지막 찍은 점 취소 / Ctrl+Y, Ctrl+Shift+Z: 재실행
+    document.addEventListener("keydown", function(e){
+      if (e.key === "Escape" && editingId){ cancelEditRoute(); return; }
+      if (!drawMode) return;
+      if (e.key === "Escape"){
+        cancelDrawShape();
+        setDrawMode(drawMode);
+        return;
+      }
+      var mod = e.ctrlKey || e.metaKey;
+      if (mod && !e.shiftKey && e.key.toLowerCase()==="z"){
+        e.preventDefault(); undoDrawPoint();
+      } else if (mod && ((e.shiftKey && e.key.toLowerCase()==="z") || e.key.toLowerCase()==="y")){
+        e.preventDefault(); redoDrawPoint();
+      }
+    });
+
+    // 초기 로드: GitHub의 routes.json 있으면 우선 사용, 없으면 로컬
+    (function initRoutes(){
+      window.ROUTES = loadRoutesLocal();
+      renderAllRoutes();
+      renderRouteList();
+      fetch("routes.json?v="+Date.now()).then(function(r){ return r.ok ? r.json() : null; }).then(function(server){
+        if (Array.isArray(server) && server.length && !window.ROUTES.length){
+          window.ROUTES = server;
+          saveRoutesLocal();
+          renderAllRoutes();
+          renderRouteList();
+        }
+      }).catch(function(){});
+    })();
+
+    document.getElementById("rpSaveGh").addEventListener("click", async function(){
+      var btn=this;
+      var token = ghToken();
+      if (!token){ return; }
+      var apiBase = "https://api.github.com/repos/"+GH_OWNER+"/"+GH_REPO+"/contents/routes.json";
+      var headers = { "Authorization":"Bearer "+token, "Accept":"application/vnd.github+json" };
+      btn.disabled=true; var orig=btn.textContent; btn.textContent="저장 중…";
+      try {
+        var sha=null;
+        var getRes = await fetch(apiBase+"?ref="+GH_BRANCH, { headers: headers });
+        if (getRes.status===200){ var info=await getRes.json(); sha=info.sha; }
+        else if (getRes.status===401){ throw new Error("토큰이 거부됨(401)."); }
+        var body = { message:"임장동선 저장 ("+window.ROUTES.length+"개) — "+new Date().toISOString(), content: toB64(JSON.stringify(window.ROUTES)), branch: GH_BRANCH };
+        if (sha) body.sha = sha;
+        var putRes = await fetch(apiBase, { method:"PUT", headers: headers, body: JSON.stringify(body) });
+        if (putRes.status===200 || putRes.status===201){
+          btn.textContent="저장됨 ✓"; setTimeout(function(){ btn.textContent=orig; btn.disabled=false; }, 2000);
+        } else { throw new Error("저장 실패 ("+putRes.status+")"); }
+      } catch(e){
+        btn.textContent=orig; btn.disabled=false; alert("저장 실패: "+e.message);
+      }
+    });
+
     document.getElementById("saveGhBtn").addEventListener("click", async function(){
       var btn=this;
       buildAll();
@@ -2828,6 +3706,54 @@
       renderAll();
       autoFetchPrices();
       alert("실거래가 캐시를 비웠습니다. 화면의 단지부터 다시 조회합니다.");
+    });
+
+    // 캐시 상태 확인
+    document.getElementById("cacheStatusBtn").addEventListener("click", function(){
+      var local = loadPriceCache();
+      var localKeys = Object.keys(local).filter(function(k){ return k.indexOf('__deals__')!==0; });
+      var localCnt = localKeys.length;
+      var localHasVal = localKeys.filter(function(k){ return local[k] && !local[k].none; }).length;
+
+      // 전체 아파트 수 (자동조회 대상)
+      var totalApt = all.filter(function(p){ return isAutoPrice(p); }).length;
+
+      // 현재 화면(bounds) 안 아파트 중 캐시 없는 것
+      var bounds = map.getBounds();
+      var viewportApt = all.filter(function(p){
+        return isAutoPrice(p) && p.lat!=null && p.lng!=null &&
+               bounds.contain(new kakao.maps.LatLng(p.lat,p.lng));
+      });
+      var viewportNoCache = viewportApt.filter(function(p){
+        var k = priceKey(p);
+        return local[k]===undefined && autoCache[p.__id]===undefined;
+      }).length;
+
+      // prices.json 서버캐시 fetch해서 비교
+      fetch('prices.json?v='+Date.now()).then(function(r){ return r.ok ? r.json() : {}; }).then(function(server){
+        var serverKeys = Object.keys(server||{});
+        var serverHasVal = serverKeys.filter(function(k){
+          var v = server[k];
+          return v && v.val && !v.val.none;
+        }).length;
+
+        var msg =
+          "📊 실거래가 캐시 상태\n\n" +
+          "· 전체 자동조회 대상 아파트: " + totalApt + "개\n\n" +
+          "[내 브라우저 캐시]\n" +
+          "· 저장된 항목: " + localCnt + "개\n" +
+          "· 실거래가 있음: " + localHasVal + "개\n\n" +
+          "[서버 캐시 (prices.json)]\n" +
+          "· 저장된 항목: " + serverKeys.length + "개\n" +
+          "· 실거래가 있음: " + serverHasVal + "개\n\n" +
+          "[현재 화면]\n" +
+          "· 화면 안 아파트: " + viewportApt.length + "개\n" +
+          "· 캐시 없어 조회중: " + viewportNoCache + "개";
+
+        alert(msg);
+      }).catch(function(){
+        alert("📊 실거래가 캐시 상태\n\n· 전체 자동조회 대상: " + totalApt + "개\n· 내 브라우저 캐시: " + localCnt + "개 (실거래가 있음 " + localHasVal + "개)\n· 화면 안 조회중: " + viewportNoCache + "개\n\n(서버 캐시 조회 실패)");
+      });
     });
   });
   </script>
