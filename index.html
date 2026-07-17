@@ -320,7 +320,12 @@
         <button type="button" class="seg-b" data-sp="기타">⭐ 기타</button>
       </div>
       <input id="f-spottype" type="hidden" value="지하철" />
-      <label>내용</label>
+      <div id="subwayLineField" style="display:none;">
+        <label>노선</label>
+        <select id="f-lineSelect"></select>
+        <input id="f-newLineName" placeholder="새 노선 이름 (예: GTX-A 연장(안))" style="margin-top:6px;display:none;" />
+      </div>
+      <label id="f-spot-label">내용</label>
       <input id="f-spot" placeholder="예: GTX-A / 복합개발" />
     </div>
 
@@ -1280,13 +1285,42 @@
           '<button class="iw-edit" onclick="window.__editItem(\''+p.__id+'\')" style="flex:1;background:#3a3f49;border:none;color:#e8eaed;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;">✏ 수정</button>' +
           '<button class="iw-del" onclick="window.__deleteItem(\''+p.__id+'\')" style="flex:1;background:#5a3a3a;border:none;color:#f0d6d6;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;">🗑 삭제</button>' +
         '</div>';
+      var subwayOrderBtns = (p.kind==="spot" && p.spottype==="지하철" && p.sub && p.sub.trim())
+        ? subwayOrderUI(p)
+        : '';
       return '<div class="iw"><div class="iw-top">' +
         '<div class="iw-name">'+esc(p.name)+'</div>' +
         '<button class="iw-close" aria-label="닫기" onclick="window.__closeIW()">✕</button></div>' +
         stars + infoEl +
         '<div class="iw-note">'+esc(p.note)+'</div>' +
-        moreBtns + naverBtn + photoBtn + editDel + '</div>';
+        subwayOrderBtns + moreBtns + naverBtn + photoBtn + editDel + '</div>';
     }
+    function subwayOrderUI(p){
+      var group = all.filter(function(x){ return x.kind==="spot" && x.spottype==="지하철" && x.sub===p.sub; });
+      group.sort(function(a,b){ var oa=(a.lineOrder!=null?a.lineOrder:(a.seq||0)), ob=(b.lineOrder!=null?b.lineOrder:(b.seq||0)); return oa-ob; });
+      var idx = group.findIndex(function(x){ return x.__id===p.__id; });
+      return '<div style="margin-top:8px;padding:7px;background:#1f2937;border-radius:6px;">' +
+        '<div style="font-size:10.5px;color:#9aa0ab;margin-bottom:5px;">🚇 '+esc(p.sub)+' · '+(idx+1)+'/'+group.length+'번째 역</div>' +
+        '<div style="display:flex;gap:6px;">' +
+          '<button onclick="window.__swapSubwayOrder(\''+p.__id+'\',-1)" '+(idx<=0?'disabled':'')+' style="flex:1;background:#2c3742;border:none;color:#cfe8db;border-radius:6px;padding:6px;font-size:11px;cursor:pointer;'+(idx<=0?'opacity:0.4;':'')+'">◀ 이전역과 순서교체</button>' +
+          '<button onclick="window.__swapSubwayOrder(\''+p.__id+'\',1)" '+(idx>=group.length-1?'disabled':'')+' style="flex:1;background:#2c3742;border:none;color:#cfe8db;border-radius:6px;padding:6px;font-size:11px;cursor:pointer;'+(idx>=group.length-1?'opacity:0.4;':'')+'">다음역과 순서교체 ▶</button>' +
+        '</div>' +
+      '</div>';
+    }
+    window.__swapSubwayOrder = function(id, dir){
+      var p = findById(id);
+      if (!p) return;
+      var group = all.filter(function(x){ return x.kind==="spot" && x.spottype==="지하철" && x.sub===p.sub; });
+      group.sort(function(a,b){ var oa=(a.lineOrder!=null?a.lineOrder:(a.seq||0)), ob=(b.lineOrder!=null?b.lineOrder:(b.seq||0)); return oa-ob; });
+      var idx = group.findIndex(function(x){ return x.__id===p.__id; });
+      var swapIdx = idx + dir;
+      if (swapIdx<0 || swapIdx>=group.length) return;
+      // lineOrder를 그룹 내 인덱스 기준으로 전부 재부여하면서 두 항목만 위치 교체
+      var order = group.map(function(x){ return x; });
+      var tmp = order[idx]; order[idx] = order[swapIdx]; order[swapIdx] = tmp;
+      order.forEach(function(x, i){ x.lineOrder = i; });
+      renderAll();
+    };
     var __hiddenCache = null;
     function loadHidden(){ try{ return (__hiddenCache=JSON.parse(localStorage.getItem(HIDE_KEY)||"[]")); }catch(e){ return []; } }
     function saveHidden(a){ __hiddenCache=a; try{ localStorage.setItem(HIDE_KEY,JSON.stringify(a)); }catch(e){} }
@@ -1297,6 +1331,41 @@
       window.__closeIW();
       applyZoomFilter();
       renderGroupPanel();
+      renderSubwayAutoLines();
+    }
+    var subwayAutoLineOverlays = [];
+    function renderSubwayAutoLines(){
+      subwayAutoLineOverlays.forEach(function(o){ o.setMap(null); });
+      subwayAutoLineOverlays = [];
+      var groups = {};
+      all.forEach(function(p){
+        if (p.kind==="spot" && p.spottype==="지하철" && p.sub && p.sub.trim() && p.lat!=null && p.lng!=null){
+          var key = p.sub.trim();
+          (groups[key] = groups[key]||[]).push(p);
+        }
+      });
+      Object.keys(groups).forEach(function(lineName){
+        var pts = groups[lineName];
+        if (pts.length < 2) return;
+        pts.sort(function(a,b){
+          var oa = (a.lineOrder!=null) ? a.lineOrder : (a.seq||0);
+          var ob = (b.lineOrder!=null) ? b.lineOrder : (b.seq||0);
+          return oa - ob;
+        });
+        var path = pts.map(function(p){ return new kakao.maps.LatLng(p.lat, p.lng); });
+        var poly = new kakao.maps.Polyline({ path: path, strokeWeight:4, strokeColor:subwayLineColor(lineName), strokeOpacity:0.85, strokeStyle:"solid", zIndex:3 });
+        poly.setMap(map);
+        subwayAutoLineOverlays.push(poly);
+      });
+    }
+    var __subwayColorCache = {};
+    var __subwayColorPalette = ["#0052A4","#00A84D","#EF7C1C","#996CAC","#D4003B","#0090D2","#CD7C2F","#747F00","#E6186C"];
+    function subwayLineColor(name){
+      if (__subwayColorCache[name]) return __subwayColorCache[name];
+      var idx = Object.keys(__subwayColorCache).length % __subwayColorPalette.length;
+      var c = __subwayColorPalette[idx];
+      __subwayColorCache[name] = c;
+      return c;
     }
 
     // 줌/드래그 완료 시 화면에 보이는 마커만 생성+표시, 벗어난 건 숨김
@@ -2292,6 +2361,7 @@
       document.getElementById("rankField").style.display = (kind==="school") ? "block" : "none";
       document.getElementById("spotField").style.display = (kind==="spot") ? "block" : "none";
       document.getElementById("scoreWrap").style.display = (kind==="spot"||kind==="school") ? "none" : "block";
+      if (kind==="spot" && typeof updateSubwayLineUI==="function") updateSubwayLineUI();
     }
     document.getElementById("f-kind").addEventListener("change", function(){
       syncKindUI();
@@ -2339,7 +2409,43 @@
         document.querySelectorAll("#spotTypeBtns .seg-b").forEach(function(x){ x.classList.remove("on"); });
         this.classList.add("on");
         document.getElementById("f-spottype").value=this.getAttribute("data-sp");
+        updateSubwayLineUI();
       });
+    });
+    // ===== 지하철 노선 선택 UI =====
+    function existingSubwayLines(){
+      buildAll();
+      var names = {};
+      all.forEach(function(p){
+        if (p.kind==="spot" && p.spottype==="지하철" && p.sub && p.sub.trim()) names[p.sub.trim()] = true;
+      });
+      return Object.keys(names).sort();
+    }
+    function updateSubwayLineUI(){
+      var sp = document.getElementById("f-spottype").value;
+      var isSubway = (document.getElementById("f-kind").value==="spot") && sp==="지하철";
+      document.getElementById("subwayLineField").style.display = isSubway ? "block" : "none";
+      document.getElementById("f-spot-label").style.display = isSubway ? "none" : "block";
+      document.getElementById("f-spot").style.display = isSubway ? "none" : "block";
+      if (!isSubway) return;
+      var sel = document.getElementById("f-lineSelect");
+      var lines = existingSubwayLines();
+      var curVal = document.getElementById("f-spot").value;
+      sel.innerHTML = lines.map(function(n){ return '<option value="'+esc(n)+'">'+esc(n)+'</option>'; }).join("") +
+        '<option value="__new__">➕ 새 노선 추가</option>';
+      if (curVal && lines.indexOf(curVal)>-1) sel.value = curVal;
+      else if (curVal){ sel.value="__new__"; document.getElementById("f-newLineName").value=curVal; }
+      syncLineSelectDisplay();
+    }
+    function syncLineSelectDisplay(){
+      var sel = document.getElementById("f-lineSelect");
+      var isNew = sel.value === "__new__";
+      document.getElementById("f-newLineName").style.display = isNew ? "block" : "none";
+      document.getElementById("f-spot").value = isNew ? document.getElementById("f-newLineName").value : sel.value;
+    }
+    document.getElementById("f-lineSelect").addEventListener("change", syncLineSelectDisplay);
+    document.getElementById("f-newLineName").addEventListener("input", function(){
+      document.getElementById("f-spot").value = this.value;
     });
     // 종류/점수/단계/등수 버튼을 현재 값에 맞추기
     function syncSegButtons(){
@@ -2961,7 +3067,7 @@
       return all.map(function(p){
         return '  { kind:'+q(p.kind)+', name:'+q(p.name)+', disp:'+q(p.disp)+', score:'+(p.score||0)+',\n' +
                '    py:'+q(p.py)+', price:'+q(p.price)+', land:'+(parseFloat(p.land)||0)+', jong:'+q(p.jong||"")+', stage:'+q(p.stage)+', sub:'+q(p.sub)+', spottype:'+q(p.spottype||"")+',\n' +
-               '    note:'+q(p.note)+', group:'+q(p.group||"")+', seq:'+(p.seq!=null?p.seq:0)+', lat:'+Number(p.lat).toFixed(6)+', lng:'+Number(p.lng).toFixed(6)+', code:'+q(p.code)+' },';
+               '    note:'+q(p.note)+', group:'+q(p.group||"")+', seq:'+(p.seq!=null?p.seq:0)+', lat:'+Number(p.lat).toFixed(6)+', lng:'+Number(p.lng).toFixed(6)+', code:'+q(p.code)+', addr:'+q(p.addr||"")+(p.lineOrder!=null?', lineOrder:'+Number(p.lineOrder):'')+' },';
       }).join("\n");
     }
 
