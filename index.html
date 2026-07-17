@@ -470,6 +470,9 @@
     <div class="rp-tools">
       <button class="rp-tool" id="swLineBtn" data-type="line" title="노선 그리기">🚇 노선 그리기</button>
     </div>
+    <div style="margin-bottom:8px;">
+      <select id="swLineSelect" style="width:100%;background:#1a1d24;color:#e8eaed;border:0.5px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px;font-size:11px;"></select>
+    </div>
     <div class="rp-colors" id="swColors"></div>
     <div class="rp-style-row">
       <button class="rp-eyedrop" id="swEyedrop" title="화면에서 색 추출">💧</button>
@@ -2620,7 +2623,8 @@
       }
       if (swDrawing){ swHandleClick(mouseEvent.latLng); return; }
       if (swEditingId){
-        swEditPoints.push({lat:mouseEvent.latLng.getLat(), lng:mouseEvent.latLng.getLng(), memo:"", memoPos:null});
+        var nm2 = prompt("역 이름을 입력하세요", "");
+        swEditPoints.push({lat:mouseEvent.latLng.getLat(), lng:mouseEvent.latLng.getLng(), name:(nm2||"").trim(), memo:"", memoPos:null, namePos:null});
         swRenderEditHandles(); swRenderEditPreview(); swRenderEditMemos();
         return;
       }
@@ -3570,6 +3574,16 @@
     // ===== 지하철노선(역+메모) 그리기 기능 =====
     var SUBWAY_KEY = "budongsan_subway_v1";
     var SUBWAY_COLORS = ["#00A5DE","#0052A4","#EF7C1C","#009D3E","#996CAC","#F5A200"]; // 임장동선과 안 겹치는 팔레트
+    var SUBWAY_LINES = [
+      {name:"1호선", color:"#0052A4"}, {name:"2호선", color:"#00A84D"}, {name:"3호선", color:"#EF7C1C"},
+      {name:"4호선", color:"#00A4E3"}, {name:"5호선", color:"#996CAC"}, {name:"6호선", color:"#CD7C2F"},
+      {name:"7호선", color:"#747F00"}, {name:"8호선", color:"#E6186C"}, {name:"9호선", color:"#BDB092"},
+      {name:"신분당선", color:"#D4003B"}, {name:"수인분당선", color:"#F5A200"}, {name:"경의중앙선", color:"#77C4A3"},
+      {name:"공항철도", color:"#0090D2"}, {name:"경춘선", color:"#0C8E72"}, {name:"우이신설선", color:"#B0CE18"},
+      {name:"신림선", color:"#6789CA"}, {name:"김포골드라인", color:"#A17800"}, {name:"의정부경전철", color:"#FDA600"},
+      {name:"용인에버라인", color:"#509F22"}, {name:"직접 선택(색상 팔레트)", color:null}
+    ];
+    var swLineName = SUBWAY_LINES[0].name;
     window.SUBWAY = [];
     var swDrawing = false;
     var swPoints = [];       // {lat,lng,memo:"",memoPos:null}
@@ -3594,12 +3608,20 @@
     function swMemoOverlaysFor(line){
       var ovs = [];
       (line.points||[]).forEach(function(pt){
-        if (!pt.memo || !pt.memo.trim()) return;
-        var pos = pt.memoPos || pt;
-        var content = '<div style="background:#fff;color:#111;font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:8px;white-space:nowrap;box-shadow:0 1px 5px rgba(0,0,0,0.5);border:2px solid '+line.color+';max-width:160px;white-space:normal;">'+esc(pt.memo)+'</div>';
-        var ov = makeDraggableOverlay(pos, content, function(newPos){ pt.memoPos = newPos; saveSubwayLocal(); }, {yAnchor:1.6, zIndex:16});
-        ov.setMap(map);
-        ovs.push(ov);
+        if (pt.name && pt.name.trim()){
+          var namePos = pt.namePos || pt;
+          var nameContent = '<div style="background:#fff;color:#111;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:8px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.5);border:2px solid '+line.color+';">'+esc(pt.name)+'</div>';
+          var nameOv = makeDraggableOverlay(namePos, nameContent, function(newPos){ pt.namePos = newPos; saveSubwayLocal(); }, {yAnchor:1.9, zIndex:17});
+          nameOv.setMap(map);
+          ovs.push(nameOv);
+        }
+        if (pt.memo && pt.memo.trim()){
+          var pos = pt.memoPos || pt;
+          var content = '<div style="background:#fffbe0;color:#111;font-size:10px;font-weight:600;padding:3px 8px;border-radius:8px;white-space:nowrap;box-shadow:0 1px 5px rgba(0,0,0,0.5);border:2px dashed '+line.color+';max-width:160px;white-space:normal;">📝 '+esc(pt.memo)+'</div>';
+          var ov = makeDraggableOverlay(pos, content, function(newPos){ pt.memoPos = newPos; saveSubwayLocal(); }, {yAnchor:0.3, xAnchor:-0.1, zIndex:16});
+          ov.setMap(map);
+          ovs.push(ov);
+        }
       });
       return ovs;
     }
@@ -3634,11 +3656,23 @@
         var line = new kakao.maps.Polyline({ path:toPath(swPoints), strokeWeight:swWeight, strokeColor:swColor, strokeOpacity:0.9, strokeStyle:"shortdash" });
         line.setMap(map); swTempOverlays.push(line);
       }
-      swPoints.forEach(function(p){ var d=makeDot(p,swColor); d.setMap(map); swTempOverlays.push(d); });
+      swPoints.forEach(function(p){
+        var d=makeDot(p,swColor); d.setMap(map); swTempOverlays.push(d);
+        if (p.name && p.name.trim()){
+          var lbl = new kakao.maps.CustomOverlay({
+            position: new kakao.maps.LatLng(p.lat,p.lng),
+            content: '<div style="background:#fff;color:#111;font-size:10px;font-weight:700;padding:1px 6px;border-radius:8px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.5);border:1.5px solid '+swColor+';">'+esc(p.name)+'</div>',
+            xAnchor:0.5, yAnchor:1.9, zIndex:18
+          });
+          lbl.setMap(map); swTempOverlays.push(lbl);
+        }
+      });
       document.getElementById("swFinishRow").style.display = (swPoints.length>=2) ? "flex" : "none";
     }
     function swHandleClick(latLng){
-      var p = {lat:latLng.getLat(), lng:latLng.getLng(), memo:"", memoPos:null};
+      var p = {lat:latLng.getLat(), lng:latLng.getLng(), name:"", memo:"", memoPos:null};
+      var nm = prompt("역 이름을 입력하세요 (예: 강남역) — 비워두면 나중에 입력 가능", "");
+      if (nm!==null) p.name = nm.trim();
       var now = Date.now();
       var last = swPoints[swPoints.length-1];
       if (last && (now - (window.__lastSwClickTs||0)) < 350 &&
@@ -3658,7 +3692,7 @@
     }
     function swFinish(){
       if (!swDrawing || swPoints.length<2){ swCancelDraw(); return; }
-      var line = { id:"sw_"+Date.now(), points:swPoints.slice(), color:swColor, dash:swDash, weight:swWeight, label:"" };
+      var line = { id:"sw_"+Date.now(), points:swPoints.slice(), color:swColor, dash:swDash, weight:swWeight, label:swLineName||"" };
       window.SUBWAY.push(line);
       saveSubwayLocal();
       swClearTemp();
@@ -3750,9 +3784,11 @@
         });
         kakao.maps.event.addListener(marker, "click", function(){
           if (moved){ moved=false; return; } // 드래그 끝난 직후 클릭 오발동 방지
-          var v = prompt("이 역(점)의 메모를 입력하세요", swEditPoints[idx].memo||"");
-          if (v===null) return;
-          swEditPoints[idx].memo = v.trim();
+          var nm = prompt("역 이름을 입력하세요", swEditPoints[idx].name||"");
+          if (nm===null) return;
+          swEditPoints[idx].name = nm.trim();
+          var memoV = prompt("메모(선택, 비워두면 없음)", swEditPoints[idx].memo||"");
+          if (memoV!==null) swEditPoints[idx].memo = memoV.trim();
           swRenderEditMemos();
           renderSubwayList();
         });
@@ -3770,7 +3806,11 @@
       swEditingId = id;
       var l = window.SUBWAY.find(function(x){ return x.id===id; });
       if (!l) return;
-      swEditPoints = l.points.map(function(p){ return {lat:p.lat, lng:p.lng, memo:p.memo||"", memoPos:p.memoPos?{lat:p.memoPos.lat,lng:p.memoPos.lng}:null}; });
+      swEditPoints = l.points.map(function(p){ return {
+        lat:p.lat, lng:p.lng, name:p.name||"", memo:p.memo||"",
+        memoPos:p.memoPos?{lat:p.memoPos.lat,lng:p.memoPos.lng}:null,
+        namePos:p.namePos?{lat:p.namePos.lat,lng:p.namePos.lng}:null
+      }; });
       removeSubwayOverlays(id);
       swRenderEditHandles(); swRenderEditPreview(); swRenderEditMemos();
       document.getElementById("swEditRow").style.display = "flex";
@@ -3781,7 +3821,7 @@
       if (!swEditingId) return;
       var l = window.SUBWAY.find(function(x){ return x.id===swEditingId; });
       if (!l || swEditPoints.length<2){ alert("점이 최소 2개는 있어야 합니다."); return; }
-      l.points = swEditPoints.map(function(p){ return {lat:p.lat, lng:p.lng, memo:p.memo||"", memoPos:p.memoPos}; });
+      l.points = swEditPoints.map(function(p){ return {lat:p.lat, lng:p.lng, name:p.name||"", memo:p.memo||"", memoPos:p.memoPos, namePos:p.namePos}; });
       saveSubwayLocal();
       swClearEditOverlays();
       renderSubwayLine(l);
@@ -3815,6 +3855,19 @@
           el.classList.add("on");
         });
       });
+    })();
+    (function initSwLineSelect(){
+      var sel = document.getElementById("swLineSelect");
+      sel.innerHTML = SUBWAY_LINES.map(function(l){ return '<option value="'+l.name+'">'+l.name+'</option>'; }).join("");
+      function applyLine(){
+        var l = SUBWAY_LINES.find(function(x){ return x.name===sel.value; });
+        swLineName = sel.value;
+        document.getElementById("swColors").style.display = (l && l.color==null) ? "flex" : "none";
+        if (l && l.color){ swColor = l.color; }
+      }
+      sel.addEventListener("change", applyLine);
+      applyLine();
+      document.getElementById("swColors").style.display = "none"; // 기본은 호선 프리셋 색상 사용
     })();
     document.getElementById("swSolidBtn").addEventListener("click", function(){
       swDash = false;
