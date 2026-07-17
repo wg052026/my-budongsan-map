@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>노선 관리 — 내 부동산 지도</title>
+<style>
+  html, body { margin:0; padding:0; background:#1a1d24; color:#f2f3f5; font-family:-apple-system,BlinkMacSystemFont,"Malgun Gothic",sans-serif; }
+  #topbar { position:sticky; top:0; z-index:10; display:flex; align-items:center; gap:10px;
+    background:#23272f; border-bottom:0.5px solid rgba(255,255,255,0.18); padding:12px 16px; }
+  #topbar h1 { font-size:15px; margin:0; flex:1; font-weight:800; }
+  #topbar a { color:#9aa0ab; text-decoration:none; font-size:12px; background:#2c3742; padding:7px 12px;
+    border-radius:7px; border:0.5px solid rgba(255,255,255,0.2); }
+  #topbar a:hover { color:#cfe8db; }
+  #wrap { max-width:760px; margin:0 auto; padding:14px 12px 60px; }
+  .hint { font-size:11.5px; color:#8a909b; line-height:1.6; margin:0 0 14px; padding:10px 12px;
+    background:#23272f; border-radius:8px; border:0.5px solid rgba(255,255,255,0.12); }
+  .card { background:#23272f; border:0.5px solid rgba(255,255,255,0.18); border-radius:12px;
+    padding:13px 14px; margin-bottom:14px; }
+  .card-head { display:flex; align-items:center; gap:9px; margin-bottom:10px; }
+  .swatch { width:16px; height:16px; border-radius:50%; flex-shrink:0; border:2px solid rgba(255,255,255,0.5); }
+  .line-name { font-size:14px; font-weight:800; flex:1; }
+  .line-count { font-size:11px; color:#8a909b; }
+  .card-actions { display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap; }
+  .btn { background:#2c3742; border:0.5px solid rgba(255,255,255,0.2); color:#cfe8db; border-radius:6px;
+    padding:6px 10px; font-size:11px; font-weight:700; cursor:pointer; }
+  .btn:hover { background:#34404d; }
+  .btn.danger { background:#5a3a3a; color:#f0d6d6; }
+  .btn.danger:hover { background:#6b4444; }
+  .btn.primary { background:#3F9E7E; color:#fff; border:none; }
+  .btn.primary:hover { background:#379073; }
+  .stlist { list-style:none; margin:0; padding:0; }
+  .st-row { display:flex; align-items:center; gap:8px; padding:7px 4px; border-radius:7px; }
+  .st-row:hover { background:rgba(255,255,255,0.04); }
+  .st-order { width:22px; text-align:center; font-size:11px; color:#8a909b; flex-shrink:0; }
+  .st-name { flex:1; font-size:12.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .st-arrows { display:flex; flex-direction:column; gap:1px; }
+  .st-arrows button { width:20px; height:16px; line-height:14px; padding:0; font-size:9px;
+    background:#2c3742; border:0.5px solid rgba(255,255,255,0.2); color:#cfe8db; border-radius:3px; cursor:pointer; }
+  .st-arrows button:disabled { opacity:0.25; cursor:default; }
+  .st-del { background:none; border:none; color:#a06060; cursor:pointer; font-size:13px; padding:2px 4px; }
+  .empty { text-align:center; color:#6b7280; font-size:12px; padding:30px 0; }
+  #addLineBox { display:flex; gap:8px; margin-bottom:16px; }
+  #addLineBox input { flex:1; background:#1a1d24; border:0.5px solid rgba(255,255,255,0.2); color:#e8eaed;
+    border-radius:6px; padding:9px 10px; font-size:12.5px; }
+  #unassignedSel { width:100%; background:#1a1d24; border:0.5px solid rgba(255,255,255,0.2); color:#e8eaed;
+    border-radius:6px; padding:7px; font-size:12px; margin-bottom:6px; }
+  .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#3F9E7E; color:#fff;
+    padding:9px 18px; border-radius:8px; font-size:12.5px; font-weight:700; opacity:0; transition:opacity 0.25s;
+    pointer-events:none; z-index:50; }
+  .toast.on { opacity:1; }
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <h1>🚇 노선 관리</h1>
+  <a href="./index.html">← 지도로 돌아가기</a>
+</div>
+
+<div id="wrap">
+  <div class="hint">
+    여기서 바꾼 내용은 이 기기에 바로 저장되며, 지도 페이지를 새로고침하면 반영됩니다.<br/>
+    깃허브(데이터 파일)에 영구 반영하려면 지도 페이지의 <b>💾 GitHub에 저장</b> 버튼을 눌러주세요.
+  </div>
+
+  <div id="addLineBox">
+    <input type="text" id="newLineName" placeholder="새 노선 이름 (예: 인동선)" />
+    <button class="btn primary" id="addLineBtn">➕ 빈 노선 만들기</button>
+  </div>
+
+  <div id="lines"></div>
+
+  <div class="card" id="unassignedCard" style="display:none;">
+    <div class="card-head"><div class="line-name">🚏 노선 미지정 역</div><div class="line-count" id="unassignedCount"></div></div>
+    <div class="hint" style="margin:0 0 8px;">spottype이 "지하철"이지만 아직 어느 노선에도 속하지 않은 항목입니다. 노선을 지정해주세요.</div>
+    <ul class="stlist" id="unassignedList"></ul>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="./data.js"></script>
+<script>
+  var STORE_KEY = "budongsan_added_v2";
+  var EDIT_KEY  = "budongsan_edits_v1";
+  var places = (window.PLACES || []).slice();
+  var added=[], edits={}, all=[];
+
+  function loadAdded(){
+    var arr=[];
+    try{ arr = JSON.parse(localStorage.getItem(STORE_KEY)||"[]"); }catch(e){ arr=[]; }
+    var changed=false;
+    arr.forEach(function(p, i){
+      if (!p.__id){ p.__id = "add_" + Date.now() + "_" + i + "_" + Math.floor(Math.random()*1000000); changed=true; }
+    });
+    if (changed){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(arr)); }catch(e){} }
+    return arr;
+  }
+  function saveAdded(a){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(a)); }catch(e){} }
+  function loadEdits(){ try{ return JSON.parse(localStorage.getItem(EDIT_KEY)||"{}"); }catch(e){ return {}; } }
+  function saveEdits(o){ try{ localStorage.setItem(EDIT_KEY, JSON.stringify(o)); }catch(e){} }
+
+  function buildAll(){
+    var list=[];
+    places.forEach(function(p,i){
+      var id="fix:"+i;
+      if (edits[id]==="__deleted__") return;
+      var merged=Object.assign({}, p, edits[id]||{});
+      merged.__id=id;
+      list.push(merged);
+    });
+    added.forEach(function(p,i){
+      if (!p.__id) p.__id="add_"+i;
+      var item=Object.assign({}, p);
+      list.push(item);
+    });
+    all=list;
+    return all;
+  }
+
+  function persist(items){
+    // items: 변경된 항목 배열 (전체 필드 포함, __id 필수)
+    items.forEach(function(x){
+      var updated={};
+      Object.keys(x).forEach(function(k){ if (k.indexOf("__")!==0) updated[k]=x[k]; });
+      var xid=x.__id;
+      if (xid.indexOf("fix:")===0){
+        updated.__id=xid;
+        edits[xid]=updated;
+      } else {
+        var found=false;
+        for (var j=0;j<added.length;j++){ if (added[j].__id===xid){ updated.__id=xid; added[j]=updated; found=true; break; } }
+        if (!found){ updated.__id=xid; added.push(updated); }
+      }
+    });
+    saveEdits(edits);
+    saveAdded(added);
+  }
+
+  var SUBWAY_PALETTE = ["#00A84D","#0052A4","#FDA502","#00A5DE","#996CAC","#CD7C2F","#747F00","#EF7C1C","#009D3E","#BB8C00"];
+  function colorFor(name, existingColor){
+    if (existingColor) return existingColor;
+    var h=0; for (var i=0;i<name.length;i++) h = (h*31 + name.charCodeAt(i)) >>> 0;
+    return SUBWAY_PALETTE[h % SUBWAY_PALETTE.length];
+  }
+
+  function showToast(msg){
+    var t=document.getElementById("toast");
+    t.textContent=msg; t.classList.add("on");
+    setTimeout(function(){ t.classList.remove("on"); }, 1600);
+  }
+
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g, function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+  }); }
+
+  function groupStations(){
+    buildAll();
+    var subway = all.filter(function(x){ return x.kind==="spot" && x.spottype==="지하철"; });
+    var lines = {};
+    var unassigned = [];
+    subway.forEach(function(p){
+      var sub = (p.sub||"").trim();
+      if (!sub){ unassigned.push(p); return; }
+      (lines[sub] = lines[sub]||[]).push(p);
+    });
+    Object.keys(lines).forEach(function(k){
+      lines[k].sort(function(a,b){
+        var oa=(a.lineOrder!=null?a.lineOrder:(a.seq||0)), ob=(b.lineOrder!=null?b.lineOrder:(b.seq||0));
+        return oa-ob;
+      });
+    });
+    return { lines: lines, unassigned: unassigned };
+  }
+
+  function render(){
+    var data = groupStations();
+    var lineNames = Object.keys(data.lines).sort(function(a,b){ return a.localeCompare(b,"ko"); });
+    var wrap = document.getElementById("lines");
+    if (!lineNames.length){
+      wrap.innerHTML = '<div class="empty">아직 등록된 노선이 없습니다.<br/>위에서 새 노선을 만들거나, 지도에서 수동찍기로 역을 추가해보세요.</div>';
+    } else {
+      wrap.innerHTML = lineNames.map(function(name){
+        var group = data.lines[name];
+        var color = colorFor(name, group[0].lineColor);
+        var weight = group[0].lineWeight || 4;
+        var rows = group.map(function(p, idx){
+          return '<li class="st-row">' +
+            '<span class="st-order">'+(idx+1)+'</span>' +
+            '<span class="st-name">'+esc(p.name)+'</span>' +
+            '<div class="st-arrows">' +
+              '<button '+(idx===0?'disabled':'')+' onclick="moveStation(\''+esc(name).replace(/'/g,"\\'")+'\',\''+p.__id+'\',-1)">▲</button>' +
+              '<button '+(idx===group.length-1?'disabled':'')+' onclick="moveStation(\''+esc(name).replace(/'/g,"\\'")+'\',\''+p.__id+'\',1)">▼</button>' +
+            '</div>' +
+            '<button class="st-del" title="이 노선에서 제외" onclick="removeFromLine(\''+p.__id+'\')">✕</button>' +
+          '</li>';
+        }).join("");
+        return '<div class="card">' +
+          '<div class="card-head">' +
+            '<span class="swatch" style="background:'+color+';"></span>' +
+            '<span class="line-name">'+esc(name)+'</span>' +
+            '<span class="line-count">역 '+group.length+'개</span>' +
+          '</div>' +
+          '<div class="card-actions">' +
+            '<button class="btn" onclick="styleLine(\''+esc(name).replace(/'/g,"\\'")+'\')">🎨 색상/굵기</button>' +
+            '<button class="btn" onclick="renameLine(\''+esc(name).replace(/'/g,"\\'")+'\')">✏ 이름변경</button>' +
+            '<button class="btn danger" onclick="deleteLine(\''+esc(name).replace(/'/g,"\\'")+'\')">🗑 노선 삭제</button>' +
+          '</div>' +
+          '<ul class="stlist">'+rows+'</ul>' +
+        '</div>';
+      }).join("");
+    }
+
+    var uCard = document.getElementById("unassignedCard");
+    if (data.unassigned.length){
+      uCard.style.display="block";
+      document.getElementById("unassignedCount").textContent = data.unassigned.length+"개";
+      document.getElementById("unassignedList").innerHTML = data.unassigned.map(function(p){
+        var opts = lineNames.map(function(n){ return '<option value="'+esc(n)+'">'+esc(n)+'</option>'; }).join("");
+        return '<li class="st-row" style="flex-direction:column;align-items:stretch;gap:5px;padding:8px 4px;border-bottom:0.5px solid rgba(255,255,255,0.08);">' +
+          '<span class="st-name" style="white-space:normal;">'+esc(p.name)+'</span>' +
+          '<div style="display:flex;gap:6px;">' +
+            '<select id="unsel-'+p.__id+'" style="flex:1;background:#1a1d24;border:0.5px solid rgba(255,255,255,0.2);color:#e8eaed;border-radius:6px;padding:6px;font-size:12px;">' +
+              '<option value="">노선 선택...</option>' + opts +
+            '</select>' +
+            '<button class="btn primary" onclick="assignToLine(\''+p.__id+'\')">지정</button>' +
+          '</div>' +
+        '</li>';
+      }).join("");
+    } else {
+      uCard.style.display="none";
+    }
+  }
+
+  function findAll(id){ for (var i=0;i<all.length;i++){ if (all[i].__id===id) return all[i]; } return null; }
+  function lineGroup(name){
+    return all.filter(function(x){ return x.kind==="spot" && x.spottype==="지하철" && (x.sub||"").trim()===name; })
+      .sort(function(a,b){ var oa=(a.lineOrder!=null?a.lineOrder:(a.seq||0)), ob=(b.lineOrder!=null?b.lineOrder:(b.seq||0)); return oa-ob; });
+  }
+  function persistOrder(order){
+    order.forEach(function(x,i){ x.lineOrder=i; });
+    persist(order);
+    render();
+    showToast("순서가 저장되었습니다");
+  }
+
+  window.moveStation = function(lineName, id, dir){
+    var group = lineGroup(lineName);
+    var idx = group.findIndex(function(x){ return x.__id===id; });
+    var swapIdx = idx+dir;
+    if (idx<0 || swapIdx<0 || swapIdx>=group.length) return;
+    var tmp=group[idx]; group[idx]=group[swapIdx]; group[swapIdx]=tmp;
+    persistOrder(group);
+  };
+
+  window.removeFromLine = function(id){
+    var p = findAll(id);
+    if (!p) return;
+    if (!confirm('"'+p.name+'"을(를) 노선에서 제외할까요? (항목 자체는 삭제되지 않습니다)')) return;
+    var lineName=(p.sub||"").trim();
+    var updated = Object.assign({}, p, { sub:"", lineOrder:undefined, lineColor:undefined, lineWeight:undefined });
+    persist([updated]);
+    // 남은 역들 순서 재정렬
+    var rest = lineGroup(lineName).filter(function(x){ return x.__id!==id; });
+    if (rest.length) persist(rest.map(function(x,i){ x.lineOrder=i; return x; }));
+    render();
+    showToast("노선에서 제외했습니다");
+  };
+
+  window.assignToLine = function(id){
+    var sel = document.getElementById("unsel-"+id);
+    var lineName = sel.value;
+    if (!lineName){ alert("노선을 선택하세요."); return; }
+    var p = findAll(id);
+    if (!p) return;
+    var group = lineGroup(lineName);
+    var updated = Object.assign({}, p, { sub:lineName, spottype:"지하철", lineOrder:group.length });
+    persist([updated]);
+    render();
+    showToast('"'+lineName+'" 노선에 추가했습니다');
+  };
+
+  window.styleLine = async function(name){
+    var group = lineGroup(name);
+    if (!group.length) return;
+    var curColor = group[0].lineColor || colorFor(name);
+    var curWeight = group[0].lineWeight || 4;
+    var newColor = curColor;
+    if (window.EyeDropper){
+      if (confirm("스포이드로 화면에서 색을 고르시겠어요?\n확인=스포이드 / 취소=직접 코드 입력")){
+        try { var ed=new EyeDropper(); var r=await ed.open(); newColor=r.sRGBHex; } catch(e){ return; }
+      } else {
+        var v=prompt("색상 코드를 입력하세요 (예: #00A84D)", curColor);
+        if (v===null) return;
+        newColor = v.trim() || curColor;
+      }
+    } else {
+      var v2=prompt("색상 코드를 입력하세요 (예: #00A84D)", curColor);
+      if (v2===null) return;
+      newColor = v2.trim() || curColor;
+    }
+    var wv = prompt("선 굵기(px)를 입력하세요", curWeight);
+    if (wv===null) return;
+    var newWeight = parseFloat(wv);
+    if (isNaN(newWeight) || newWeight<=0) newWeight = curWeight;
+    var updated = group.map(function(p){ return Object.assign({}, p, { lineColor:newColor, lineWeight:newWeight }); });
+    persist(updated);
+    render();
+    showToast("색상/굵기가 저장되었습니다");
+  };
+
+  window.renameLine = function(oldName){
+    var group = lineGroup(oldName);
+    if (!group.length) return;
+    var newName = prompt('"'+oldName+'" 노선의 새 이름을 입력하세요 (역 '+group.length+'개 전부 바뀝니다)', oldName);
+    if (newName===null) return;
+    newName = newName.trim();
+    if (!newName || newName===oldName) return;
+    var updated = group.map(function(p){ return Object.assign({}, p, { sub:newName }); });
+    persist(updated);
+    render();
+    showToast("노선 이름이 변경되었습니다");
+  };
+
+  window.deleteLine = function(name){
+    var group = lineGroup(name);
+    if (!group.length) return;
+    if (!confirm('"'+name+'" 노선 전체(역 '+group.length+'개)를 삭제할까요?\n되돌릴 수 없습니다.')) return;
+    group.forEach(function(p){
+      var id=p.__id;
+      if (id.indexOf("fix:")===0){ edits[id]="__deleted__"; }
+      else { for (var i=0;i<added.length;i++){ if (added[i].__id===id){ added.splice(i,1); break; } } }
+    });
+    saveEdits(edits);
+    saveAdded(added);
+    render();
+    showToast("노선이 삭제되었습니다");
+  };
+
+  document.getElementById("addLineBtn").addEventListener("click", function(){
+    var input = document.getElementById("newLineName");
+    var name = input.value.trim();
+    if (!name){ alert("노선 이름을 입력하세요."); return; }
+    var data = groupStations();
+    if (data.lines[name]){ alert("이미 있는 노선 이름입니다."); return; }
+    // 빈 노선은 실제 역이 하나도 없으면 표시할 수 없으므로,
+    // 노선 미지정 역이 있다면 그쪽에서 지정하도록 안내
+    alert('빈 노선은 화면에 표시되지 않습니다.\n먼저 지도의 "수동찍기 → 호재 → 🚇지하철"로 역을 하나 추가한 뒤,\n노선 이름에 "'+name+'"을(를) 입력해주세요.\n\n또는 아래 "노선 미지정 역" 목록이 있다면 거기서 이 노선으로 지정할 수 있습니다.');
+    input.value="";
+  });
+
+  added = loadAdded();
+  edits = loadEdits();
+  render();
+</script>
+</body>
+</html>
