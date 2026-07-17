@@ -985,40 +985,56 @@
         else map.removeOverlayMapTypeId(kakao.maps.MapTypeId.USE_DISTRICT);
       });
 
-      // 행정구역 경계(시/군/구): 공개 GeoJSON(TopoJSON)을 받아와 폴리곤으로 그림 (카카오맵 API엔 없는 레이어)
-      var ADMIN_BOUNDARY_URL = "https://raw.githubusercontent.com/southkorea/southkorea-maps/master/kostat/2018/json/skorea-municipalities-2018-topo-simple.json";
+      // 행정구역 경계(시/군/구): 저장소에 내장된 admin_boundary.json 사용 + localStorage 캐시 (외부 사이트 의존 제거, 빠른 재로딩)
+      var ADMIN_BOUNDARY_URL = "./admin_boundary.json";
+      var ADMIN_CACHE_KEY = "budongsan_admin_boundary_v1";
       var __adminPolys = null, __adminLoading = false;
       var adminChk = document.getElementById("mtAdminBoundary");
       var adminLabel = document.getElementById("mtAdminLabel");
+      function buildAdminPolys(topo){
+        var key = Object.keys(topo.objects)[0];
+        var geo = topojson.feature(topo, topo.objects[key]);
+        var polys = [];
+        geo.features.forEach(function(f){
+          var geom = f.geometry;
+          if (!geom) return;
+          var polyList = geom.type==="Polygon" ? [geom.coordinates] : geom.coordinates;
+          polyList.forEach(function(rings){
+            var path = rings[0].map(function(c){ return new kakao.maps.LatLng(c[1], c[0]); });
+            polys.push(new kakao.maps.Polygon({
+              path: path, strokeWeight:1.6, strokeColor:"#FFD400", strokeOpacity:0.85, strokeStyle:"solid",
+              fillColor:"#FFD400", fillOpacity:0.02
+            }));
+          });
+        });
+        return polys;
+      }
       function loadAdminBoundary(cb){
         if (__adminPolys){ cb(__adminPolys); return; }
         if (__adminLoading) return;
         __adminLoading = true;
         adminLabel.textContent = "행정구역 경계 불러오는 중...";
-        fetch(ADMIN_BOUNDARY_URL).then(function(r){ return r.json(); }).then(function(topo){
-          var key = Object.keys(topo.objects)[0];
-          var geo = topojson.feature(topo, topo.objects[key]);
-          var polys = [];
-          geo.features.forEach(function(f){
-            var geom = f.geometry;
-            if (!geom) return;
-            var polyList = geom.type==="Polygon" ? [geom.coordinates] : geom.coordinates;
-            polyList.forEach(function(rings){
-              var path = rings[0].map(function(c){ return new kakao.maps.LatLng(c[1], c[0]); });
-              polys.push(new kakao.maps.Polygon({
-                path: path, strokeWeight:1.6, strokeColor:"#FFD400", strokeOpacity:0.85, strokeStyle:"solid",
-                fillColor:"#FFD400", fillOpacity:0.02
-              }));
-            });
-          });
-          __adminPolys = polys;
+        // 1) 이 기기에 이미 캐시된 데이터가 있으면 네트워크 요청 없이 바로 사용
+        var cached = null;
+        try{ var raw = localStorage.getItem(ADMIN_CACHE_KEY); if (raw) cached = JSON.parse(raw); }catch(e){ cached = null; }
+        if (cached){
+          __adminPolys = buildAdminPolys(cached);
           __adminLoading = false;
           adminLabel.textContent = "행정구역 경계(시/군/구)";
-          cb(polys);
+          cb(__adminPolys);
+          return;
+        }
+        // 2) 캐시가 없으면 이 사이트에 내장된 파일에서 딱 한 번만 받아온 뒤 캐시에 저장
+        fetch(ADMIN_BOUNDARY_URL).then(function(r){ return r.json(); }).then(function(topo){
+          __adminPolys = buildAdminPolys(topo);
+          __adminLoading = false;
+          adminLabel.textContent = "행정구역 경계(시/군/구)";
+          try{ localStorage.setItem(ADMIN_CACHE_KEY, JSON.stringify(topo)); }catch(e){ /* 용량 초과 시 캐시 생략, 기능엔 지장 없음 */ }
+          cb(__adminPolys);
         }).catch(function(err){
           __adminLoading = false;
           adminLabel.textContent = "행정구역 경계(시/군/구)";
-          alert("행정구역 경계 데이터를 불러오지 못했습니다. 인터넷 연결을 확인해주세요.\n("+err+")");
+          alert("행정구역 경계 데이터를 불러오지 못했습니다.\n("+err+")");
           adminChk.checked = false;
         });
       }
