@@ -895,7 +895,10 @@
       var rank = p.score>=1 ? (' · '+p.score+'등') : '';
       return '<div class="mk-main">'+esc(p.name)+esc(rank)+'</div>';
     }
-    return '<div class="mk-main">'+esc(p.sub||p.name)+'</div>';   // 호재: 내용
+    if (p.kind==="spot" && p.spottype==="지하철"){
+      return '<div class="mk-main">'+esc(p.name)+'</div>';   // 지하철: 역명
+    }
+    return '<div class="mk-main">'+esc(p.sub||p.name)+'</div>';   // 그 외 호재: 내용
   }
   // 정보창 정보 줄
   function infoLine(p){
