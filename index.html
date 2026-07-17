@@ -151,6 +151,15 @@
     #mapSearch input::placeholder { color:#9aa0ab; }
     #mapSearchBtn { position:absolute; top:4px; right:4px; height:calc(100% - 8px); padding:0 12px;
       background:#3F9E7E; border:none; border-radius:6px; color:#fff; font-size:12px; font-weight:700; cursor:pointer; }
+    #mapTypeCtrl { position:absolute; bottom:26px; right:12px; z-index:20; background:rgba(35,39,47,0.95);
+      border:0.5px solid rgba(255,255,255,0.2); border-radius:8px; padding:6px; display:flex; flex-direction:column; gap:5px; }
+    .mt-row { display:flex; gap:4px; }
+    .mt-btn { background:#1a1d24; border:0.5px solid rgba(255,255,255,0.2); color:#9aa0ab;
+      border-radius:6px; padding:6px 9px; font-size:11px; cursor:pointer; white-space:nowrap; }
+    .mt-btn.on { background:#3F9E7E; color:#fff; border-color:#3F9E7E; font-weight:700; }
+    .mt-chk { display:flex; align-items:center; gap:5px; font-size:11px; color:#cfe8db; cursor:pointer;
+      padding:4px 2px 1px; border-top:0.5px solid rgba(255,255,255,0.12); margin-top:1px; }
+    .mt-chk input { accent-color:#3F9E7E; cursor:pointer; }
     #mapSearchResults { margin-top:6px; background:rgba(35,39,47,0.97); border-radius:8px; overflow:hidden;
       box-shadow:0 2px 8px rgba(0,0,0,0.35); display:none; max-height:260px; overflow-y:auto; }
     #mapSearchResults .msr-row { padding:9px 12px; border-bottom:0.5px solid rgba(255,255,255,0.08);
@@ -236,6 +245,14 @@
 </head>
 <body>
   <div id="map"></div>
+  <div id="mapTypeCtrl">
+    <div class="mt-row">
+      <button class="mt-btn on" id="mtRoadmap" data-t="ROADMAP">지도</button>
+      <button class="mt-btn" id="mtSkyview" data-t="SKYVIEW">위성</button>
+      <button class="mt-btn" id="mtHybrid" data-t="HYBRID">위성+라벨</button>
+    </div>
+    <label class="mt-chk"><input type="checkbox" id="mtDistrict" /> 지적편집도(지적도)</label>
+  </div>
 
   <div id="mapSearch">
     <input id="mapSearchInput" placeholder="🔍 단지명·주소로 위치 찾기" />
@@ -950,6 +967,22 @@
 
     var center = new kakao.maps.LatLng(37.2636, 127.0286); // 수원시
     var map = new kakao.maps.Map(document.getElementById("map"), { center:center, level:6 });
+
+    // ===== 지도타입 컨트롤: 로드맵/위성/하이브리드 + 지적편집도 =====
+    (function initMapTypeCtrl(){
+      var baseBtns = { ROADMAP:document.getElementById("mtRoadmap"), SKYVIEW:document.getElementById("mtSkyview"), HYBRID:document.getElementById("mtHybrid") };
+      Object.keys(baseBtns).forEach(function(key){
+        baseBtns[key].addEventListener("click", function(){
+          map.setMapTypeId(kakao.maps.MapTypeId[key]);
+          Object.keys(baseBtns).forEach(function(k){ baseBtns[k].classList.toggle("on", k===key); });
+        });
+      });
+      var districtChk = document.getElementById("mtDistrict");
+      districtChk.addEventListener("change", function(){
+        if (districtChk.checked) map.addOverlayMapTypeId(kakao.maps.MapTypeId.USE_DISTRICT);
+        else map.removeOverlayMapTypeId(kakao.maps.MapTypeId.USE_DISTRICT);
+      });
+    })();
 
     var geocoder = new kakao.maps.services.Geocoder();
     var ps = new kakao.maps.services.Places();
