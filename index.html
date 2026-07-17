@@ -252,7 +252,7 @@
       <button class="mt-btn" id="mtHybrid" data-t="HYBRID">위성+라벨</button>
     </div>
     <label class="mt-chk"><input type="checkbox" id="mtDistrict" /> 지적편집도(지적도)</label>
-    <label class="mt-chk"><input type="checkbox" id="mtAdminBoundary" /> <span id="mtAdminLabel">행정구역 경계(시/군/구)</span></label>
+    <label class="mt-chk"><input type="checkbox" id="mtAdminBoundary" /> <span id="mtAdminLabel">행정구역 경계</span></label>
   </div>
 
   <div id="mapSearch">
@@ -985,13 +985,23 @@
         else map.removeOverlayMapTypeId(kakao.maps.MapTypeId.USE_DISTRICT);
       });
 
-      // 행정구역 경계(시/군/구): 저장소에 내장된 admin_boundary.json 사용 + localStorage 캐시 (외부 사이트 의존 제거, 빠른 재로딩)
-      var ADMIN_BOUNDARY_URL = "./admin_boundary.json";
-      var ADMIN_CACHE_KEY = "budongsan_admin_boundary_v1";
-      var __adminPolys = null, __adminLoading = false;
+      // 행정구역 경계: 줌 레벨에 따라 도(넓게)→시군구→동(좁게) 단계로 자동 전환, 라인만 표시(채우기 없음)
+      // 저장소에 내장된 파일 사용 + localStorage 캐시 (외부 사이트 의존 제거, 빠른 재로딩)
+      var ADMIN_TIERS = {
+        do:      { url:"./admin_boundary_do.json",      cacheKey:"budongsan_admin_boundary_do_v1",
+                   style:{ strokeWeight:3,   strokeColor:"#000000", strokeOpacity:0.9,  strokeStyle:"solid"   }, label:"도" },
+        sigungu: { url:"./admin_boundary_sigungu.json", cacheKey:"budongsan_admin_boundary_sigungu_v1",
+                   style:{ strokeWeight:1,   strokeColor:"#000000", strokeOpacity:0.75, strokeStyle:"solid"   }, label:"시군구" },
+        dong:    { url:"./admin_boundary_dong.json",    cacheKey:"budongsan_admin_boundary_dong_v1",
+                   style:{ strokeWeight:1,   strokeColor:"#000000", strokeOpacity:0.6,  strokeStyle:"shortdot" }, label:"동" }
+      };
+      var __adminPolys = { do:null, sigungu:null, dong:null };
+      var __adminLoading = { do:false, sigungu:false, dong:false };
+      var __adminVisibleTier = null;
       var adminChk = document.getElementById("mtAdminBoundary");
       var adminLabel = document.getElementById("mtAdminLabel");
-      function buildAdminPolys(topo){
+
+      function buildAdminPolys(topo, style){
         var key = Object.keys(topo.objects)[0];
         var geo = topojson.feature(topo, topo.objects[key]);
         var polys = [];
@@ -1001,50 +1011,66 @@
           var polyList = geom.type==="Polygon" ? [geom.coordinates] : geom.coordinates;
           polyList.forEach(function(rings){
             var path = rings[0].map(function(c){ return new kakao.maps.LatLng(c[1], c[0]); });
-            polys.push(new kakao.maps.Polygon({
-              path: path, strokeWeight:1.6, strokeColor:"#FFD400", strokeOpacity:0.85, strokeStyle:"solid",
-              fillColor:"#FFD400", fillOpacity:0.02
-            }));
+            polys.push(new kakao.maps.Polygon(Object.assign({ path:path, fillOpacity:0 }, style)));
           });
         });
         return polys;
       }
-      function loadAdminBoundary(cb){
-        if (__adminPolys){ cb(__adminPolys); return; }
-        if (__adminLoading) return;
-        __adminLoading = true;
-        adminLabel.textContent = "행정구역 경계 불러오는 중...";
-        // 1) 이 기기에 이미 캐시된 데이터가 있으면 네트워크 요청 없이 바로 사용
-        var cached = null;
-        try{ var raw = localStorage.getItem(ADMIN_CACHE_KEY); if (raw) cached = JSON.parse(raw); }catch(e){ cached = null; }
-        if (cached){
-          __adminPolys = buildAdminPolys(cached);
-          __adminLoading = false;
-          adminLabel.textContent = "행정구역 경계(시/군/구)";
-          cb(__adminPolys);
-          return;
+      function loadAdminTier(tier, cb){
+        if (__adminPolys[tier]){ cb(__adminPolys[tier]); return; }
+        if (__adminLoading[tier]) return;
+        __adminLoading[tier] = true;
+        var conf = ADMIN_TIERS[tier];
+        function done(topo, saveCache){
+          __adminPolys[tier] = buildAdminPolys(topo, conf.style);
+          __adminLoading[tier] = false;
+          if (saveCache){ try{ localStorage.setItem(conf.cacheKey, JSON.stringify(topo)); }catch(e){ /* 용량 초과 시 캐시 생략 */ } }
+          cb(__adminPolys[tier]);
         }
-        // 2) 캐시가 없으면 이 사이트에 내장된 파일에서 딱 한 번만 받아온 뒤 캐시에 저장
-        fetch(ADMIN_BOUNDARY_URL).then(function(r){ return r.json(); }).then(function(topo){
-          __adminPolys = buildAdminPolys(topo);
-          __adminLoading = false;
-          adminLabel.textContent = "행정구역 경계(시/군/구)";
-          try{ localStorage.setItem(ADMIN_CACHE_KEY, JSON.stringify(topo)); }catch(e){ /* 용량 초과 시 캐시 생략, 기능엔 지장 없음 */ }
-          cb(__adminPolys);
-        }).catch(function(err){
-          __adminLoading = false;
-          adminLabel.textContent = "행정구역 경계(시/군/구)";
-          alert("행정구역 경계 데이터를 불러오지 못했습니다.\n("+err+")");
-          adminChk.checked = false;
+        var cached = null;
+        try{ var raw = localStorage.getItem(conf.cacheKey); if (raw) cached = JSON.parse(raw); }catch(e){ cached = null; }
+        if (cached){ done(cached, false); return; }
+        fetch(conf.url).then(function(r){ return r.json(); }).then(function(topo){ done(topo, true); })
+        .catch(function(err){
+          __adminLoading[tier] = false;
+          alert("행정구역 경계("+conf.label+") 데이터를 불러오지 못했습니다.\n("+err+")");
+        });
+      }
+      function tierForLevel(level){
+        if (level >= 10) return "do";
+        if (level >= 7) return "sigungu";
+        return "dong";
+      }
+      function hideAllAdminTiers(exceptTier){
+        Object.keys(__adminPolys).forEach(function(t){
+          if (t===exceptTier) return;
+          if (__adminPolys[t]) __adminPolys[t].forEach(function(p){ p.setMap(null); });
+        });
+      }
+      function updateAdminBoundaryDisplay(){
+        if (!adminChk.checked) return;
+        var tier = tierForLevel(map.getLevel());
+        if (tier === __adminVisibleTier && __adminPolys[tier]) return; // 이미 같은 단계 표시중
+        __adminVisibleTier = tier;
+        hideAllAdminTiers(tier);
+        adminLabel.textContent = "행정구역 경계 불러오는 중...";
+        loadAdminTier(tier, function(polys){
+          if (!adminChk.checked || __adminVisibleTier!==tier) return; // 로딩 중 꺼졌거나 다른 단계로 바뀜
+          adminLabel.textContent = "행정구역 경계 (자동: "+ADMIN_TIERS[tier].label+")";
+          polys.forEach(function(p){ p.setMap(map); });
         });
       }
       adminChk.addEventListener("change", function(){
         if (adminChk.checked){
-          loadAdminBoundary(function(polys){ polys.forEach(function(p){ p.setMap(map); }); });
-        } else if (__adminPolys){
-          __adminPolys.forEach(function(p){ p.setMap(null); });
+          __adminVisibleTier = null;
+          updateAdminBoundaryDisplay();
+        } else {
+          hideAllAdminTiers(null);
+          __adminVisibleTier = null;
+          adminLabel.textContent = "행정구역 경계";
         }
       });
+      kakao.maps.event.addListener(map, "zoom_changed", updateAdminBoundaryDisplay);
     })();
 
     var geocoder = new kakao.maps.services.Geocoder();
