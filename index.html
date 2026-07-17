@@ -471,7 +471,7 @@
       <button class="rp-tool" id="swLineBtn" data-type="line" title="노선 그리기">🚇 노선 그리기</button>
     </div>
     <div style="margin-bottom:8px;">
-      <select id="swLineSelect" style="width:100%;background:#1a1d24;color:#e8eaed;border:0.5px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px;font-size:11px;"></select>
+      <input type="text" id="swLineNameInput" placeholder="신규노선 이름 (예: GTX-A 연장(안))" style="width:100%;box-sizing:border-box;background:#1a1d24;color:#e8eaed;border:0.5px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px;font-size:11px;">
     </div>
     <div class="rp-colors" id="swColors"></div>
     <div class="rp-style-row">
@@ -2623,8 +2623,9 @@
       }
       if (swDrawing){ swHandleClick(mouseEvent.latLng); return; }
       if (swEditingId){
-        var nm2 = prompt("역 이름을 입력하세요", "");
-        swEditPoints.push({lat:mouseEvent.latLng.getLat(), lng:mouseEvent.latLng.getLng(), name:(nm2||"").trim(), memo:"", memoPos:null, namePos:null});
+        var nm2 = (prompt("역 이름을 입력하세요", "")||"").trim();
+        var ex2 = nm2 ? confirm("'"+nm2+"' — 기존에 있는 역인가요? (환승역 등)\n확인=기존역 / 취소=신규역") : false;
+        swEditPoints.push({lat:mouseEvent.latLng.getLat(), lng:mouseEvent.latLng.getLng(), name:nm2, existing:ex2, memo:"", memoPos:null, namePos:null});
         swRenderEditHandles(); swRenderEditPreview(); swRenderEditMemos();
         return;
       }
@@ -3583,7 +3584,7 @@
       {name:"신림선", color:"#6789CA"}, {name:"김포골드라인", color:"#A17800"}, {name:"의정부경전철", color:"#FDA600"},
       {name:"용인에버라인", color:"#509F22"}, {name:"직접 선택(색상 팔레트)", color:null}
     ];
-    var swLineName = SUBWAY_LINES[0].name;
+    var swLineName = "";
     window.SUBWAY = [];
     var swDrawing = false;
     var swPoints = [];       // {lat,lng,memo:"",memoPos:null}
@@ -3610,7 +3611,8 @@
       (line.points||[]).forEach(function(pt){
         if (pt.name && pt.name.trim()){
           var namePos = pt.namePos || pt;
-          var nameContent = '<div style="background:#fff;color:#111;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:8px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.5);border:2px solid '+line.color+';">'+esc(pt.name)+'</div>';
+          var isExisting = !!pt.existing;
+          var nameContent = '<div style="background:'+(isExisting?'#eef':'#fff')+';color:#111;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:8px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.5);border:2px '+(isExisting?'dashed':'solid')+' '+line.color+';">'+(isExisting?'🔁 ':'')+esc(pt.name)+'</div>';
           var nameOv = makeDraggableOverlay(namePos, nameContent, function(newPos){ pt.namePos = newPos; saveSubwayLocal(); }, {yAnchor:1.9, zIndex:17});
           nameOv.setMap(map);
           ovs.push(nameOv);
@@ -3661,7 +3663,7 @@
         if (p.name && p.name.trim()){
           var lbl = new kakao.maps.CustomOverlay({
             position: new kakao.maps.LatLng(p.lat,p.lng),
-            content: '<div style="background:#fff;color:#111;font-size:10px;font-weight:700;padding:1px 6px;border-radius:8px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.5);border:1.5px solid '+swColor+';">'+esc(p.name)+'</div>',
+            content: '<div style="background:'+(p.existing?'#eef':'#fff')+';color:#111;font-size:10px;font-weight:700;padding:1px 6px;border-radius:8px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.5);border:1.5px '+(p.existing?'dashed':'solid')+' '+swColor+';">'+(p.existing?'🔁 ':'')+esc(p.name)+'</div>',
             xAnchor:0.5, yAnchor:1.9, zIndex:18
           });
           lbl.setMap(map); swTempOverlays.push(lbl);
@@ -3670,9 +3672,10 @@
       document.getElementById("swFinishRow").style.display = (swPoints.length>=2) ? "flex" : "none";
     }
     function swHandleClick(latLng){
-      var p = {lat:latLng.getLat(), lng:latLng.getLng(), name:"", memo:"", memoPos:null};
+      var p = {lat:latLng.getLat(), lng:latLng.getLng(), name:"", existing:false, memo:"", memoPos:null};
       var nm = prompt("역 이름을 입력하세요 (예: 강남역) — 비워두면 나중에 입력 가능", "");
       if (nm!==null) p.name = nm.trim();
+      if (p.name && confirm("'"+p.name+"' — 기존에 있는 역인가요? (환승역 등)\n확인=기존역 / 취소=신규역")) p.existing = true;
       var now = Date.now();
       var last = swPoints[swPoints.length-1];
       if (last && (now - (window.__lastSwClickTs||0)) < 350 &&
@@ -3692,6 +3695,12 @@
     }
     function swFinish(){
       if (!swDrawing || swPoints.length<2){ swCancelDraw(); return; }
+      if (!swLineName || !swLineName.trim()){
+        var nm = prompt("이 노선의 이름을 입력하세요 (예: GTX-A 연장(안))", "");
+        if (nm===null) return;
+        swLineName = nm.trim();
+        document.getElementById("swLineNameInput").value = swLineName;
+      }
       var line = { id:"sw_"+Date.now(), points:swPoints.slice(), color:swColor, dash:swDash, weight:swWeight, label:swLineName||"" };
       window.SUBWAY.push(line);
       saveSubwayLocal();
@@ -3700,6 +3709,8 @@
       renderSubwayList();
       swPoints = []; swRedoStack = [];
       document.getElementById("swFinishRow").style.display = "none";
+      swLineName = "";
+      document.getElementById("swLineNameInput").value = "";
       swSetDrawing(false);
     }
     function swSetDrawing(on){
@@ -3787,6 +3798,7 @@
           var nm = prompt("역 이름을 입력하세요", swEditPoints[idx].name||"");
           if (nm===null) return;
           swEditPoints[idx].name = nm.trim();
+          swEditPoints[idx].existing = swEditPoints[idx].name ? confirm("'"+swEditPoints[idx].name+"' — 기존에 있는 역인가요? (환승역 등)\n확인=기존역 / 취소=신규역") : false;
           var memoV = prompt("메모(선택, 비워두면 없음)", swEditPoints[idx].memo||"");
           if (memoV!==null) swEditPoints[idx].memo = memoV.trim();
           swRenderEditMemos();
@@ -3807,7 +3819,7 @@
       var l = window.SUBWAY.find(function(x){ return x.id===id; });
       if (!l) return;
       swEditPoints = l.points.map(function(p){ return {
-        lat:p.lat, lng:p.lng, name:p.name||"", memo:p.memo||"",
+        lat:p.lat, lng:p.lng, name:p.name||"", existing:!!p.existing, memo:p.memo||"",
         memoPos:p.memoPos?{lat:p.memoPos.lat,lng:p.memoPos.lng}:null,
         namePos:p.namePos?{lat:p.namePos.lat,lng:p.namePos.lng}:null
       }; });
@@ -3821,7 +3833,7 @@
       if (!swEditingId) return;
       var l = window.SUBWAY.find(function(x){ return x.id===swEditingId; });
       if (!l || swEditPoints.length<2){ alert("점이 최소 2개는 있어야 합니다."); return; }
-      l.points = swEditPoints.map(function(p){ return {lat:p.lat, lng:p.lng, name:p.name||"", memo:p.memo||"", memoPos:p.memoPos, namePos:p.namePos}; });
+      l.points = swEditPoints.map(function(p){ return {lat:p.lat, lng:p.lng, name:p.name||"", existing:!!p.existing, memo:p.memo||"", memoPos:p.memoPos, namePos:p.namePos}; });
       saveSubwayLocal();
       swClearEditOverlays();
       renderSubwayLine(l);
@@ -3856,18 +3868,10 @@
         });
       });
     })();
-    (function initSwLineSelect(){
-      var sel = document.getElementById("swLineSelect");
-      sel.innerHTML = SUBWAY_LINES.map(function(l){ return '<option value="'+l.name+'">'+l.name+'</option>'; }).join("");
-      function applyLine(){
-        var l = SUBWAY_LINES.find(function(x){ return x.name===sel.value; });
-        swLineName = sel.value;
-        document.getElementById("swColors").style.display = (l && l.color==null) ? "flex" : "none";
-        if (l && l.color){ swColor = l.color; }
-      }
-      sel.addEventListener("change", applyLine);
-      applyLine();
-      document.getElementById("swColors").style.display = "none"; // 기본은 호선 프리셋 색상 사용
+    (function initSwLineName(){
+      var inp = document.getElementById("swLineNameInput");
+      inp.addEventListener("input", function(){ swLineName = inp.value; });
+      document.getElementById("swColors").style.display = "flex"; // 색상은 항상 팔레트/스포이드로 직접 선택
     })();
     document.getElementById("swSolidBtn").addEventListener("click", function(){
       swDash = false;
