@@ -180,6 +180,26 @@
     .gp-row { display:flex; align-items:center; gap:6px; padding:3px 0; }
     .gp-row label { flex:1; display:flex; align-items:center; gap:6px; color:#e8eaed; font-size:12px; cursor:pointer; min-width:0; }
     .gp-row .gp-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+    #routePanel { display:none; position:absolute; top:12px; left:12px; z-index:46; background:rgba(28,31,38,0.97);
+      border:0.5px solid rgba(255,255,255,0.2); border-radius:12px; padding:12px; width:220px;
+      box-shadow:0 4px 24px rgba(0,0,0,0.6); }
+    #routePanel .rp-head { color:#f2f3f5; font-size:13px; font-weight:700; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; }
+    #routeCloseBtn { background:#3a3f49; border:none; color:#e8eaed; border-radius:6px; width:22px; height:22px; cursor:pointer; font-size:12px; }
+    .rp-tools { display:flex; gap:5px; margin-bottom:8px; }
+    .rp-tool { flex:1; background:#2c3742; border:0.5px solid rgba(255,255,255,0.2); color:#cfe8db; border-radius:6px; padding:6px 2px; font-size:11px; cursor:pointer; }
+    .rp-tool.on { background:#3F9E7E; color:#fff; border-color:#3F9E7E; }
+    .rp-colors { display:flex; gap:5px; margin-bottom:8px; flex-wrap:wrap; }
+    .rp-color { width:20px; height:20px; border-radius:50%; cursor:pointer; border:2px solid transparent; box-sizing:border-box; }
+    .rp-color.on { border-color:#fff; }
+    .rp-hint { color:#9aa0ab; font-size:10.5px; line-height:1.4; margin-bottom:8px; }
+    .rp-list { max-height:180px; overflow-y:auto; margin-bottom:8px; }
+    .rp-item { display:flex; align-items:center; gap:6px; padding:4px 2px; border-bottom:0.5px solid rgba(255,255,255,0.07); font-size:11px; color:#e8eaed; }
+    .rp-item .rp-swatch { width:10px; height:10px; border-radius:3px; flex-shrink:0; }
+    .rp-item .rp-label { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; }
+    .rp-item .rp-del { background:none; border:none; color:#e08a8a; cursor:pointer; font-size:12px; padding:2px 4px; }
+    .rp-actions { display:flex; gap:6px; }
+    .rp-actions button { border:none; border-radius:6px; padding:7px 0; font-size:11px; font-weight:700; cursor:pointer; }
     .gp-row .gp-cnt { color:#9aa0ab; font-size:11px; flex-shrink:0; }
     .gp-row .gp-del { background:#5a3a3a; border:none; color:#f0d6d6; border-radius:5px;
       padding:2px 6px; font-size:11px; cursor:pointer; flex-shrink:0; }
@@ -340,6 +360,7 @@
       <input type="file" id="xlsxFile" accept=".xlsx,.xls" style="display:none;" />
       <button id="exportBtn">⟱ 코드 내보내기</button>
       <button id="saveGhBtn">💾 GitHub에 저장</button>
+      <button id="routeToggleBtn">✏️ 임장동선 그리기</button>
       <button id="clearBtn">🗑 내 추가분 비우기</button>
       <button id="clearPriceBtn">💰 실거래가 캐시 비우기</button>
       <button id="cacheStatusBtn">📊 실거래가 캐시 상태</button>
@@ -389,6 +410,25 @@
       <button id="gpDelSel" title="선택 삭제" style="flex:1;background:#5a3a3a;border:none;color:#f0d6d6;border-radius:6px;padding:7px 0;font-size:14px;cursor:pointer;">🗑</button>
     </div>
     <div id="gpList"></div>
+  </div>
+
+  <div id="routePanel" style="display:none;">
+    <div class="rp-head">
+      <span>✏️ 임장동선</span>
+      <button id="routeCloseBtn" title="닫기">✕</button>
+    </div>
+    <div class="rp-tools">
+      <button class="rp-tool" data-type="line" title="선">📏 선</button>
+      <button class="rp-tool" data-type="arrow" title="화살표">➡️ 화살표</button>
+      <button class="rp-tool" data-type="polygon" title="면">⬠ 면</button>
+    </div>
+    <div class="rp-colors" id="rpColors"></div>
+    <div class="rp-hint" id="rpHint">도구를 선택하고 지도를 클릭해 점을 찍으세요. 더블클릭하면 완성됩니다.</div>
+    <div class="rp-list" id="rpList"></div>
+    <div class="rp-actions">
+      <button id="rpClearAll" style="flex:1;background:#5a3a3a;color:#f0d6d6;">🗑 전체 삭제</button>
+      <button id="rpSaveGh" style="flex:1;background:#3F9E7E;color:#fff;">💾 저장</button>
+    </div>
   </div>
 
   <div id="trendBox">
@@ -2495,6 +2535,7 @@
     });
 
     kakao.maps.event.addListener(map, "click", function(mouseEvent){
+      if (drawMode){ handleDrawClick(mouseEvent.latLng); return; }
       if (moveMode) return;
       if (window.__suppressCloseUntil && Date.now() < window.__suppressCloseUntil) return;
       window.__closeIW();
@@ -2522,6 +2563,10 @@
         document.getElementById("addBtn").disabled=false;
         autoDetectKind(pendingPos);
       }
+    });
+
+    kakao.maps.event.addListener(map, "dblclick", function(mouseEvent){
+      if (drawMode){ finishDraw(); }
     });
 
     // 클릭 지점 주변에서 아파트·학교 중 더 가까운 종류로 자동 설정
@@ -2935,6 +2980,225 @@
     function toB64(str){
       return btoa(unescape(encodeURIComponent(str)));
     }
+
+    // ===== 임장동선(선/화살표/면 그리기) 기능 =====
+    var ROUTE_KEY = "budongsan_routes_v1";
+    var ROUTE_COLORS = ["#FF5252","#FFB300","#3F9E7E","#42A5F5","#AB47BC","#FFFFFF"];
+    window.ROUTES = [];
+    var drawMode = null;        // 'line' | 'arrow' | 'polygon' | null
+    var drawPoints = [];
+    var drawTempOverlays = [];  // 그리는 중 임시 표시
+    var routeMapOverlays = {};  // id -> [overlay, overlay, ...]
+    var drawColor = ROUTE_COLORS[0];
+
+    function loadRoutesLocal(){
+      try{ return JSON.parse(localStorage.getItem(ROUTE_KEY)||"[]"); }catch(e){ return []; }
+    }
+    function saveRoutesLocal(){
+      try{ localStorage.setItem(ROUTE_KEY, JSON.stringify(window.ROUTES)); }catch(e){}
+    }
+
+    function bearingDeg(p1,p2){
+      var dx = p2.lng-p1.lng, dy = p2.lat-p1.lat;
+      return Math.atan2(dx,dy)*180/Math.PI;
+    }
+    function makeArrowHead(p1,p2,color){
+      var deg = bearingDeg(p1,p2);
+      var html = '<div style="width:0;height:0;transform:rotate('+deg+'deg);' +
+        'border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:14px solid '+color+';"></div>';
+      return new kakao.maps.CustomOverlay({
+        position: new kakao.maps.LatLng(p2.lat,p2.lng), content: html,
+        xAnchor:0.5, yAnchor:0.75, zIndex:20
+      });
+    }
+    function makeDot(p,color){
+      var html = '<div style="width:9px;height:9px;border-radius:50%;background:'+color+';border:2px solid #fff;box-shadow:0 0 3px rgba(0,0,0,0.5);"></div>';
+      return new kakao.maps.CustomOverlay({
+        position: new kakao.maps.LatLng(p.lat,p.lng), content: html, xAnchor:0.5, yAnchor:0.5, zIndex:19
+      });
+    }
+    function toPath(points){ return points.map(function(p){ return new kakao.maps.LatLng(p.lat,p.lng); }); }
+
+    function renderRoute(route){
+      var ovs = [];
+      var path = toPath(route.points);
+      if (route.type === "polygon"){
+        var poly = new kakao.maps.Polygon({ path: path, strokeWeight:2, strokeColor:route.color, strokeOpacity:0.9, strokeStyle:"solid", fillColor:route.color, fillOpacity:0.22 });
+        poly.setMap(map);
+        ovs.push(poly);
+      } else {
+        var line = new kakao.maps.Polyline({ path: path, strokeWeight:3.5, strokeColor:route.color, strokeOpacity:0.9, strokeStyle:"solid" });
+        line.setMap(map);
+        ovs.push(line);
+        if (route.type === "arrow" && route.points.length>=2){
+          var ah = makeArrowHead(route.points[route.points.length-2], route.points[route.points.length-1], route.color);
+          ah.setMap(map);
+          ovs.push(ah);
+        }
+      }
+      routeMapOverlays[route.id] = ovs;
+    }
+    function removeRouteOverlays(id){
+      (routeMapOverlays[id]||[]).forEach(function(o){ o.setMap(null); });
+      delete routeMapOverlays[id];
+    }
+    function renderAllRoutes(){
+      Object.keys(routeMapOverlays).forEach(removeRouteOverlays);
+      window.ROUTES.forEach(renderRoute);
+    }
+
+    function clearTempOverlays(){
+      drawTempOverlays.forEach(function(o){ o.setMap(null); });
+      drawTempOverlays = [];
+    }
+    function renderTempShape(){
+      clearTempOverlays();
+      if (!drawPoints.length) return;
+      var path = toPath(drawPoints);
+      if (drawMode==="polygon" && drawPoints.length>=3){
+        var poly = new kakao.maps.Polygon({ path:path, strokeWeight:2, strokeColor:drawColor, strokeOpacity:0.9, fillColor:drawColor, fillOpacity:0.22 });
+        poly.setMap(map); drawTempOverlays.push(poly);
+      } else if (drawPoints.length>=2){
+        var line = new kakao.maps.Polyline({ path:path, strokeWeight:3.5, strokeColor:drawColor, strokeOpacity:0.9, strokeStyle:"shortdash" });
+        line.setMap(map); drawTempOverlays.push(line);
+        if (drawMode==="arrow"){
+          var ah = makeArrowHead(drawPoints[drawPoints.length-2], drawPoints[drawPoints.length-1], drawColor);
+          ah.setMap(map); drawTempOverlays.push(ah);
+        }
+      }
+      drawPoints.forEach(function(p){ var d=makeDot(p,drawColor); d.setMap(map); drawTempOverlays.push(d); });
+    }
+
+    function handleDrawClick(latLng){
+      drawPoints.push({lat:latLng.getLat(), lng:latLng.getLng()});
+      renderTempShape();
+    }
+    function finishDraw(){
+      if (!drawMode) return;
+      var minPts = drawMode==="polygon" ? 3 : 2;
+      if (drawPoints.length < minPts){ cancelDrawShape(); return; }
+      var route = { id:"route_"+Date.now(), type:drawMode, points:drawPoints.slice(), color:drawColor, label:"" };
+      window.ROUTES.push(route);
+      saveRoutesLocal();
+      clearTempOverlays();
+      renderRoute(route);
+      renderRouteList();
+      drawPoints = [];
+      // 같은 도구로 계속 그릴 수 있게 모드는 유지
+    }
+    function cancelDrawShape(){
+      clearTempOverlays();
+      drawPoints = [];
+    }
+    function setDrawMode(type){
+      cancelDrawShape();
+      drawMode = (drawMode===type) ? null : type;
+      document.querySelectorAll(".rp-tool").forEach(function(b){
+        b.classList.toggle("on", b.getAttribute("data-type")===drawMode);
+      });
+      var mapEl = document.getElementById("map");
+      if (mapEl) mapEl.style.cursor = drawMode ? "crosshair" : "";
+      document.getElementById("rpHint").textContent = drawMode
+        ? "지도를 클릭해 점을 찍으세요. 더블클릭하면 완성됩니다."
+        : "도구를 선택하고 지도를 클릭해 점을 찍으세요.";
+    }
+    function deleteRoute(id){
+      removeRouteOverlays(id);
+      window.ROUTES = window.ROUTES.filter(function(r){ return r.id!==id; });
+      saveRoutesLocal();
+      renderRouteList();
+    }
+    function renderRouteList(){
+      var listEl = document.getElementById("rpList");
+      if (!window.ROUTES.length){ listEl.innerHTML = '<div style="color:#6b7280;font-size:10.5px;">아직 그린 게 없습니다.</div>'; return; }
+      var typeIcon = {line:"📏", arrow:"➡️", polygon:"⬠"};
+      listEl.innerHTML = window.ROUTES.map(function(r,i){
+        return '<div class="rp-item">' +
+          '<span class="rp-swatch" style="background:'+r.color+';"></span>' +
+          '<span class="rp-label" onclick="window.__focusRoute(\''+r.id+'\')">'+(typeIcon[r.type]||"")+' '+(r.label||("동선 "+(i+1)))+'</span>' +
+          '<button class="rp-del" onclick="window.__deleteRoute(\''+r.id+'\')">🗑</button>' +
+        '</div>';
+      }).join("");
+    }
+    window.__deleteRoute = deleteRoute;
+    window.__focusRoute = function(id){
+      var r = window.ROUTES.find(function(x){ return x.id===id; });
+      if (!r || !r.points.length) return;
+      map.setCenter(new kakao.maps.LatLng(r.points[0].lat, r.points[0].lng));
+    };
+
+    // 도구/색상 버튼 초기화
+    document.querySelectorAll(".rp-tool").forEach(function(b){
+      b.addEventListener("click", function(){ setDrawMode(b.getAttribute("data-type")); });
+    });
+    (function initColors(){
+      var wrap = document.getElementById("rpColors");
+      wrap.innerHTML = ROUTE_COLORS.map(function(c,i){
+        return '<div class="rp-color'+(i===0?' on':'')+'" data-color="'+c+'" style="background:'+c+';"></div>';
+      }).join("");
+      wrap.querySelectorAll(".rp-color").forEach(function(el){
+        el.addEventListener("click", function(){
+          drawColor = el.getAttribute("data-color");
+          wrap.querySelectorAll(".rp-color").forEach(function(x){ x.classList.remove("on"); });
+          el.classList.add("on");
+        });
+      });
+    })();
+    document.getElementById("routeToggleBtn").addEventListener("click", function(){
+      var panel = document.getElementById("routePanel");
+      panel.style.display = (panel.style.display==="none") ? "block" : "none";
+      document.getElementById("settingsMenu").style.display = "none";
+    });
+    document.getElementById("routeCloseBtn").addEventListener("click", function(){
+      document.getElementById("routePanel").style.display = "none";
+      if (drawMode) setDrawMode(drawMode); // 켜져 있으면 꺼서 그리기 모드 해제
+    });
+    document.getElementById("rpClearAll").addEventListener("click", function(){
+      if (!window.ROUTES.length) return;
+      if (!confirm("그린 동선을 전부 삭제할까요?")) return;
+      Object.keys(routeMapOverlays).forEach(removeRouteOverlays);
+      window.ROUTES = [];
+      saveRoutesLocal();
+      renderRouteList();
+    });
+
+    // 초기 로드: GitHub의 routes.json 있으면 우선 사용, 없으면 로컬
+    (function initRoutes(){
+      window.ROUTES = loadRoutesLocal();
+      renderAllRoutes();
+      renderRouteList();
+      fetch("routes.json?v="+Date.now()).then(function(r){ return r.ok ? r.json() : null; }).then(function(server){
+        if (Array.isArray(server) && server.length && !window.ROUTES.length){
+          window.ROUTES = server;
+          saveRoutesLocal();
+          renderAllRoutes();
+          renderRouteList();
+        }
+      }).catch(function(){});
+    })();
+
+    document.getElementById("rpSaveGh").addEventListener("click", async function(){
+      var btn=this;
+      var token = ghToken();
+      if (!token){ return; }
+      var apiBase = "https://api.github.com/repos/"+GH_OWNER+"/"+GH_REPO+"/contents/routes.json";
+      var headers = { "Authorization":"Bearer "+token, "Accept":"application/vnd.github+json" };
+      btn.disabled=true; var orig=btn.textContent; btn.textContent="저장 중…";
+      try {
+        var sha=null;
+        var getRes = await fetch(apiBase+"?ref="+GH_BRANCH, { headers: headers });
+        if (getRes.status===200){ var info=await getRes.json(); sha=info.sha; }
+        else if (getRes.status===401){ throw new Error("토큰이 거부됨(401)."); }
+        var body = { message:"임장동선 저장 ("+window.ROUTES.length+"개) — "+new Date().toISOString(), content: toB64(JSON.stringify(window.ROUTES)), branch: GH_BRANCH };
+        if (sha) body.sha = sha;
+        var putRes = await fetch(apiBase, { method:"PUT", headers: headers, body: JSON.stringify(body) });
+        if (putRes.status===200 || putRes.status===201){
+          btn.textContent="저장됨 ✓"; setTimeout(function(){ btn.textContent=orig; btn.disabled=false; }, 2000);
+        } else { throw new Error("저장 실패 ("+putRes.status+")"); }
+      } catch(e){
+        btn.textContent=orig; btn.disabled=false; alert("저장 실패: "+e.message);
+      }
+    });
 
     document.getElementById("saveGhBtn").addEventListener("click", async function(){
       var btn=this;
