@@ -3389,16 +3389,18 @@
       }).catch(function(){});
     })();
 
-    document.getElementById("rpSaveGh").addEventListener("click", async function(){
-      var btn=this;
+    async function saveRoutesToGithub(btn, attempt){
+      attempt = attempt || 1;
       var token = ghToken();
       if (!token){ return; }
       var apiBase = "https://api.github.com/repos/"+GH_OWNER+"/"+GH_REPO+"/contents/routes.json";
       var headers = { "Authorization":"Bearer "+token, "Accept":"application/vnd.github+json" };
-      btn.disabled=true; var orig=btn.textContent; btn.textContent="저장 중…";
+      var orig = btn.getAttribute("data-orig") || btn.textContent;
+      btn.setAttribute("data-orig", orig);
+      btn.disabled=true; btn.textContent = attempt>1 ? "재시도 중…("+attempt+")" : "저장 중…";
       try {
         var sha=null;
-        var getRes = await fetch(apiBase+"?ref="+GH_BRANCH, { headers: headers });
+        var getRes = await fetch(apiBase+"?ref="+GH_BRANCH, { headers: headers, cache:"no-store" });
         if (getRes.status===200){ var info=await getRes.json(); sha=info.sha; }
         else if (getRes.status===401){ throw new Error("토큰이 거부됨(401)."); }
         var body = { message:"임장동선 저장 ("+window.ROUTES.length+"개) — "+new Date().toISOString(), content: toB64(JSON.stringify(window.ROUTES)), branch: GH_BRANCH };
@@ -3406,10 +3408,19 @@
         var putRes = await fetch(apiBase, { method:"PUT", headers: headers, body: JSON.stringify(body) });
         if (putRes.status===200 || putRes.status===201){
           btn.textContent="저장됨 ✓"; setTimeout(function(){ btn.textContent=orig; btn.disabled=false; }, 2000);
-        } else { throw new Error("저장 실패 ("+putRes.status+")"); }
+        } else if (putRes.status===409 && attempt<3){
+          // 다른 저장과 충돌(동시 저장 등) → 최신 sha 다시 받아서 자동 재시도
+          await new Promise(function(res){ setTimeout(res, 400*attempt); });
+          return saveRoutesToGithub(btn, attempt+1);
+        } else {
+          throw new Error("저장 실패 ("+putRes.status+")");
+        }
       } catch(e){
-        btn.textContent=orig; btn.disabled=false; alert("저장 실패: "+e.message);
+        btn.textContent=orig; btn.disabled=false; alert("저장 실패: "+e.message+(attempt>1?" (재시도 "+attempt+"회 후에도 실패, 다시 눌러주세요)":""));
       }
+    }
+    document.getElementById("rpSaveGh").addEventListener("click", function(){
+      saveRoutesToGithub(this);
     });
 
     document.getElementById("saveGhBtn").addEventListener("click", async function(){
