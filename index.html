@@ -2600,14 +2600,13 @@
     });
 
     kakao.maps.event.addListener(map, "click", function(mouseEvent){
-      console.log('[DBG-CLICK] fired, drawMode=', drawMode, 'editingId=', editingId, 'swDrawing=', swDrawing, 'swEditingId=', swEditingId);
       if (drawMode){ handleDrawClick(mouseEvent.latLng); return; }
       if (editingId){
         editPoints.push({lat:mouseEvent.latLng.getLat(), lng:mouseEvent.latLng.getLng()});
         renderEditHandles(); renderEditPreview();
         return;
       }
-      if (swDrawing){ console.log('[DBG-SW] click, swDrawing=true, swPoints before=', swPoints.length); swHandleClick(mouseEvent.latLng); console.log('[DBG-SW] swPoints after=', swPoints.length); return; }
+      if (swDrawing){ swHandleClick(mouseEvent.latLng); return; }
       if (swEditingId){
         swEditPoints.push({lat:mouseEvent.latLng.getLat(), lng:mouseEvent.latLng.getLng(), memo:"", memoPos:null});
         swRenderEditHandles(); swRenderEditPreview(); swRenderEditMemos();
@@ -3250,7 +3249,7 @@
       // 완성되면 자동으로 그리기 모드 종료 (계속 이어지는 문제 방지). 다음 도형은 도구를 다시 눌러 시작
       var finishedType = drawMode;
       drawMode = null;
-      document.querySelectorAll(".rp-tool").forEach(function(b){ b.classList.remove("on"); });
+      document.querySelectorAll("#routePanel .rp-tool").forEach(function(b){ b.classList.remove("on"); });
       var mapEl = document.getElementById("map");
       if (mapEl) mapEl.style.cursor = "";
       document.getElementById("rpHint").textContent = "도구를 선택하고 지도를 클릭해 점을 찍으세요.";
@@ -3275,7 +3274,7 @@
         }
       }
       drawMode = (drawMode===type) ? null : type;
-      document.querySelectorAll(".rp-tool").forEach(function(b){
+      document.querySelectorAll("#routePanel .rp-tool").forEach(function(b){
         b.classList.toggle("on", b.getAttribute("data-type")===drawMode);
       });
       var mapEl = document.getElementById("map");
@@ -3430,7 +3429,7 @@
     document.getElementById("rpEditCancel").addEventListener("click", cancelEditRoute);
 
     // 도구/색상 버튼 초기화
-    document.querySelectorAll(".rp-tool").forEach(function(b){
+    document.querySelectorAll("#routePanel .rp-tool").forEach(function(b){
       b.addEventListener("click", function(){ setDrawMode(b.getAttribute("data-type")); });
     });
     (function initColors(){
@@ -3671,7 +3670,7 @@
         ? "역 위치를 클릭해 점을 찍으세요. 다 찍으면 '완성' 버튼을 누르세요."
         : "역 위치를 클릭해 점을 찍으세요. 점마다 나중에 메모를 달 수 있습니다.";
     }
-    document.getElementById("swLineBtn").addEventListener("click", function(){ console.log('[DBG-BTN] swLineBtn clicked, before swDrawing=', swDrawing); swSetDrawing(!swDrawing); console.log('[DBG-BTN] after swDrawing=', swDrawing); });
+    document.getElementById("swLineBtn").addEventListener("click", function(){ swSetDrawing(!swDrawing); });
     document.getElementById("swFinishBtn").addEventListener("click", swFinish);
     document.getElementById("swCancelBtn").addEventListener("click", swCancelDraw);
 
