@@ -1303,10 +1303,11 @@
       group.sort(function(a,b){ var oa=(a.lineOrder!=null?a.lineOrder:(a.seq||0)), ob=(b.lineOrder!=null?b.lineOrder:(b.seq||0)); return oa-ob; });
       var idx = group.findIndex(function(x){ return x.__id===p.__id; });
       return '<div style="margin-top:8px;padding:7px;background:#1f2937;border-radius:6px;">' +
-        '<div style="font-size:10.5px;color:#9aa0ab;margin-bottom:5px;">🚇 '+esc(p.sub)+' · 전체 '+group.length+'개 역</div>' +
+        '<div style="font-size:10.5px;color:#9aa0ab;margin-bottom:5px;">🚇 '+esc(p.sub)+'</div>' +
         '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">' +
           '<span style="font-size:11px;color:#cfe8db;">순서</span>' +
-          '<input type="number" min="1" max="'+group.length+'" value="'+(idx+1)+'" id="swOrderInput-'+p.__id+'" style="width:50px;background:#1a1d24;color:#e8eaed;border:0.5px solid rgba(255,255,255,0.3);border-radius:5px;padding:4px;font-size:12px;text-align:center;" />' +
+          '<input type="number" min="1" max="'+group.length+'" value="'+(idx+1)+'" id="swOrderInput-'+p.__id+'" style="width:44px;background:#1a1d24;color:#e8eaed;border:0.5px solid rgba(255,255,255,0.3);border-radius:5px;padding:4px;font-size:12px;text-align:center;" />' +
+          '<span style="font-size:12px;color:#9aa0ab;">/ '+group.length+'</span>' +
           '<button onclick="window.__setSubwayOrder(\''+p.__id+'\', parseInt(document.getElementById(\'swOrderInput-'+p.__id+'\').value,10))" style="flex:1;background:#3F9E7E;border:none;color:#fff;border-radius:6px;padding:5px;font-size:11px;font-weight:700;cursor:pointer;">적용</button>' +
         '</div>' +
         '<div style="display:flex;gap:6px;margin-bottom:6px;">' +
