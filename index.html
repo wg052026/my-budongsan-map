@@ -1305,9 +1305,38 @@
           '<button onclick="window.__swapSubwayOrder(\''+p.__id+'\',-1)" '+(idx<=0?'disabled':'')+' style="flex:1;background:#2c3742;border:none;color:#cfe8db;border-radius:6px;padding:6px;font-size:11px;cursor:pointer;'+(idx<=0?'opacity:0.4;':'')+'">◀ 이전역과 순서교체</button>' +
           '<button onclick="window.__swapSubwayOrder(\''+p.__id+'\',1)" '+(idx>=group.length-1?'disabled':'')+' style="flex:1;background:#2c3742;border:none;color:#cfe8db;border-radius:6px;padding:6px;font-size:11px;cursor:pointer;'+(idx>=group.length-1?'opacity:0.4;':'')+'">다음역과 순서교체 ▶</button>' +
         '</div>' +
-        '<button onclick="window.__deleteSubwayLine(\''+esc(p.sub).replace(/'/g,"\\'")+'\')" style="width:100%;background:#5a3a3a;border:none;color:#f0d6d6;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;">🗑 이 노선 전체 삭제 ('+group.length+'개 역)</button>' +
+        '<div style="display:flex;gap:6px;">' +
+          '<button onclick="window.__renameSubwayLine(\''+esc(p.sub).replace(/'/g,"\\'")+'\')" style="flex:1;background:#2c3742;border:none;color:#cfe8db;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;">✏ 노선 이름 변경</button>' +
+          '<button onclick="window.__deleteSubwayLine(\''+esc(p.sub).replace(/'/g,"\\'")+'\')" style="flex:1;background:#5a3a3a;border:none;color:#f0d6d6;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;">🗑 노선 전체 삭제</button>' +
+        '</div>' +
       '</div>';
     }
+    window.__renameSubwayLine = function(oldName){
+      var group = all.filter(function(x){ return x.kind==="spot" && x.spottype==="지하철" && x.sub===oldName; });
+      if (!group.length) return;
+      var newName = prompt("'"+oldName+"' 노선의 새 이름을 입력하세요 (역 "+group.length+"개 전부 바뀝니다)", oldName);
+      if (newName===null) return;
+      newName = newName.trim();
+      if (!newName || newName===oldName) return;
+      window.__closeIW();
+      group.forEach(function(p){
+        var updated = {};
+        Object.keys(p).forEach(function(k){ if (k.indexOf("__")!==0) updated[k]=p[k]; });
+        updated.sub = newName;
+        var id = p.__id;
+        if (id.indexOf("fix:")===0){
+          updated.__id = id;
+          edits[id] = updated;
+        } else {
+          for (var i=0; i<added.length; i++){
+            if (added[i].__id===id){ updated.__id=id; added[i]=updated; break; }
+          }
+        }
+      });
+      saveEdits(edits);
+      saveAdded(added);
+      forceRebuildMarkers();
+    };
     window.__deleteSubwayLine = function(lineName){
       var group = all.filter(function(x){ return x.kind==="spot" && x.spottype==="지하철" && x.sub===lineName; });
       if (!group.length) return;
