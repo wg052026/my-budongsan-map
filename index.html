@@ -1381,11 +1381,23 @@
           if(p.__iw) p.__iw.setMap(null);
         }
       });
+      // 단지정보 마커와 동일한 줌 단계(레벨 7 이상)에서 임장동선/지하철노선도 함께 숨김
+      applyRouteZoomVisibility(zoomLevel);
       // 마커 생성/표시 후 캐시 즉시 반영 (디바운스)
       if(typeof autoFetchPrices === 'function' && map.getLevel() <= 6){
         if(window.__afpTimer) clearTimeout(window.__afpTimer);
         window.__afpTimer = setTimeout(function(){ window.__afpTimer=null; autoFetchPrices(); }, 100);
       }
+    }
+    function applyRouteZoomVisibility(zoomLevel){
+      var show = !(zoomLevel>=7);
+      var m = show ? map : null;
+      Object.keys(routeMapOverlays||{}).forEach(function(id){
+        routeMapOverlays[id].forEach(function(o){ o.setMap(m); });
+      });
+      Object.keys(swMapOverlays||{}).forEach(function(id){
+        swMapOverlays[id].forEach(function(o){ o.setMap(m); });
+      });
     }
 
     function forceRebuildMarkers(){
