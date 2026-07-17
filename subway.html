@@ -186,8 +186,10 @@
       var eyedrop = ov.querySelector("#cpEyedrop");
       if (eyedrop){
         eyedrop.addEventListener("click", async function(){
+          ov.style.display = "none"; // 오버레이가 화면을 어둡게 가려 스포이드 색이 왜곡되는 것 방지
           try { var ed = new EyeDropper(); var r = await ed.open(); colorInput.value = r.sRGBHex; hexInput.value = r.sRGBHex; }
           catch(e){ /* 취소됨 */ }
+          ov.style.display = "flex";
         });
       }
       function close(result){ document.body.removeChild(ov); resolve(result); }
