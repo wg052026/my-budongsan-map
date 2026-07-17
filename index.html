@@ -1407,8 +1407,24 @@
       // lineOrder를 그룹 내 인덱스 기준으로 전부 재부여하면서 두 항목만 위치 교체
       var order = group.map(function(x){ return x; });
       var tmp = order[idx]; order[idx] = order[swapIdx]; order[swapIdx] = tmp;
-      order.forEach(function(x, i){ x.lineOrder = i; });
-      renderAll();
+      order.forEach(function(x, i){
+        x.lineOrder = i;
+        // 메모리(all)만 바꾸면 renderAll()의 buildAll()이 저장된 값으로 즉시 되돌리므로 반드시 영속 저장
+        var updated = {};
+        Object.keys(x).forEach(function(k){ if (k.indexOf("__")!==0) updated[k]=x[k]; });
+        var xid = x.__id;
+        if (xid.indexOf("fix:")===0){
+          updated.__id = xid;
+          edits[xid] = updated;
+        } else {
+          for (var j=0; j<added.length; j++){
+            if (added[j].__id===xid){ updated.__id=xid; added[j]=updated; break; }
+          }
+        }
+      });
+      saveEdits(edits);
+      saveAdded(added);
+      forceRebuildMarkers();
     };
     var __hiddenCache = null;
     function loadHidden(){ try{ return (__hiddenCache=JSON.parse(localStorage.getItem(HIDE_KEY)||"[]")); }catch(e){ return []; } }
