@@ -1300,10 +1300,11 @@
       group.sort(function(a,b){ var oa=(a.lineOrder!=null?a.lineOrder:(a.seq||0)), ob=(b.lineOrder!=null?b.lineOrder:(b.seq||0)); return oa-ob; });
       var idx = group.findIndex(function(x){ return x.__id===p.__id; });
       return '<div style="margin-top:8px;padding:7px;background:#1f2937;border-radius:6px;">' +
-        '<div style="font-size:10.5px;color:#9aa0ab;margin-bottom:5px;">🚇 '+esc(p.sub)+' · '+(idx+1)+'/'+group.length+'번째 역</div>' +
-        '<div style="display:flex;gap:6px;margin-bottom:6px;">' +
-          '<button onclick="window.__swapSubwayOrder(\''+p.__id+'\',-1)" '+(idx<=0?'disabled':'')+' style="flex:1;background:#2c3742;border:none;color:#cfe8db;border-radius:6px;padding:6px;font-size:11px;cursor:pointer;'+(idx<=0?'opacity:0.4;':'')+'">◀ 이전역과 순서교체</button>' +
-          '<button onclick="window.__swapSubwayOrder(\''+p.__id+'\',1)" '+(idx>=group.length-1?'disabled':'')+' style="flex:1;background:#2c3742;border:none;color:#cfe8db;border-radius:6px;padding:6px;font-size:11px;cursor:pointer;'+(idx>=group.length-1?'opacity:0.4;':'')+'">다음역과 순서교체 ▶</button>' +
+        '<div style="font-size:10.5px;color:#9aa0ab;margin-bottom:5px;">🚇 '+esc(p.sub)+' · 전체 '+group.length+'개 역</div>' +
+        '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">' +
+          '<span style="font-size:11px;color:#cfe8db;">순서</span>' +
+          '<input type="number" min="1" max="'+group.length+'" value="'+(idx+1)+'" id="swOrderInput-'+p.__id+'" style="width:50px;background:#1a1d24;color:#e8eaed;border:0.5px solid rgba(255,255,255,0.3);border-radius:5px;padding:4px;font-size:12px;text-align:center;" />' +
+          '<button onclick="window.__setSubwayOrder(\''+p.__id+'\', parseInt(document.getElementById(\'swOrderInput-'+p.__id+'\').value,10))" style="flex:1;background:#3F9E7E;border:none;color:#fff;border-radius:6px;padding:5px;font-size:11px;font-weight:700;cursor:pointer;">적용</button>' +
         '</div>' +
         '<div style="display:flex;gap:6px;margin-bottom:6px;">' +
           '<button onclick="window.__styleSubwayLine(\''+esc(p.sub).replace(/'/g,"\\'")+'\')" style="flex:1;background:#2c3742;border:none;color:#cfe8db;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;">🎨 색상/굵기</button>' +
@@ -1396,17 +1397,7 @@
       saveAdded(added);
       forceRebuildMarkers();
     };
-    window.__swapSubwayOrder = function(id, dir){
-      var p = findById(id);
-      if (!p) return;
-      var group = all.filter(function(x){ return x.kind==="spot" && x.spottype==="지하철" && x.sub===p.sub; });
-      group.sort(function(a,b){ var oa=(a.lineOrder!=null?a.lineOrder:(a.seq||0)), ob=(b.lineOrder!=null?b.lineOrder:(b.seq||0)); return oa-ob; });
-      var idx = group.findIndex(function(x){ return x.__id===p.__id; });
-      var swapIdx = idx + dir;
-      if (swapIdx<0 || swapIdx>=group.length) return;
-      // lineOrder를 그룹 내 인덱스 기준으로 전부 재부여하면서 두 항목만 위치 교체
-      var order = group.map(function(x){ return x; });
-      var tmp = order[idx]; order[idx] = order[swapIdx]; order[swapIdx] = tmp;
+    function persistSubwayOrder(order){
       order.forEach(function(x, i){
         x.lineOrder = i;
         // 메모리(all)만 바꾸면 renderAll()의 buildAll()이 저장된 값으로 즉시 되돌리므로 반드시 영속 저장
@@ -1425,6 +1416,31 @@
       saveEdits(edits);
       saveAdded(added);
       forceRebuildMarkers();
+    }
+    window.__swapSubwayOrder = function(id, dir){
+      var p = findById(id);
+      if (!p) return;
+      var group = all.filter(function(x){ return x.kind==="spot" && x.spottype==="지하철" && x.sub===p.sub; });
+      group.sort(function(a,b){ var oa=(a.lineOrder!=null?a.lineOrder:(a.seq||0)), ob=(b.lineOrder!=null?b.lineOrder:(b.seq||0)); return oa-ob; });
+      var idx = group.findIndex(function(x){ return x.__id===p.__id; });
+      var swapIdx = idx + dir;
+      if (swapIdx<0 || swapIdx>=group.length) return;
+      var order = group.map(function(x){ return x; });
+      var tmp = order[idx]; order[idx] = order[swapIdx]; order[swapIdx] = tmp;
+      persistSubwayOrder(order);
+    };
+    window.__setSubwayOrder = function(id, newPos1){
+      var p = findById(id);
+      if (!p) return;
+      var group = all.filter(function(x){ return x.kind==="spot" && x.spottype==="지하철" && x.sub===p.sub; });
+      group.sort(function(a,b){ var oa=(a.lineOrder!=null?a.lineOrder:(a.seq||0)), ob=(b.lineOrder!=null?b.lineOrder:(b.seq||0)); return oa-ob; });
+      if (isNaN(newPos1)){ alert("숫자를 입력하세요."); return; }
+      var newIdx = Math.min(Math.max(newPos1-1, 0), group.length-1);
+      var curIdx = group.findIndex(function(x){ return x.__id===p.__id; });
+      if (curIdx===newIdx) return;
+      var order = group.filter(function(x){ return x.__id!==p.__id; });
+      order.splice(newIdx, 0, p);
+      persistSubwayOrder(order);
     };
     var __hiddenCache = null;
     function loadHidden(){ try{ return (__hiddenCache=JSON.parse(localStorage.getItem(HIDE_KEY)||"[]")); }catch(e){ return []; } }
