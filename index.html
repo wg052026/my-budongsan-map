@@ -2606,7 +2606,7 @@
         renderEditHandles(); renderEditPreview();
         return;
       }
-      if (swDrawing){ swHandleClick(mouseEvent.latLng); return; }
+      if (swDrawing){ console.log('[DBG-SW] click, swDrawing=true, swPoints before=', swPoints.length); swHandleClick(mouseEvent.latLng); console.log('[DBG-SW] swPoints after=', swPoints.length); return; }
       if (swEditingId){
         swEditPoints.push({lat:mouseEvent.latLng.getLat(), lng:mouseEvent.latLng.getLng(), memo:"", memoPos:null});
         swRenderEditHandles(); swRenderEditPreview(); swRenderEditMemos();
