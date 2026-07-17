@@ -2788,8 +2788,8 @@
 
     kakao.maps.event.addListener(map, "click", function(mouseEvent){
       if (drawMode){ handleDrawClick(mouseEvent.latLng); return; }
-      if (editingId){
-        editPoints.push({lat:mouseEvent.latLng.getLat(), lng:mouseEvent.latLng.getLng()});
+      if (rpEditId){
+        rpEditPoints.push({lat:mouseEvent.latLng.getLat(), lng:mouseEvent.latLng.getLng()});
         renderEditHandles(); renderEditPreview();
         return;
       }
@@ -3425,7 +3425,7 @@
       cancelDrawShape();
     });
     function deleteRoute(id){
-      if (editingId===id){ clearEditOverlays(); editingId=null; editPoints=[]; document.getElementById("rpEditRow").style.display="none"; }
+      if (rpEditId===id){ clearEditOverlays(); rpEditId=null; rpEditPoints=[]; document.getElementById("rpEditRow").style.display="none"; }
       removeRouteOverlays(id);
       window.ROUTES = window.ROUTES.filter(function(r){ return r.id!==id; });
       saveRoutesLocal();
@@ -3436,7 +3436,7 @@
       if (!window.ROUTES.length){ listEl.innerHTML = '<div style="color:#6b7280;font-size:10.5px;">아직 그린 게 없습니다.</div>'; return; }
       var typeIcon = {line:"📏", arrow:"➡️", polygon:"⬠"};
       listEl.innerHTML = window.ROUTES.map(function(r,i){
-        var editing = (editingId===r.id);
+        var editing = (rpEditId===r.id);
         return '<div class="rp-item" style="'+(editing?'background:rgba(63,158,126,0.15);border-radius:6px;':'')+'">' +
           '<span class="rp-swatch" style="background:'+r.color+';"></span>' +
           '<span class="rp-label" title="클릭하면 위치로 이동" onclick="window.__focusRoute(\''+r.id+'\')">'+(typeIcon[r.type]||"")+' '+(r.label||("동선 "+(i+1)))+'</span>' +
@@ -3453,7 +3453,7 @@
       if (v===null) return; // 취소
       r.label = v.trim();
       saveRoutesLocal();
-      if (editingId!==id){ removeRouteOverlays(id); renderRoute(r); } // 지도 라벨 갱신 (편집중이 아닐 때만)
+      if (rpEditId!==id){ removeRouteOverlays(id); renderRoute(r); } // 지도 라벨 갱신 (편집중이 아닐 때만)
       renderRouteList();
     };
     window.__deleteRoute = deleteRoute;
@@ -3464,72 +3464,72 @@
     };
 
     // ===== 동선 수정(편집) 기능 =====
-    var editingId = null;
-    var editPoints = [];
-    var editHandles = [];   // 드래그 가능한 꼭짓점 마커들
-    var editPreviewOv = [];
+    var rpEditId = null;
+    var rpEditPoints = [];
+    var rpEditHandles = [];   // 드래그 가능한 꼭짓점 마커들
+    var rpEditPreviewOv = [];
 
     function handleIcon(color){
       var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"><circle cx="9" cy="9" r="7" fill="'+color+'" stroke="#fff" stroke-width="2.5"/></svg>';
       return "data:image/svg+xml;base64," + btoa(svg);
     }
     function clearEditOverlays(){
-      editHandles.forEach(function(m){ m.setMap(null); });
-      editHandles = [];
-      editPreviewOv.forEach(function(o){ o.setMap(null); });
-      editPreviewOv = [];
+      rpEditHandles.forEach(function(m){ m.setMap(null); });
+      rpEditHandles = [];
+      rpEditPreviewOv.forEach(function(o){ o.setMap(null); });
+      rpEditPreviewOv = [];
     }
     function renderEditPreview(){
-      editPreviewOv.forEach(function(o){ o.setMap(null); });
-      editPreviewOv = [];
-      var r = window.ROUTES.find(function(x){ return x.id===editingId; });
-      if (!r || editPoints.length<2) return;
-      var path = toPath(editPoints);
-      if (r.type==="polygon" && editPoints.length>=3){
+      rpEditPreviewOv.forEach(function(o){ o.setMap(null); });
+      rpEditPreviewOv = [];
+      var r = window.ROUTES.find(function(x){ return x.id===rpEditId; });
+      if (!r || rpEditPoints.length<2) return;
+      var path = toPath(rpEditPoints);
+      if (r.type==="polygon" && rpEditPoints.length>=3){
         var poly = new kakao.maps.Polygon({ path:path, strokeWeight:2, strokeColor:r.color, strokeOpacity:0.9, fillColor:r.color, fillOpacity:0.22 });
-        poly.setMap(map); editPreviewOv.push(poly);
-      } else if (editPoints.length>=2){
+        poly.setMap(map); rpEditPreviewOv.push(poly);
+      } else if (rpEditPoints.length>=2){
         var line = new kakao.maps.Polyline({ path:path, strokeWeight:3.5, strokeColor:r.color, strokeOpacity:0.9 });
-        line.setMap(map); editPreviewOv.push(line);
+        line.setMap(map); rpEditPreviewOv.push(line);
         if (r.type==="arrow"){
-          var ah = makeArrowHead(editPoints[editPoints.length-2], editPoints[editPoints.length-1], r.color);
-          ah.setMap(map); editPreviewOv.push(ah);
+          var ah = makeArrowHead(rpEditPoints[rpEditPoints.length-2], rpEditPoints[rpEditPoints.length-1], r.color);
+          ah.setMap(map); rpEditPreviewOv.push(ah);
         }
       }
     }
     function renderEditHandles(){
-      editHandles.forEach(function(m){ m.setMap(null); });
-      editHandles = [];
-      var r = window.ROUTES.find(function(x){ return x.id===editingId; });
+      rpEditHandles.forEach(function(m){ m.setMap(null); });
+      rpEditHandles = [];
+      var r = window.ROUTES.find(function(x){ return x.id===rpEditId; });
       if (!r) return;
       var icon = new kakao.maps.MarkerImage(handleIcon(r.color), new kakao.maps.Size(18,18), {offset:new kakao.maps.Point(9,9)});
-      editPoints.forEach(function(p, idx){
+      rpEditPoints.forEach(function(p, idx){
         var marker = new kakao.maps.Marker({
           position: new kakao.maps.LatLng(p.lat,p.lng), image: icon, draggable: true, zIndex: 30
         });
         marker.setMap(map);
         kakao.maps.event.addListener(marker, "dragend", function(){
           var pos = marker.getPosition();
-          editPoints[idx] = {lat: pos.getLat(), lng: pos.getLng()};
+          rpEditPoints[idx] = {lat: pos.getLat(), lng: pos.getLng()};
           renderEditPreview();
         });
         kakao.maps.event.addListener(marker, "rightclick", function(){
           var minPts = r.type==="polygon" ? 3 : 2;
-          if (editPoints.length <= minPts){ alert("점이 최소 "+minPts+"개는 있어야 합니다."); return; }
-          editPoints.splice(idx,1);
+          if (rpEditPoints.length <= minPts){ alert("점이 최소 "+minPts+"개는 있어야 합니다."); return; }
+          rpEditPoints.splice(idx,1);
           renderEditHandles();
           renderEditPreview();
         });
-        editHandles.push(marker);
+        rpEditHandles.push(marker);
       });
     }
     window.__editRoute = function(id){
-      if (editingId && editingId!==id) cancelEditRoute();
+      if (rpEditId && rpEditId!==id) cancelEditRoute();
       if (drawMode) setDrawMode(drawMode); // 그리기 모드 중이면 종료
-      editingId = id;
+      rpEditId = id;
       var r = window.ROUTES.find(function(x){ return x.id===id; });
       if (!r) return;
-      editPoints = r.points.map(function(p){ return {lat:p.lat, lng:p.lng}; });
+      rpEditPoints = r.points.map(function(p){ return {lat:p.lat, lng:p.lng}; });
       removeRouteOverlays(id); // 일반 표시는 잠시 숨기고 편집용으로 대체
       renderEditHandles();
       renderEditPreview();
@@ -3538,25 +3538,25 @@
       renderRouteList();
     };
     function finishEditRoute(){
-      if (!editingId) return;
-      var r = window.ROUTES.find(function(x){ return x.id===editingId; });
+      if (!rpEditId) return;
+      var r = window.ROUTES.find(function(x){ return x.id===rpEditId; });
       var minPts = r && r.type==="polygon" ? 3 : 2;
-      if (!r || editPoints.length < minPts){ alert("점이 최소 "+minPts+"개는 있어야 합니다."); return; }
-      r.points = editPoints.map(function(p){ return {lat:p.lat, lng:p.lng}; });
+      if (!r || rpEditPoints.length < minPts){ alert("점이 최소 "+minPts+"개는 있어야 합니다."); return; }
+      r.points = rpEditPoints.map(function(p){ return {lat:p.lat, lng:p.lng}; });
       saveRoutesLocal();
       clearEditOverlays();
       renderRoute(r);
-      editingId = null; editPoints = [];
+      rpEditId = null; rpEditPoints = [];
       document.getElementById("rpEditRow").style.display = "none";
       document.getElementById("rpHint").textContent = "도구를 선택하고 지도를 클릭해 점을 찍으세요.";
       renderRouteList();
     }
     function cancelEditRoute(){
-      if (!editingId) return;
-      var r = window.ROUTES.find(function(x){ return x.id===editingId; });
+      if (!rpEditId) return;
+      var r = window.ROUTES.find(function(x){ return x.id===rpEditId; });
       clearEditOverlays();
       if (r) renderRoute(r); // 원래 모양 그대로 복원
-      editingId = null; editPoints = [];
+      rpEditId = null; rpEditPoints = [];
       document.getElementById("rpEditRow").style.display = "none";
       document.getElementById("rpHint").textContent = "도구를 선택하고 지도를 클릭해 점을 찍으세요.";
       renderRouteList();
@@ -3589,12 +3589,12 @@
     document.getElementById("routeCloseBtn").addEventListener("click", function(){
       document.getElementById("routePanel").style.display = "none";
       if (drawMode) setDrawMode(drawMode); // 켜져 있으면 꺼서 그리기 모드 해제
-      if (editingId) cancelEditRoute();
+      if (rpEditId) cancelEditRoute();
     });
     document.getElementById("rpClearAll").addEventListener("click", function(){
       if (!window.ROUTES.length) return;
       if (!confirm("그린 동선을 전부 삭제할까요?")) return;
-      if (editingId){ clearEditOverlays(); editingId=null; editPoints=[]; document.getElementById("rpEditRow").style.display="none"; }
+      if (rpEditId){ clearEditOverlays(); rpEditId=null; rpEditPoints=[]; document.getElementById("rpEditRow").style.display="none"; }
       Object.keys(routeMapOverlays).forEach(removeRouteOverlays);
       window.ROUTES = [];
       saveRoutesLocal();
@@ -3603,7 +3603,7 @@
     // ESC: 그리는 중이면 현재 도형만 취소, 수정 중이면 수정 취소, 그리기 모드 자체도 종료
     // Ctrl+Z: 마지막 찍은 점 취소 / Ctrl+Y, Ctrl+Shift+Z: 재실행
     document.addEventListener("keydown", function(e){
-      if (e.key === "Escape" && editingId){ cancelEditRoute(); return; }
+      if (e.key === "Escape" && rpEditId){ cancelEditRoute(); return; }
       if (!drawMode) return;
       if (e.key === "Escape"){
         cancelDrawShape();
