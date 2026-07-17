@@ -3050,6 +3050,16 @@
           ovs.push(ah);
         }
       }
+      if (route.label && route.label.trim()){
+        var mid = route.points[Math.floor(route.points.length/2)];
+        var labelOv = new kakao.maps.CustomOverlay({
+          position: new kakao.maps.LatLng(mid.lat, mid.lng),
+          content: '<div style="background:'+route.color+';color:#111;font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.4);border:1.5px solid #fff;">'+esc(route.label)+'</div>',
+          xAnchor:0.5, yAnchor:1.8, zIndex:15
+        });
+        labelOv.setMap(map);
+        ovs.push(labelOv);
+      }
       routeMapOverlays[route.id] = ovs;
     }
     function removeRouteOverlays(id){
@@ -3185,12 +3195,23 @@
         var editing = (editingId===r.id);
         return '<div class="rp-item" style="'+(editing?'background:rgba(63,158,126,0.15);border-radius:6px;':'')+'">' +
           '<span class="rp-swatch" style="background:'+r.color+';"></span>' +
-          '<span class="rp-label" onclick="window.__focusRoute(\''+r.id+'\')">'+(typeIcon[r.type]||"")+' '+(r.label||("동선 "+(i+1)))+'</span>' +
+          '<span class="rp-label" title="클릭하면 위치로 이동" onclick="window.__focusRoute(\''+r.id+'\')">'+(typeIcon[r.type]||"")+' '+(r.label||("동선 "+(i+1)))+'</span>' +
+          '<button class="rp-del" title="메모" onclick="window.__memoRoute(\''+r.id+'\')">📝</button>' +
           '<button class="rp-del" title="수정" onclick="window.__editRoute(\''+r.id+'\')">'+(editing?'✏️':'✏')+'</button>' +
           '<button class="rp-del" onclick="window.__deleteRoute(\''+r.id+'\')">🗑</button>' +
         '</div>';
       }).join("");
     }
+    window.__memoRoute = function(id){
+      var r = window.ROUTES.find(function(x){ return x.id===id; });
+      if (!r) return;
+      var v = prompt("이 동선의 메모를 입력하세요 (예: 여기서 남향 확인, 소음 심함 등)", r.label||"");
+      if (v===null) return; // 취소
+      r.label = v.trim();
+      saveRoutesLocal();
+      if (editingId!==id){ removeRouteOverlays(id); renderRoute(r); } // 지도 라벨 갱신 (편집중이 아닐 때만)
+      renderRouteList();
+    };
     window.__deleteRoute = deleteRoute;
     window.__focusRoute = function(id){
       var r = window.ROUTES.find(function(x){ return x.id===id; });
