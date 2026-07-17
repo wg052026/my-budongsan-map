@@ -84,21 +84,6 @@
       background:#3a3f49; color:#e8eaed; font-size:12px; cursor:pointer; }
     .divider { border:none; border-top:0.5px solid rgba(255,255,255,0.12); margin:10px 0; }
 
-    #railLegend { position:absolute; bottom:20px; left:12px; z-index:20; background:rgba(28,31,38,0.92);
-      border:0.5px solid rgba(255,255,255,0.18); border-radius:10px; padding:10px 12px; width:190px;
-      font-size:11px; color:#e8eaed; }
-    #railLegend h4 { margin:0 0 8px; font-size:12px; font-weight:700; color:#f2f3f5; display:flex;
-      justify-content:space-between; align-items:center; }
-    #railLegend h4 span.rl-close { cursor:pointer; color:#8a909b; font-weight:400; }
-    .rl-row { display:flex; align-items:center; gap:7px; margin-bottom:6px; cursor:pointer; }
-    .rl-row:last-child { margin-bottom:0; }
-    .rl-swatch { width:22px; height:0; border-top-width:3px; border-top-style:solid; flex-shrink:0; }
-    .rl-row.off { opacity:0.35; }
-    .rl-row input { display:none; }
-    #railLegendOpen { position:absolute; bottom:20px; left:12px; z-index:20; display:none;
-      background:#23272f; border:0.5px solid rgba(255,255,255,0.2); color:#e8eaed;
-      border-radius:6px; padding:7px 12px; font-size:12px; cursor:pointer; }
-
     #topright { position:absolute; top:12px; right:12px; z-index:20; display:flex; flex-direction:column; gap:6px; }
     #topright button { background:#23272f; border:0.5px solid rgba(255,255,255,0.2); color:#e8eaed;
       border-radius:6px; padding:6px 10px; font-size:11px; cursor:pointer; white-space:nowrap; }
@@ -251,17 +236,6 @@
 </head>
 <body>
   <div id="map"></div>
-
-  <div id="railLegend">
-    <h4>예정 지하철 노선 <span class="rl-close" id="railLegendClose">✕</span></h4>
-    <label class="rl-row" data-line="gtxc"><input type="checkbox" checked />
-      <span class="rl-swatch" style="border-color:#7A4988;"></span>GTX-C</label>
-    <label class="rl-row" data-line="indong"><input type="checkbox" checked />
-      <span class="rl-swatch" style="border-color:#00A5B8;"></span>인동선(동탄인덕원)</label>
-    <label class="rl-row" data-line="sinbundang"><input type="checkbox" checked />
-      <span class="rl-swatch" style="border-color:#D31145;"></span>신분당선 연장(호매실)</label>
-  </div>
-  <button id="railLegendOpen">🚇 노선</button>
 
   <div id="mapSearch">
     <input id="mapSearchInput" placeholder="🔍 단지명·주소로 위치 찾기" />
@@ -967,135 +941,6 @@
 
     var center = new kakao.maps.LatLng(37.2636, 127.0286); // 수원시
     var map = new kakao.maps.Map(document.getElementById("map"), { center:center, level:6 });
-
-    // ============ 예정 지하철 노선 (GTX-C / 인동선 / 신분당선 연장) ============
-    // 좌표는 카카오 로컬 API로 조회한 기존 역/랜드마크 좌표 + 국토교통부 고시(제2021-1388호, 제2022-250호) 기준 근사치입니다.
-    (function(){
-      var RAIL_LINES = {
-        gtxc: {
-          name: "GTX-C (경기 남부: 금정-의왕-수원, 1호선 기존선 공용. 의왕·수원만 정차, 화서·성균관대는 통과)",
-          color: "#7A4988",
-          style: "shortdash",
-          weight: 5,
-          stations: [
-            { name:"의왕역(정차)",     lat:37.3203, lng:126.9480 },
-            { name:"성균관대역(통과, 무정차)", lat:37.3003, lng:126.9710 },
-            { name:"화서역(통과, 무정차)",     lat:37.2840, lng:126.9896 },
-            { name:"수원역(정차, 종점)",     lat:37.2658, lng:127.0001 }
-          ]
-        },
-        indong: {
-          name: "동탄인덕원선(인동선) 수원 구간 (국토부고시 제2018-181호 / 미래철도DB 기준)",
-          color: "#00A5B8",
-          style: "shortdot",
-          weight: 5,
-          stations: [
-            { name:"106역(교육원삼거리, 장안구 파장동, 일명 북수원역)",       lat:37.3118, lng:126.9897 },
-            { name:"107역(한일타운, 장안구 조원동, 수원1호선트램 환승예정)",     lat:37.3049, lng:127.0076 },
-            { name:"108역(수원월드컵경기장, 팔달구 우만동, 신분당선 평행환승)", lat:37.2865, lng:127.0369 },
-            { name:"109역(아주대삼거리, 팔달구 우만동)", lat:37.2747, lng:127.0441 },
-            { name:"110역(원천교서측, 영통구 원천동)",   lat:37.2699, lng:127.0611 },
-            { name:"112역=영통역(기존, 수인분당선 환승)",                  lat:37.2515, lng:127.0713 }
-          ]
-        },
-        sinbundang: {
-          name: "신분당선 연장(광교중앙~호매실, 국토교통부고시 제2021-1388호/미래철도DB 확인)",
-          color: "#D31145",
-          style: "shortdash",
-          weight: 5,
-          // 광교역은 경유하지 않음 (2020년 예타에서 광교역 경유안 최종 배제, 확정) — 광교중앙역에서 분기
-          stations: [
-            { name:"광교중앙역(기존)",             lat:37.2884, lng:127.0517 },
-            { name:"SB06정거장(가칭, 우만동·수원월드컵경기장 환승)", lat:37.2865, lng:127.0369 },
-            { name:"SB07정거장(가칭, 조원동·수성중사거리)", lat:37.2932, lng:127.0109 },
-            { name:"화서역(기존, 1호선 환승)",       lat:37.2840, lng:126.9896 },
-            { name:"구운정거장(가칭, 구운오거리, 2024확정)", lat:37.2816, lng:126.9734 },
-            { name:"SB09정거장(가칭, 금곡동·호매실)", lat:37.2723, lng:126.9407 }
-          ]
-        }
-      };
-
-      var railObjs = {}; // key -> { polyline, overlays:[] }
-
-      function buildLine(key, def){
-        var path = def.stations.map(function(s){ return new kakao.maps.LatLng(s.lat, s.lng); });
-        var poly = new kakao.maps.Polyline({
-          path: path,
-          strokeWeight: def.weight,
-          strokeColor: def.color,
-          strokeOpacity: 0.85,
-          strokeStyle: def.style || "shortdash"
-        });
-        poly.setMap(map);
-
-        var overlays = def.stations.map(function(s){
-          var content = document.createElement("div");
-          // 앵커는 xAnchor:0(왼쪽) / yAnchor:0.5(세로 중앙) 하나만 사용 — 점(dot)이 좌표에 정확히 위치.
-          content.style.cssText = "display:flex;align-items:center;gap:4px;";
-          content.innerHTML =
-            '<div style="width:8px;height:8px;border-radius:50%;background:'+def.color+';border:1.5px solid #14161a;flex-shrink:0;"></div>' +
-            '<div style="background:rgba(20,22,26,0.88);color:#f2f3f5;font-size:10px;padding:1px 5px;border-radius:4px;white-space:nowrap;">'+s.name+'</div>';
-          var ov = new kakao.maps.CustomOverlay({
-            position: new kakao.maps.LatLng(s.lat, s.lng),
-            content: content,
-            xAnchor: 0,
-            yAnchor: 0.5,
-            zIndex: 15
-          });
-          ov.setMap(map);
-          return ov;
-        });
-
-        railObjs[key] = { polyline: poly, overlays: overlays };
-      }
-
-      Object.keys(RAIL_LINES).forEach(function(key){ buildLine(key, RAIL_LINES[key]); });
-
-      // 줌 레벨에 따라 역 이름표는 너무 축소됐을 때 숨김 (레벨 8 이상이면 라벨 숨김, 선은 유지)
-      // 상태가 실제로 바뀔 때만 setMap 호출해서 불필요한 리렌더 방지 (성능)
-      var railLabelsHidden = null;
-      function updateRailLabelVisibility(){
-        var hide = map.getLevel() > 7;
-        if (hide === railLabelsHidden) return;
-        railLabelsHidden = hide;
-        Object.keys(railObjs).forEach(function(k){
-          if (!railObjs[k].__on) return; // 범례에서 꺼둔 노선은 건드리지 않음
-          railObjs[k].overlays.forEach(function(ov){ ov.setMap(hide ? null : map); });
-        });
-      }
-      Object.keys(railObjs).forEach(function(k){ railObjs[k].__on = true; });
-      updateRailLabelVisibility();
-      kakao.maps.event.addListener(map, "zoom_changed", updateRailLabelVisibility);
-
-      // 범례 체크박스로 on/off
-      document.querySelectorAll("#railLegend .rl-row").forEach(function(row){
-        var key = row.getAttribute("data-line");
-        var cb = row.querySelector("input");
-        row.addEventListener("click", function(e){
-          cb.checked = !cb.checked;
-          var on = cb.checked;
-          row.classList.toggle("off", !on);
-          var obj = railObjs[key];
-          if (!obj) return;
-          obj.__on = on;
-          obj.polyline.setMap(on ? map : null);
-          var hideLabel = map.getLevel() > 7;
-          obj.overlays.forEach(function(ov){ ov.setMap(on && !hideLabel ? map : null); });
-        });
-      });
-
-      var legendBox = document.getElementById("railLegend");
-      var legendOpenBtn = document.getElementById("railLegendOpen");
-      document.getElementById("railLegendClose").addEventListener("click", function(){
-        legendBox.style.display = "none";
-        legendOpenBtn.style.display = "block";
-      });
-      legendOpenBtn.addEventListener("click", function(){
-        legendBox.style.display = "block";
-        legendOpenBtn.style.display = "none";
-      });
-    })();
-    // ============ /예정 지하철 노선 ============
 
     var geocoder = new kakao.maps.services.Geocoder();
     var ps = new kakao.maps.services.Places();
