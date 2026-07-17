@@ -2600,6 +2600,7 @@
     });
 
     kakao.maps.event.addListener(map, "click", function(mouseEvent){
+      console.log('[DBG-CLICK] fired, drawMode=', drawMode, 'editingId=', editingId, 'swDrawing=', swDrawing, 'swEditingId=', swEditingId);
       if (drawMode){ handleDrawClick(mouseEvent.latLng); return; }
       if (editingId){
         editPoints.push({lat:mouseEvent.latLng.getLat(), lng:mouseEvent.latLng.getLng()});
@@ -3670,7 +3671,7 @@
         ? "역 위치를 클릭해 점을 찍으세요. 다 찍으면 '완성' 버튼을 누르세요."
         : "역 위치를 클릭해 점을 찍으세요. 점마다 나중에 메모를 달 수 있습니다.";
     }
-    document.getElementById("swLineBtn").addEventListener("click", function(){ swSetDrawing(!swDrawing); });
+    document.getElementById("swLineBtn").addEventListener("click", function(){ console.log('[DBG-BTN] swLineBtn clicked, before swDrawing=', swDrawing); swSetDrawing(!swDrawing); console.log('[DBG-BTN] after swDrawing=', swDrawing); });
     document.getElementById("swFinishBtn").addEventListener("click", swFinish);
     document.getElementById("swCancelBtn").addEventListener("click", swCancelDraw);
 
