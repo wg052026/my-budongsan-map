@@ -1127,8 +1127,7 @@
       }
       function tierForLevel(level){
         if (level >= 10) return "do";
-        if (level >= 7) return "sigungu";
-        return "dong";
+        return "sigungu"; // 동 단위는 제거 — 많이 확대해도 시군구 단계 유지
       }
       function hideAllAdminTiers(exceptTier){
         if (exceptTier!=="do" && __doPolys) __doPolys.forEach(function(p){ p.setMap(null); });
