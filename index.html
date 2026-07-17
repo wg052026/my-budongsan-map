@@ -3070,7 +3070,18 @@
     }
 
     function handleDrawClick(latLng){
-      drawPoints.push({lat:latLng.getLat(), lng:latLng.getLng()});
+      var p = {lat:latLng.getLat(), lng:latLng.getLng()};
+      var now = Date.now();
+      // 더블클릭은 브라우저/카카오맵이 click을 두 번 쏜 뒤 dblclick을 쏘므로,
+      // 짧은 시간 안에 거의 같은 자리를 다시 클릭한 건 중복으로 보고 점을 추가하지 않음
+      var last = drawPoints[drawPoints.length-1];
+      if (last && (now - (window.__lastDrawClickTs||0)) < 350 &&
+          Math.abs(last.lat-p.lat) < 0.00003 && Math.abs(last.lng-p.lng) < 0.00003){
+        window.__lastDrawClickTs = now;
+        return;
+      }
+      window.__lastDrawClickTs = now;
+      drawPoints.push(p);
       renderTempShape();
     }
     function finishDraw(){
@@ -3084,7 +3095,8 @@
       renderRoute(route);
       renderRouteList();
       drawPoints = [];
-      // 같은 도구로 계속 그릴 수 있게 모드는 유지
+      // 완성되면 자동으로 그리기 모드 종료 (계속 이어지는 문제 방지). 다음 도형은 도구를 다시 눌러 시작
+      setDrawMode(drawMode);
     }
     function cancelDrawShape(){
       clearTempOverlays();
@@ -3160,6 +3172,13 @@
       window.ROUTES = [];
       saveRoutesLocal();
       renderRouteList();
+    });
+    // ESC: 그리는 중이면 현재 도형만 취소, 그리기 모드 자체도 종료
+    document.addEventListener("keydown", function(e){
+      if (e.key === "Escape" && drawMode){
+        cancelDrawShape();
+        setDrawMode(drawMode);
+      }
     });
 
     // 초기 로드: GitHub의 routes.json 있으면 우선 사용, 없으면 로컬
