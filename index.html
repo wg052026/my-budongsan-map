@@ -2874,9 +2874,16 @@
         group:document.getElementById("f-group").value.trim(),
         seq: editingId ? ((findById(editingId)||{}).seq) : undefined,
         lat:pendingPos.getLat(), lng:pendingPos.getLng(),
-        code:document.getElementById("f-code").value.trim()
+        code:document.getElementById("f-code").value.trim(),
+        addr: editingId ? ((findById(editingId)||{}).addr||"") : "",
+        lineOrder: editingId ? ((findById(editingId)||{}).lineOrder) : undefined,
+        lineColor: editingId ? ((findById(editingId)||{}).lineColor||"") : "",
+        lineWeight: editingId ? ((findById(editingId)||{}).lineWeight) : undefined
       };
       if (p.seq==null) delete p.seq;
+      if (p.lineOrder==null) delete p.lineOrder;
+      if (p.lineWeight==null) delete p.lineWeight;
+      if (!p.lineColor) delete p.lineColor;
 
       if (editingId){
         // 수정 저장
