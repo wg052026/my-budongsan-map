@@ -2391,6 +2391,7 @@
         this.style.background=""; this.style.color="";
         mapEl.classList.remove("move-mode");
       }
+      if (typeof renderAllRoutes==="function") renderAllRoutes(); // 동선 점/메모 드래그 핸들 표시·숨김
     });
 
     // ===== 수동 찍기 토글 =====
@@ -2400,7 +2401,7 @@
         this.textContent="📍 수동 찍기 (켜짐)";
         this.style.background="#3F9E7E"; this.style.color="#fff";
         // 이동 모드와 동시에 켜지지 않게
-        if (moveMode){ moveMode=false; var mb=document.getElementById("moveModeBtn"); mb.textContent="✋ 이동 모드"; mb.style.background=""; mb.style.color=""; document.getElementById("map").classList.remove("move-mode"); }
+        if (moveMode){ moveMode=false; var mb=document.getElementById("moveModeBtn"); mb.textContent="✋ 이동 모드"; mb.style.background=""; mb.style.color=""; document.getElementById("map").classList.remove("move-mode"); if (typeof renderAllRoutes==="function") renderAllRoutes(); }
       } else {
         this.textContent="📍 수동 찍기";
         this.style.background=""; this.style.color="";
@@ -3328,31 +3329,119 @@
     }
     function toPath(points){ return points.map(function(p){ return new kakao.maps.LatLng(p.lat,p.lng); }); }
 
+    // 임의의 CustomOverlay를 이동 모드에서 드래그 가능하게 만드는 범용 함수 (마커 드래그와 동일 패턴)
+    function enableOverlayDrag(el, overlay, onDragMove, onDragEnd){
+      var startX=0, startY=0, moved=false, dragging=false, offX=0, offY=0;
+      var THRESH=4;
+      function getXY(ev){
+        if (ev.touches && ev.touches[0]) return {x:ev.touches[0].clientX, y:ev.touches[0].clientY};
+        return {x:ev.clientX, y:ev.clientY};
+      }
+      function onDown(ev){
+        if (!moveMode) return;
+        var pt=getXY(ev); startX=pt.x; startY=pt.y; moved=false; dragging=true;
+        var proj=map.getProjection();
+        var cp = proj.containerPointFromCoords ? proj.containerPointFromCoords(overlay.getPosition())
+               : proj.pointFromCoords(overlay.getPosition());
+        var rect=document.getElementById("map").getBoundingClientRect();
+        offX = (pt.x-rect.left) - cp.x;
+        offY = (pt.y-rect.top)  - cp.y;
+        map.setDraggable(false);
+        document.addEventListener("mousemove", onMove);
+        document.addEventListener("mouseup", onUp);
+        document.addEventListener("touchmove", onMove, {passive:false});
+        document.addEventListener("touchend", onUp);
+        ev.stopPropagation(); ev.preventDefault();
+      }
+      function onMove(ev){
+        if (!dragging) return;
+        var pt=getXY(ev);
+        var dx=pt.x-startX, dy=pt.y-startY;
+        if (!moved && (Math.abs(dx)>THRESH || Math.abs(dy)>THRESH)) moved=true;
+        if (moved){
+          if (ev.cancelable) ev.preventDefault();
+          var proj=map.getProjection();
+          var rect=document.getElementById("map").getBoundingClientRect();
+          var cx=(pt.x-rect.left)-offX, cy=(pt.y-rect.top)-offY;
+          var ptObj=new kakao.maps.Point(cx, cy);
+          var latlng = proj.coordsFromContainerPoint ? proj.coordsFromContainerPoint(ptObj)
+                     : proj.coordsFromPoint(ptObj);
+          overlay.setPosition(latlng);
+          if (onDragMove) onDragMove(latlng);
+        }
+      }
+      function onUp(ev){
+        if (!dragging) return;
+        dragging=false;
+        map.setDraggable(true);
+        document.removeEventListener("mousemove", onMove);
+        document.removeEventListener("mouseup", onUp);
+        document.removeEventListener("touchmove", onMove);
+        document.removeEventListener("touchend", onUp);
+        if (moved && onDragEnd) onDragEnd(overlay.getPosition());
+      }
+      el.addEventListener("mousedown", onDown);
+      el.addEventListener("touchstart", onDown, {passive:false});
+    }
     function renderRoute(route){
       var ovs = [];
       var path = toPath(route.points);
+      var shapeOverlay;
       if (route.type === "polygon"){
         var poly = new kakao.maps.Polygon({ path: path, strokeWeight:2, strokeColor:route.color, strokeOpacity:0.9, strokeStyle:"solid", fillColor:route.color, fillOpacity:0.22 });
         poly.setMap(map);
         ovs.push(poly);
+        shapeOverlay = poly;
       } else {
         var line = new kakao.maps.Polyline({ path: path, strokeWeight:3.5, strokeColor:route.color, strokeOpacity:0.9, strokeStyle:"solid" });
         line.setMap(map);
         ovs.push(line);
+        shapeOverlay = line;
         if (route.type === "arrow" && route.points.length>=2){
           var ah = makeArrowHead(route.points[route.points.length-2], route.points[route.points.length-1], route.color);
           ah.setMap(map);
           ovs.push(ah);
         }
       }
+      // 이동 모드: 점(꼭짓점) 드래그 핸들 표시
+      if (moveMode){
+        route.points.forEach(function(pt, idx){
+          var el = document.createElement("div");
+          el.style.cssText = "width:14px;height:14px;border-radius:50%;background:"+route.color+";border:2.5px solid #fff;box-shadow:0 0 4px rgba(0,0,0,0.5);cursor:grab;";
+          var dotOv = new kakao.maps.CustomOverlay({
+            position: new kakao.maps.LatLng(pt.lat, pt.lng), content: el, xAnchor:0.5, yAnchor:0.5, zIndex:25, clickable:true
+          });
+          dotOv.setMap(map);
+          enableOverlayDrag(el, dotOv, function(latlng){
+            // 드래그 중 실시간으로 선/도형 모양 갱신
+            route.points[idx] = { lat: latlng.getLat(), lng: latlng.getLng() };
+            shapeOverlay.setPath(toPath(route.points));
+          }, function(latlng){
+            route.points[idx] = { lat: latlng.getLat(), lng: latlng.getLng() };
+            saveRoutesLocal();
+            removeRouteOverlays(route.id);
+            renderRoute(route);
+          });
+          ovs.push(dotOv);
+        });
+      }
+      // 메모(라벨)
       if (route.label && route.label.trim()){
-        var mid = route.points[Math.floor(route.points.length/2)];
+        var labelPos = route.labelPos || route.points[Math.floor(route.points.length/2)];
+        var labelEl = document.createElement("div");
+        labelEl.style.cssText = "background:"+route.color+";color:#111;font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.4);border:1.5px solid #fff;"+(moveMode?"cursor:grab;":"");
+        labelEl.textContent = route.label;
         var labelOv = new kakao.maps.CustomOverlay({
-          position: new kakao.maps.LatLng(mid.lat, mid.lng),
-          content: '<div style="background:'+route.color+';color:#111;font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.4);border:1.5px solid #fff;">'+esc(route.label)+'</div>',
-          xAnchor:0.5, yAnchor:1.8, zIndex:15
+          position: new kakao.maps.LatLng(labelPos.lat, labelPos.lng), content: labelEl,
+          xAnchor:0.5, yAnchor:1.8, zIndex:15, clickable: !!moveMode
         });
         labelOv.setMap(map);
+        if (moveMode){
+          enableOverlayDrag(labelEl, labelOv, null, function(latlng){
+            route.labelPos = { lat: latlng.getLat(), lng: latlng.getLng() };
+            saveRoutesLocal();
+          });
+        }
         ovs.push(labelOv);
       }
       routeMapOverlays[route.id] = ovs;
