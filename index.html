@@ -2418,9 +2418,10 @@
       document.getElementById("f-price").value = p.price||"";
       document.getElementById("f-land").value = (p.land&&parseFloat(p.land)>0)?p.land:"";
       if (p.kind==="redev") document.getElementById("f-stage").value = p.stage||"조합전";
-      syncSegButtons();
       document.getElementById("f-spot").value = p.sub||"";
-      document.getElementById("f-spottype").value = p.spottype||"지하철";
+      document.getElementById("f-spottype").value = p.spottype||(p.kind==="spot"?"지하철":"");
+      syncSegButtons();
+      updateSubwayLineUI();
       document.getElementById("f-note").value = p.note||"";
       document.getElementById("f-group").value = p.group||"";
       refreshGroupOptions();
