@@ -161,8 +161,14 @@
       padding:4px 2px 1px; border-top:0.5px solid rgba(255,255,255,0.12); margin-top:1px; }
     .mt-chk input { accent-color:#3F9E7E; cursor:pointer; }
     #map.roadview-pick { cursor: crosshair; }
-    #roadviewPanel { display:none; position:fixed; inset:0; z-index:60; background:#000; }
-    #roadviewMap { position:absolute; inset:0; }
+    #roadviewPanel { display:none; position:fixed; inset:0; z-index:60; background:#000;
+      flex-direction:column; }
+    #roadviewMap { position:relative; width:100%; flex:2; min-height:0; }
+    #roadviewMiniWrap { position:relative; width:100%; flex:1; min-height:0; border-top:2px solid #3F9E7E; }
+    #roadviewMiniMap { position:absolute; inset:0; }
+    #rvHeadingMarker { width:0; height:0; pointer-events:none;
+      border-left:9px solid transparent; border-right:9px solid transparent; border-bottom:22px solid rgba(63,158,126,0.85);
+      transform-origin:50% 100%; filter:drop-shadow(0 0 2px rgba(0,0,0,0.6)); }
     #roadviewClose { position:absolute; top:14px; right:14px; z-index:2; background:rgba(35,39,47,0.9);
       border:0.5px solid rgba(255,255,255,0.25); color:#fff; border-radius:8px; padding:8px 14px;
       font-size:13px; font-weight:700; cursor:pointer; }
@@ -266,7 +272,10 @@
 
   <div id="roadviewPanel">
     <div id="roadviewMap"></div>
-    <div id="roadviewHint">파노라마 안의 화살표를 클릭하면 그 방향으로 이동합니다</div>
+    <div id="roadviewMiniWrap">
+      <div id="roadviewMiniMap"></div>
+    </div>
+    <div id="roadviewHint">파노라마 안의 화살표를 클릭하면 그 방향으로 이동합니다 · 아래는 현재 보고 있는 위치·방향</div>
     <button id="roadviewClose">✕ 닫기</button>
   </div>
 
@@ -1204,10 +1213,13 @@
       var rvChk = document.getElementById("mtRoadview");
       var rvPanel = document.getElementById("roadviewPanel");
       var rvMapEl = document.getElementById("roadviewMap");
+      var rvMiniMapEl = document.getElementById("roadviewMiniMap");
       var rvCloseBtn = document.getElementById("roadviewClose");
       var mapEl = document.getElementById("map");
       var rvClient = new kakao.maps.RoadviewClient();
-      var roadview = null; // 처음 열 때 한 번만 생성 (Roadview는 컨테이너가 화면에 보여야 정상 초기화됨)
+      var roadview = null;      // 로드뷰 파노라마 (상단 2/3)
+      var miniMap = null;       // 위치·방향 확인용 미니맵 (하단 1/3)
+      var miniMarker = null;    // 방향(부채꼴 화살표) 오버레이
 
       function pickMode(on){
         if (on){
@@ -1218,15 +1230,41 @@
           mapEl.classList.remove("roadview-pick");
         }
       }
+      function ensureRoadview(position){
+        if (roadview) return;
+        roadview = new kakao.maps.Roadview(rvMapEl);
+        var headingEl = document.createElement("div");
+        headingEl.id = "rvHeadingMarker";
+        miniMap = new kakao.maps.Map(rvMiniMapEl, { center: position, level: 3 });
+        miniMarker = new kakao.maps.CustomOverlay({
+          position: position, content: headingEl, xAnchor:0.5, yAnchor:1, zIndex:10
+        });
+        miniMarker.setMap(miniMap);
+        // 로드뷰를 상하좌우로 조작하거나 이동할 때마다 미니맵 위치/화살표 방향을 동기화
+        kakao.maps.event.addListener(roadview, "position_changed", function(){
+          var pos = roadview.getPosition();
+          miniMap.setCenter(pos);
+          miniMarker.setPosition(pos);
+        });
+        kakao.maps.event.addListener(roadview, "viewpoint_changed", function(){
+          var vp = roadview.getViewpoint();
+          headingEl.style.transform = "rotate(" + vp.pan + "deg)";
+        });
+      }
       function openAt(position){
         rvClient.getNearestPanoId(position, 50, function(panoId){
           if (!panoId){
             alert("이 위치 근처에는 로드뷰가 제공되지 않습니다.");
             return;
           }
-          rvPanel.style.display = "block";
-          if (!roadview) roadview = new kakao.maps.Roadview(rvMapEl);
+          rvPanel.style.display = "flex";
+          ensureRoadview(position);
           roadview.setPanoId(panoId, position);
+          setTimeout(function(){
+            roadview.relayout();       // 컨테이너를 새로 화면에 표시한 뒤엔 반드시 relayout 필요
+            miniMap.relayout();
+            miniMap.setCenter(position);
+          }, 0);
         });
       }
       function mapClickForRoadview(mouseEvent){
