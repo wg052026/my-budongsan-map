@@ -1250,6 +1250,19 @@
           var vp = roadview.getViewpoint();
           headingEl.style.transform = "rotate(" + vp.pan + "deg)";
         });
+        // 하단 미니맵을 클릭하면 그 위치로 로드뷰를 이동
+        kakao.maps.event.addListener(miniMap, "click", function(mouseEvent){
+          moveRoadviewTo(mouseEvent.latLng);
+        });
+      }
+      function moveRoadviewTo(position){
+        rvClient.getNearestPanoId(position, 50, function(panoId){
+          if (!panoId){
+            alert("이 위치 근처에는 로드뷰가 제공되지 않습니다.");
+            return;
+          }
+          roadview.setPanoId(panoId, position);
+        });
       }
       function openAt(position){
         rvClient.getNearestPanoId(position, 50, function(panoId){
