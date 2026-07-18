@@ -160,6 +160,14 @@
     .mt-chk { display:flex; align-items:center; gap:5px; font-size:11px; color:#cfe8db; cursor:pointer;
       padding:4px 2px 1px; border-top:0.5px solid rgba(255,255,255,0.12); margin-top:1px; }
     .mt-chk input { accent-color:#3F9E7E; cursor:pointer; }
+    #map.roadview-pick { cursor: crosshair; }
+    #roadviewPanel { display:none; position:fixed; inset:0; z-index:60; background:#000; }
+    #roadviewMap { position:absolute; inset:0; }
+    #roadviewClose { position:absolute; top:14px; right:14px; z-index:2; background:rgba(35,39,47,0.9);
+      border:0.5px solid rgba(255,255,255,0.25); color:#fff; border-radius:8px; padding:8px 14px;
+      font-size:13px; font-weight:700; cursor:pointer; }
+    #roadviewHint { position:absolute; top:14px; left:14px; z-index:2; background:rgba(35,39,47,0.9);
+      border:0.5px solid rgba(255,255,255,0.25); color:#cfe8db; border-radius:8px; padding:8px 12px; font-size:12px; }
     #mapSearchResults { margin-top:6px; background:rgba(35,39,47,0.97); border-radius:8px; overflow:hidden;
       box-shadow:0 2px 8px rgba(0,0,0,0.35); display:none; max-height:260px; overflow-y:auto; }
     #mapSearchResults .msr-row { padding:9px 12px; border-bottom:0.5px solid rgba(255,255,255,0.08);
@@ -253,6 +261,13 @@
     </div>
     <label class="mt-chk"><input type="checkbox" id="mtDistrict" /> 지적편집도(지적도)</label>
     <label class="mt-chk"><input type="checkbox" id="mtAdminBoundary" /> <span id="mtAdminLabel">행정구역 경계</span></label>
+    <label class="mt-chk"><input type="checkbox" id="mtRoadview" /> 로드뷰(거리뷰)</label>
+  </div>
+
+  <div id="roadviewPanel">
+    <div id="roadviewMap"></div>
+    <div id="roadviewHint">파노라마 안의 화살표를 클릭하면 그 방향으로 이동합니다</div>
+    <button id="roadviewClose">✕ 닫기</button>
   </div>
 
   <div id="mapSearch">
@@ -1182,6 +1197,45 @@
       mapElForZoom.addEventListener("wheel", hideAdminForInteraction, { passive:true });
       mapElForZoom.addEventListener("dblclick", hideAdminForInteraction);
       mapElForZoom.addEventListener("touchstart", hideAdminForInteraction, { passive:true }); // 모바일 핀치줌 대비
+    })();
+
+    // ===== 로드뷰(거리뷰) =====
+    (function initRoadview(){
+      var rvChk = document.getElementById("mtRoadview");
+      var rvPanel = document.getElementById("roadviewPanel");
+      var rvMapEl = document.getElementById("roadviewMap");
+      var rvCloseBtn = document.getElementById("roadviewClose");
+      var mapEl = document.getElementById("map");
+      var rvClient = new kakao.maps.RoadviewClient();
+      var roadview = null; // 처음 열 때 한 번만 생성 (Roadview는 컨테이너가 화면에 보여야 정상 초기화됨)
+
+      function pickMode(on){
+        if (on){
+          map.addOverlayMapTypeId(kakao.maps.MapTypeId.ROADVIEW); // 도로에 로드뷰 촬영 가능 구간을 파란선으로 표시
+          mapEl.classList.add("roadview-pick");
+        } else {
+          map.removeOverlayMapTypeId(kakao.maps.MapTypeId.ROADVIEW);
+          mapEl.classList.remove("roadview-pick");
+        }
+      }
+      function openAt(position){
+        rvClient.getNearestPanoId(position, 50, function(panoId){
+          if (!panoId){
+            alert("이 위치 근처에는 로드뷰가 제공되지 않습니다.");
+            return;
+          }
+          rvPanel.style.display = "block";
+          if (!roadview) roadview = new kakao.maps.Roadview(rvMapEl);
+          roadview.setPanoId(panoId, position);
+        });
+      }
+      function mapClickForRoadview(mouseEvent){
+        if (!rvChk.checked) return;
+        openAt(mouseEvent.latLng);
+      }
+      kakao.maps.event.addListener(map, "click", mapClickForRoadview);
+      rvChk.addEventListener("change", function(){ pickMode(rvChk.checked); });
+      rvCloseBtn.addEventListener("click", function(){ rvPanel.style.display = "none"; });
     })();
 
     var geocoder = new kakao.maps.services.Geocoder();
