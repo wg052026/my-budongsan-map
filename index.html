@@ -172,6 +172,9 @@
     #roadviewClose { position:absolute; top:14px; right:14px; z-index:2; background:rgba(35,39,47,0.9);
       border:0.5px solid rgba(255,255,255,0.25); color:#fff; border-radius:8px; padding:8px 14px;
       font-size:13px; font-weight:700; cursor:pointer; }
+    #roadviewHistoryBtn { position:absolute; top:14px; right:100px; z-index:2; background:rgba(35,39,47,0.9);
+      border:0.5px solid rgba(255,255,255,0.25); color:#f5d78a; border-radius:8px; padding:8px 14px;
+      font-size:12.5px; font-weight:700; cursor:pointer; text-decoration:none; white-space:nowrap; }
     #roadviewHint { position:absolute; top:14px; left:14px; z-index:2; background:rgba(35,39,47,0.9);
       border:0.5px solid rgba(255,255,255,0.25); color:#cfe8db; border-radius:8px; padding:8px 12px; font-size:12px; }
     #mapSearchResults { margin-top:6px; background:rgba(35,39,47,0.97); border-radius:8px; overflow:hidden;
@@ -276,6 +279,7 @@
       <div id="roadviewMiniMap"></div>
     </div>
     <div id="roadviewHint">파노라마 안의 화살표를 클릭하면 그 방향으로 이동합니다 · 아래는 현재 보고 있는 위치·방향</div>
+    <a id="roadviewHistoryBtn" href="#" target="_blank" rel="noopener">🕘 과거 로드뷰(카카오맵)</a>
     <button id="roadviewClose">✕ 닫기</button>
   </div>
 
@@ -1215,6 +1219,7 @@
       var rvMapEl = document.getElementById("roadviewMap");
       var rvMiniMapEl = document.getElementById("roadviewMiniMap");
       var rvCloseBtn = document.getElementById("roadviewClose");
+      var historyBtn = document.getElementById("roadviewHistoryBtn");
       var mapEl = document.getElementById("map");
       var rvClient = new kakao.maps.RoadviewClient();
       var roadview = null;      // 로드뷰 파노라마 (상단 2/3)
@@ -1254,6 +1259,15 @@
         kakao.maps.event.addListener(miniMap, "click", function(mouseEvent){
           moveRoadviewTo(mouseEvent.latLng);
         });
+        // 카카오 로드뷰 JS API는 촬영일자·과거사진 목록을 제공하지 않아(카카오 공식 미지원),
+        // 같은 지점·시점을 카카오맵 사이트로 그대로 넘겨서 거기서 날짜를 선택하도록 링크를 갱신
+        function updateHistoryLink(){
+          var vp = roadview.getViewpoint();
+          historyBtn.href = "https://map.kakao.com/?panoid=" + roadview.getPanoId()
+            + "&pan=" + vp.pan + "&tilt=" + vp.tilt + "&zoom=" + vp.zoom;
+        }
+        kakao.maps.event.addListener(roadview, "panoid_changed", updateHistoryLink);
+        kakao.maps.event.addListener(roadview, "viewpoint_changed", updateHistoryLink);
       }
       function moveRoadviewTo(position){
         rvClient.getNearestPanoId(position, 50, function(panoId){
