@@ -3807,6 +3807,32 @@
       window.ROUTES.forEach(renderRoute);
     }
 
+    // 임장동선(특히 면/폴리곤)이 많아지면 채워진 도형이라 드래그·줌 중 다시 그리는 비용이 커서 버벅일 수 있음.
+    // 행정구역 경계와 같은 방식으로: 지도를 조작하는 그 순간만 잠깐 숨기고, 멈추면(idle) 바로 다시 그림.
+    (function initRouteInteractionPerf(){
+      var mapElRt = document.getElementById("map");
+      var rtHidden = false;
+      function hideRoutesForInteraction(){
+        if (rtHidden || !Object.keys(routeMapOverlays).length) return;
+        rtHidden = true;
+        Object.keys(routeMapOverlays).forEach(function(id){
+          routeMapOverlays[id].forEach(function(o){ o.setMap(null); });
+        });
+      }
+      function showRoutesAfterInteraction(){
+        if (!rtHidden) return;
+        rtHidden = false;
+        Object.keys(routeMapOverlays).forEach(function(id){
+          routeMapOverlays[id].forEach(function(o){ o.setMap(map); });
+        });
+      }
+      kakao.maps.event.addListener(map, "dragstart", hideRoutesForInteraction);
+      kakao.maps.event.addListener(map, "idle", showRoutesAfterInteraction);
+      mapElRt.addEventListener("wheel", hideRoutesForInteraction, { passive:true });
+      mapElRt.addEventListener("dblclick", hideRoutesForInteraction);
+      mapElRt.addEventListener("touchstart", hideRoutesForInteraction, { passive:true });
+    })();
+
     function clearTempOverlays(){
       drawTempOverlays.forEach(function(o){ o.setMap(null); });
       drawTempOverlays = [];
