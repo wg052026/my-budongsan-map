@@ -394483,11 +394483,24 @@
  },
  "선경@37.2919,126.8503": {
   "val": {
-   "amountText": "3.3억",
-   "pyeong": 23,
-   "date": "2026.07.22"
+   "amountText": "3.9억",
+   "pyeong": 26,
+   "date": "2026.10.03"
   },
   "deals": [
+   {
+    "apt": "SK선경",
+    "manwon": 39000,
+    "text": "3.9억",
+    "pyeong": 26,
+    "amountManwon": 39000,
+    "roadNm": "감골2로",
+    "roadBon": "58",
+    "jibun": "1345",
+    "date": "2026.10.03",
+    "dateNum": 20261003,
+    "amountText": "3.9억"
+   },
    {
     "apt": "SK선경",
     "manwon": 33000,
@@ -395319,56 +395332,30 @@
     "date": "2021.11.12",
     "dateNum": 20211112,
     "amountText": "5.2억"
-   },
-   {
-    "apt": "SK선경",
-    "manwon": 61700,
-    "text": "6.2억",
-    "pyeong": 50,
-    "amountManwon": 61700,
-    "roadNm": "감골2로",
-    "roadBon": "58",
-    "jibun": "1345",
-    "date": "2021.10.21",
-    "dateNum": 20211021,
-    "amountText": "6.2억"
-   },
-   {
-    "apt": "SK선경",
-    "manwon": 38000,
-    "text": "3.8억",
-    "pyeong": 50,
-    "amountManwon": 38000,
-    "roadNm": "감골2로",
-    "roadBon": "58",
-    "jibun": "1345",
-    "date": "2021.10.14",
-    "dateNum": 20211014,
-    "amountText": "3.8억"
-   },
-   {
-    "apt": "SK선경",
-    "manwon": 39500,
-    "text": "4.0억",
-    "pyeong": 23,
-    "amountManwon": 39500,
-    "roadNm": "감골2로",
-    "roadBon": "58",
-    "jibun": "1345",
-    "date": "2021.10.01",
-    "dateNum": 20211001,
-    "amountText": "4.0억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "요진@37.2904,126.8496": {
   "val": {
-   "amountText": "3.7억",
-   "pyeong": 26,
-   "date": "2026.09.01"
+   "amountText": "3.0억",
+   "pyeong": 17,
+   "date": "2026.09.22"
   },
   "deals": [
+   {
+    "apt": "요진",
+    "manwon": 30000,
+    "text": "3.0억",
+    "pyeong": 17,
+    "amountManwon": 30000,
+    "roadNm": "감골2로",
+    "roadBon": "47",
+    "jibun": "1345-1",
+    "date": "2026.09.22",
+    "dateNum": 20260922,
+    "amountText": "3.0억"
+   },
    {
     "apt": "요진",
     "manwon": 37000,
@@ -395420,6 +395407,19 @@
     "date": "2026.08.18",
     "dateNum": 20260818,
     "amountText": "3.4억"
+   },
+   {
+    "apt": "요진",
+    "manwon": 47000,
+    "text": "4.7억",
+    "pyeong": 53,
+    "amountManwon": 47000,
+    "roadNm": "감골2로",
+    "roadBon": "47",
+    "jibun": "1345-1",
+    "date": "2026.08.15",
+    "dateNum": 20260815,
+    "amountText": "4.7억"
    },
    {
     "apt": "요진",
@@ -395550,19 +395550,6 @@
     "date": "2026.02.13",
     "dateNum": 20260213,
     "amountText": "4.0억"
-   },
-   {
-    "apt": "요진",
-    "manwon": 32000,
-    "text": "3.2억",
-    "pyeong": 26,
-    "amountManwon": 32000,
-    "roadNm": "감골2로",
-    "roadBon": "47",
-    "jibun": "1345-1",
-    "date": "2026.01.17",
-    "dateNum": 20260117,
-    "amountText": "3.2억"
    },
    {
     "apt": "요진",
@@ -396187,22 +396174,9 @@
     "date": "2022.01.15",
     "dateNum": 20220115,
     "amountText": "5.4억"
-   },
-   {
-    "apt": "요진",
-    "manwon": 53000,
-    "text": "5.3억",
-    "pyeong": 39,
-    "amountManwon": 53000,
-    "roadNm": "감골2로",
-    "roadBon": "47",
-    "jibun": "1345-1",
-    "date": "2021.10.08",
-    "dateNum": 20211008,
-    "amountText": "5.3억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "상록수현대1차@37.2891,126.8501": {
   "val": {
@@ -396808,74 +396782,9 @@
     "date": "2021.11.29",
     "dateNum": 20211129,
     "amountText": "2.6억"
-   },
-   {
-    "apt": "현대1",
-    "manwon": 57000,
-    "text": "5.7억",
-    "pyeong": 36,
-    "amountManwon": 57000,
-    "roadNm": "감골1로",
-    "roadBon": "43",
-    "jibun": "1345-2",
-    "date": "2021.10.22",
-    "dateNum": 20211022,
-    "amountText": "5.7억"
-   },
-   {
-    "apt": "현대1",
-    "manwon": 57000,
-    "text": "5.7억",
-    "pyeong": 36,
-    "amountManwon": 57000,
-    "roadNm": "감골1로",
-    "roadBon": "43",
-    "jibun": "1345-2",
-    "date": "2021.10.22",
-    "dateNum": 20211022,
-    "amountText": "5.7억"
-   },
-   {
-    "apt": "현대1",
-    "manwon": 46900,
-    "text": "4.7억",
-    "pyeong": 26,
-    "amountManwon": 46900,
-    "roadNm": "감골1로",
-    "roadBon": "43",
-    "jibun": "1345-2",
-    "date": "2021.10.04",
-    "dateNum": 20211004,
-    "amountText": "4.7억"
-   },
-   {
-    "apt": "현대1",
-    "manwon": 42800,
-    "text": "4.3억",
-    "pyeong": 26,
-    "amountManwon": 42800,
-    "roadNm": "감골1로",
-    "roadBon": "43",
-    "jibun": "1345-2",
-    "date": "2021.10.02",
-    "dateNum": 20211002,
-    "amountText": "4.3억"
-   },
-   {
-    "apt": "현대1",
-    "manwon": 54500,
-    "text": "5.4억",
-    "pyeong": 36,
-    "amountManwon": 54500,
-    "roadNm": "감골1로",
-    "roadBon": "43",
-    "jibun": "1345-2",
-    "date": "2021.10.01",
-    "dateNum": 20211001,
-    "amountText": "5.4억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "월드메르디앙@37.287,126.8542": {
   "val": {
@@ -397845,48 +397754,9 @@
     "date": "2021.12.15",
     "dateNum": 20211215,
     "amountText": "6.4억"
-   },
-   {
-    "apt": "월드메르디앙",
-    "manwon": 50500,
-    "text": "5.0억",
-    "pyeong": 42,
-    "amountManwon": 50500,
-    "roadNm": "감골로",
-    "roadBon": "59",
-    "jibun": "1346",
-    "date": "2021.10.05",
-    "dateNum": 20211005,
-    "amountText": "5.0억"
-   },
-   {
-    "apt": "월드메르디앙",
-    "manwon": 43000,
-    "text": "4.3억",
-    "pyeong": 26,
-    "amountManwon": 43000,
-    "roadNm": "감골로",
-    "roadBon": "59",
-    "jibun": "1346",
-    "date": "2021.10.02",
-    "dateNum": 20211002,
-    "amountText": "4.3억"
-   },
-   {
-    "apt": "월드메르디앙",
-    "manwon": 28900,
-    "text": "2.9억",
-    "pyeong": 18,
-    "amountManwon": 28900,
-    "roadNm": "감골로",
-    "roadBon": "59",
-    "jibun": "1346",
-    "date": "2021.10.02",
-    "dateNum": 20211002,
-    "amountText": "2.9억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "신우@37.2889,126.8543": {
   "val": {
@@ -398674,43 +398544,43 @@
     "date": "2021.11.01",
     "dateNum": 20211101,
     "amountText": "4.5억"
-   },
-   {
-    "apt": "신우",
-    "manwon": 32000,
-    "text": "3.2억",
-    "pyeong": 17,
-    "amountManwon": 32000,
-    "roadNm": "감골로",
-    "roadBon": "83",
-    "jibun": "1344-1",
-    "date": "2021.10.20",
-    "dateNum": 20211020,
-    "amountText": "3.2억"
-   },
-   {
-    "apt": "신우",
-    "manwon": 37500,
-    "text": "3.8억",
-    "pyeong": 26,
-    "amountManwon": 37500,
-    "roadNm": "감골로",
-    "roadBon": "83",
-    "jibun": "1344-1",
-    "date": "2021.10.02",
-    "dateNum": 20211002,
-    "amountText": "3.8억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "예누림@37.2901,126.854": {
   "val": {
-   "amountText": "3.9억",
-   "pyeong": 26,
-   "date": "2026.08.26"
+   "amountText": "4.6억",
+   "pyeong": 39,
+   "date": "2026.10.03"
   },
   "deals": [
+   {
+    "apt": "예누림",
+    "manwon": 46500,
+    "text": "4.6억",
+    "pyeong": 39,
+    "amountManwon": 46500,
+    "roadNm": "감골2로",
+    "roadBon": "11",
+    "jibun": "1344",
+    "date": "2026.10.03",
+    "dateNum": 20261003,
+    "amountText": "4.6억"
+   },
+   {
+    "apt": "예누림",
+    "manwon": 50800,
+    "text": "5.1억",
+    "pyeong": 39,
+    "amountManwon": 50800,
+    "roadNm": "감골2로",
+    "roadBon": "11",
+    "jibun": "1344",
+    "date": "2026.09.10",
+    "dateNum": 20260910,
+    "amountText": "5.1억"
+   },
    {
     "apt": "예누림",
     "manwon": 39000,
@@ -399555,22 +399425,9 @@
     "date": "2021.11.24",
     "dateNum": 20211124,
     "amountText": "5.3억"
-   },
-   {
-    "apt": "예누림",
-    "manwon": 68000,
-    "text": "6.8억",
-    "pyeong": 55,
-    "amountManwon": 68000,
-    "roadNm": "감골2로",
-    "roadBon": "11",
-    "jibun": "1344",
-    "date": "2021.10.23",
-    "dateNum": 20211023,
-    "amountText": "6.8억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "상록수현대2차@37.2914,126.8545": {
   "val": {
@@ -400358,48 +400215,9 @@
     "date": "2021.11.11",
     "dateNum": 20211111,
     "amountText": "6.2억"
-   },
-   {
-    "apt": "현대2",
-    "manwon": 49000,
-    "text": "4.9억",
-    "pyeong": 26,
-    "amountManwon": 49000,
-    "roadNm": "감골2로",
-    "roadBon": "12",
-    "jibun": "1343",
-    "date": "2021.10.18",
-    "dateNum": 20211018,
-    "amountText": "4.9억"
-   },
-   {
-    "apt": "현대2",
-    "manwon": 65000,
-    "text": "6.5억",
-    "pyeong": 41,
-    "amountManwon": 65000,
-    "roadNm": "감골2로",
-    "roadBon": "12",
-    "jibun": "1343",
-    "date": "2021.10.16",
-    "dateNum": 20211016,
-    "amountText": "6.5억"
-   },
-   {
-    "apt": "현대2",
-    "manwon": 45000,
-    "text": "4.5억",
-    "pyeong": 26,
-    "amountManwon": 45000,
-    "roadNm": "감골2로",
-    "roadBon": "12",
-    "jibun": "1343",
-    "date": "2021.10.16",
-    "dateNum": 20211016,
-    "amountText": "4.5억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "안산고잔7차푸르지오@37.296,126.8182": {
   "val": {
@@ -402646,11 +402464,50 @@
  },
  "우성@37.2977,126.8651": {
   "val": {
-   "amountText": "3.0억",
+   "amountText": "2.7억",
    "pyeong": 18,
-   "date": "2026.09.15"
+   "date": "2026.10.03"
   },
   "deals": [
+   {
+    "apt": "우성",
+    "manwon": 26900,
+    "text": "2.7억",
+    "pyeong": 18,
+    "amountManwon": 26900,
+    "roadNm": "본오로",
+    "roadBon": "145",
+    "jibun": "872-20",
+    "date": "2026.10.03",
+    "dateNum": 20261003,
+    "amountText": "2.7억"
+   },
+   {
+    "apt": "우성",
+    "manwon": 29500,
+    "text": "3.0억",
+    "pyeong": 18,
+    "amountManwon": 29500,
+    "roadNm": "본오로",
+    "roadBon": "145",
+    "jibun": "872-20",
+    "date": "2026.10.01",
+    "dateNum": 20261001,
+    "amountText": "3.0억"
+   },
+   {
+    "apt": "우성",
+    "manwon": 49700,
+    "text": "5.0억",
+    "pyeong": 26,
+    "amountManwon": 49700,
+    "roadNm": "본오로",
+    "roadBon": "145",
+    "jibun": "872-20",
+    "date": "2026.09.15",
+    "dateNum": 20260915,
+    "amountText": "5.0억"
+   },
    {
     "apt": "우성",
     "manwon": 29500,
@@ -402818,45 +402675,6 @@
     "jibun": "872-20",
     "date": "2026.02.14",
     "dateNum": 20260214,
-    "amountText": "2.2억"
-   },
-   {
-    "apt": "우성",
-    "manwon": 46500,
-    "text": "4.6억",
-    "pyeong": 26,
-    "amountManwon": 46500,
-    "roadNm": "본오로",
-    "roadBon": "145",
-    "jibun": "872-20",
-    "date": "2026.02.09",
-    "dateNum": 20260209,
-    "amountText": "4.6억"
-   },
-   {
-    "apt": "우성",
-    "manwon": 50000,
-    "text": "5.0억",
-    "pyeong": 26,
-    "amountManwon": 50000,
-    "roadNm": "본오로",
-    "roadBon": "145",
-    "jibun": "872-20",
-    "date": "2026.01.31",
-    "dateNum": 20260131,
-    "amountText": "5.0억"
-   },
-   {
-    "apt": "우성",
-    "manwon": 22000,
-    "text": "2.2억",
-    "pyeong": 14,
-    "amountManwon": 22000,
-    "roadNm": "본오로",
-    "roadBon": "145",
-    "jibun": "872-20",
-    "date": "2026.01.28",
-    "dateNum": 20260128,
     "amountText": "2.2억"
    },
    {
@@ -403729,30 +403547,30 @@
     "date": "2021.11.04",
     "dateNum": 20211104,
     "amountText": "3.3억"
-   },
-   {
-    "apt": "우성",
-    "manwon": 27000,
-    "text": "2.7억",
-    "pyeong": 14,
-    "amountManwon": 27000,
-    "roadNm": "본오로",
-    "roadBon": "145",
-    "jibun": "872-20",
-    "date": "2021.10.19",
-    "dateNum": 20211019,
-    "amountText": "2.7억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "월드@37.3,126.8652": {
   "val": {
-   "amountText": "2.6억",
-   "pyeong": 12,
+   "amountText": "3.2억",
+   "pyeong": 14,
    "date": "2026.09.12"
   },
   "deals": [
+   {
+    "apt": "월드",
+    "manwon": 31500,
+    "text": "3.2억",
+    "pyeong": 14,
+    "amountManwon": 31500,
+    "roadNm": "본삼로",
+    "roadBon": "48",
+    "jibun": "872",
+    "date": "2026.09.12",
+    "dateNum": 20260912,
+    "amountText": "3.2억"
+   },
    {
     "apt": "월드",
     "manwon": 26500,
@@ -403947,19 +403765,6 @@
     "date": "2026.03.21",
     "dateNum": 20260321,
     "amountText": "2.7억"
-   },
-   {
-    "apt": "월드",
-    "manwon": 36000,
-    "text": "3.6억",
-    "pyeong": 16,
-    "amountManwon": 36000,
-    "roadNm": "본삼로",
-    "roadBon": "48",
-    "jibun": "872",
-    "date": "2026.02.26",
-    "dateNum": 20260226,
-    "amountText": "3.6억"
    },
    {
     "apt": "월드",
@@ -404753,22 +404558,9 @@
     "date": "2021.11.02",
     "dateNum": 20211102,
     "amountText": "3.9억"
-   },
-   {
-    "apt": "월드",
-    "manwon": 37800,
-    "text": "3.8억",
-    "pyeong": 12,
-    "amountManwon": 37800,
-    "roadNm": "본삼로",
-    "roadBon": "48",
-    "jibun": "872",
-    "date": "2021.10.07",
-    "dateNum": 20211007,
-    "amountText": "3.8억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "안산본오주공@37.3003,126.8613": {
   "val": {
@@ -404789,6 +404581,19 @@
     "date": "2026.09.20",
     "dateNum": 20260920,
     "amountText": "3.7억"
+   },
+   {
+    "apt": "본오주공",
+    "manwon": 35000,
+    "text": "3.5억",
+    "pyeong": 18,
+    "amountManwon": 35000,
+    "roadNm": "본삼로",
+    "roadBon": "8",
+    "jibun": "879",
+    "date": "2026.09.11",
+    "dateNum": 20260911,
+    "amountText": "3.5억"
    },
    {
     "apt": "본오주공",
@@ -405439,82 +405244,43 @@
     "date": "2021.11.24",
     "dateNum": 20211124,
     "amountText": "3.8억"
-   },
-   {
-    "apt": "본오주공",
-    "manwon": 28000,
-    "text": "2.8억",
-    "pyeong": 12,
-    "amountManwon": 28000,
-    "roadNm": "본삼로",
-    "roadBon": "8",
-    "jibun": "879",
-    "date": "2021.10.31",
-    "dateNum": 20211031,
-    "amountText": "2.8억"
-   },
-   {
-    "apt": "본오주공",
-    "manwon": 40000,
-    "text": "4.0억",
-    "pyeong": 18,
-    "amountManwon": 40000,
-    "roadNm": "본삼로",
-    "roadBon": "8",
-    "jibun": "879",
-    "date": "2021.10.29",
-    "dateNum": 20211029,
-    "amountText": "4.0억"
-   },
-   {
-    "apt": "본오주공",
-    "manwon": 37800,
-    "text": "3.8억",
-    "pyeong": 18,
-    "amountManwon": 37800,
-    "roadNm": "본삼로",
-    "roadBon": "8",
-    "jibun": "879",
-    "date": "2021.10.16",
-    "dateNum": 20211016,
-    "amountText": "3.8억"
-   },
-   {
-    "apt": "본오주공",
-    "manwon": 40000,
-    "text": "4.0억",
-    "pyeong": 18,
-    "amountManwon": 40000,
-    "roadNm": "본삼로",
-    "roadBon": "8",
-    "jibun": "879",
-    "date": "2021.10.13",
-    "dateNum": 20211013,
-    "amountText": "4.0억"
-   },
-   {
-    "apt": "본오주공",
-    "manwon": 37000,
-    "text": "3.7억",
-    "pyeong": 18,
-    "amountManwon": 37000,
-    "roadNm": "본삼로",
-    "roadBon": "8",
-    "jibun": "879",
-    "date": "2021.10.05",
-    "dateNum": 20211005,
-    "amountText": "3.7억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "태영@37.2989,126.8611": {
   "val": {
-   "amountText": "3.4억",
-   "pyeong": 23,
-   "date": "2026.08.19"
+   "amountText": "3.1억",
+   "pyeong": 19,
+   "date": "2026.10.03"
   },
   "deals": [
+   {
+    "apt": "태영",
+    "manwon": 30700,
+    "text": "3.1억",
+    "pyeong": 19,
+    "amountManwon": 30700,
+    "roadNm": "충장로",
+    "roadBon": "198",
+    "jibun": "879-15",
+    "date": "2026.10.03",
+    "dateNum": 20261003,
+    "amountText": "3.1억"
+   },
+   {
+    "apt": "태영",
+    "manwon": 56650,
+    "text": "5.7억",
+    "pyeong": 43,
+    "amountManwon": 56650,
+    "roadNm": "충장로",
+    "roadBon": "198",
+    "jibun": "879-15",
+    "date": "2026.09.17",
+    "dateNum": 20260917,
+    "amountText": "5.7억"
+   },
    {
     "apt": "태영",
     "manwon": 34000,
@@ -406242,82 +406008,56 @@
     "date": "2021.11.11",
     "dateNum": 20211111,
     "amountText": "3.5억"
-   },
-   {
-    "apt": "태영",
-    "manwon": 42700,
-    "text": "4.3억",
-    "pyeong": 23,
-    "amountManwon": 42700,
-    "roadNm": "충장로",
-    "roadBon": "198",
-    "jibun": "879-15",
-    "date": "2021.10.30",
-    "dateNum": 20211030,
-    "amountText": "4.3억"
-   },
-   {
-    "apt": "태영",
-    "manwon": 51000,
-    "text": "5.1억",
-    "pyeong": 26,
-    "amountManwon": 51000,
-    "roadNm": "충장로",
-    "roadBon": "198",
-    "jibun": "879-15",
-    "date": "2021.10.24",
-    "dateNum": 20211024,
-    "amountText": "5.1억"
-   },
-   {
-    "apt": "태영",
-    "manwon": 40000,
-    "text": "4.0억",
-    "pyeong": 23,
-    "amountManwon": 40000,
-    "roadNm": "충장로",
-    "roadBon": "198",
-    "jibun": "879-15",
-    "date": "2021.10.19",
-    "dateNum": 20211019,
-    "amountText": "4.0억"
-   },
-   {
-    "apt": "태영",
-    "manwon": 40000,
-    "text": "4.0억",
-    "pyeong": 23,
-    "amountManwon": 40000,
-    "roadNm": "충장로",
-    "roadBon": "198",
-    "jibun": "879-15",
-    "date": "2021.10.19",
-    "dateNum": 20211019,
-    "amountText": "4.0억"
-   },
-   {
-    "apt": "태영",
-    "manwon": 45700,
-    "text": "4.6억",
-    "pyeong": 26,
-    "amountManwon": 45700,
-    "roadNm": "충장로",
-    "roadBon": "198",
-    "jibun": "879-15",
-    "date": "2021.10.12",
-    "dateNum": 20211012,
-    "amountText": "4.6억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "주공1단지@37.3289,126.8495": {
   "val": {
-   "amountText": "2.2억",
+   "amountText": "2.3억",
    "pyeong": 12,
-   "date": "2026.09.21"
+   "date": "2026.10.01"
   },
   "deals": [
+   {
+    "apt": "주공1",
+    "manwon": 23400,
+    "text": "2.3억",
+    "pyeong": 12,
+    "amountManwon": 23400,
+    "roadNm": "충장로",
+    "roadBon": "565",
+    "jibun": "444",
+    "date": "2026.10.01",
+    "dateNum": 20261001,
+    "amountText": "2.3억"
+   },
+   {
+    "apt": "주공1",
+    "manwon": 19800,
+    "text": "2.0억",
+    "pyeong": 12,
+    "amountManwon": 19800,
+    "roadNm": "충장로",
+    "roadBon": "565",
+    "jibun": "444",
+    "date": "2026.09.28",
+    "dateNum": 20260928,
+    "amountText": "2.0억"
+   },
+   {
+    "apt": "주공1",
+    "manwon": 20000,
+    "text": "2.0억",
+    "pyeong": 11,
+    "amountManwon": 20000,
+    "roadNm": "충장로",
+    "roadBon": "565",
+    "jibun": "444",
+    "date": "2026.09.28",
+    "dateNum": 20260928,
+    "amountText": "2.0억"
+   },
    {
     "apt": "주공1",
     "manwon": 21500,
@@ -406330,6 +406070,19 @@
     "date": "2026.09.21",
     "dateNum": 20260921,
     "amountText": "2.2억"
+   },
+   {
+    "apt": "주공1",
+    "manwon": 24300,
+    "text": "2.4억",
+    "pyeong": 14,
+    "amountManwon": 24300,
+    "roadNm": "충장로",
+    "roadBon": "565",
+    "jibun": "444",
+    "date": "2026.09.17",
+    "dateNum": 20260917,
+    "amountText": "2.4억"
    },
    {
     "apt": "주공1",
@@ -406473,58 +406226,6 @@
     "date": "2026.05.06",
     "dateNum": 20260506,
     "amountText": "2.3억"
-   },
-   {
-    "apt": "주공1",
-    "manwon": 26700,
-    "text": "2.7억",
-    "pyeong": 15,
-    "amountManwon": 26700,
-    "roadNm": "충장로",
-    "roadBon": "565",
-    "jibun": "444",
-    "date": "2026.04.27",
-    "dateNum": 20260427,
-    "amountText": "2.7억"
-   },
-   {
-    "apt": "주공1",
-    "manwon": 28700,
-    "text": "2.9억",
-    "pyeong": 15,
-    "amountManwon": 28700,
-    "roadNm": "충장로",
-    "roadBon": "565",
-    "jibun": "444",
-    "date": "2026.04.18",
-    "dateNum": 20260418,
-    "amountText": "2.9억"
-   },
-   {
-    "apt": "주공1",
-    "manwon": 26000,
-    "text": "2.6억",
-    "pyeong": 15,
-    "amountManwon": 26000,
-    "roadNm": "충장로",
-    "roadBon": "565",
-    "jibun": "444",
-    "date": "2026.04.17",
-    "dateNum": 20260417,
-    "amountText": "2.6억"
-   },
-   {
-    "apt": "주공1",
-    "manwon": 26700,
-    "text": "2.7억",
-    "pyeong": 15,
-    "amountManwon": 26700,
-    "roadNm": "충장로",
-    "roadBon": "565",
-    "jibun": "444",
-    "date": "2026.04.16",
-    "dateNum": 20260416,
-    "amountText": "2.7억"
    },
    {
     "apt": "주공1",
@@ -407292,35 +406993,9 @@
     "date": "2021.12.31",
     "dateNum": 20211231,
     "amountText": "3.8억"
-   },
-   {
-    "apt": "주공1",
-    "manwon": 44000,
-    "text": "4.4억",
-    "pyeong": 15,
-    "amountManwon": 44000,
-    "roadNm": "충장로",
-    "roadBon": "565",
-    "jibun": "444",
-    "date": "2021.10.11",
-    "dateNum": 20211011,
-    "amountText": "4.4억"
-   },
-   {
-    "apt": "주공1",
-    "manwon": 44000,
-    "text": "4.4억",
-    "pyeong": 15,
-    "amountManwon": 44000,
-    "roadNm": "충장로",
-    "roadBon": "565",
-    "jibun": "444",
-    "date": "2021.10.11",
-    "dateNum": 20211011,
-    "amountText": "4.4억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "안산현대2차@37.3308,126.8497": {
   "val": {
@@ -408277,48 +407952,9 @@
     "date": "2021.11.27",
     "dateNum": 20211127,
     "amountText": "3.9억"
-   },
-   {
-    "apt": "현대2차",
-    "manwon": 41500,
-    "text": "4.2억",
-    "pyeong": 21,
-    "amountManwon": 41500,
-    "roadNm": "안산천동로1길",
-    "roadBon": "29",
-    "jibun": "448",
-    "date": "2021.10.23",
-    "dateNum": 20211023,
-    "amountText": "4.2억"
-   },
-   {
-    "apt": "현대2차",
-    "manwon": 40500,
-    "text": "4.0억",
-    "pyeong": 21,
-    "amountManwon": 40500,
-    "roadNm": "안산천동로1길",
-    "roadBon": "29",
-    "jibun": "448",
-    "date": "2021.10.04",
-    "dateNum": 20211004,
-    "amountText": "4.0억"
-   },
-   {
-    "apt": "현대2차",
-    "manwon": 40500,
-    "text": "4.0억",
-    "pyeong": 21,
-    "amountManwon": 40500,
-    "roadNm": "안산천동로1길",
-    "roadBon": "29",
-    "jibun": "448",
-    "date": "2021.10.04",
-    "dateNum": 20211004,
-    "amountText": "4.0억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "한양1차@37.3323,126.8483": {
   "val": {
@@ -409288,48 +408924,9 @@
     "date": "2022.02.25",
     "dateNum": 20220225,
     "amountText": "3.2억"
-   },
-   {
-    "apt": "한양",
-    "manwon": 44300,
-    "text": "4.4억",
-    "pyeong": 24,
-    "amountManwon": 44300,
-    "roadNm": "안산천동로1길",
-    "roadBon": "9",
-    "jibun": "447",
-    "date": "2021.10.25",
-    "dateNum": 20211025,
-    "amountText": "4.4억"
-   },
-   {
-    "apt": "한양",
-    "manwon": 45000,
-    "text": "4.5억",
-    "pyeong": 25,
-    "amountManwon": 45000,
-    "roadNm": "안산천동로1길",
-    "roadBon": "9",
-    "jibun": "447",
-    "date": "2021.10.06",
-    "dateNum": 20211006,
-    "amountText": "4.5억"
-   },
-   {
-    "apt": "한양",
-    "manwon": 53500,
-    "text": "5.4억",
-    "pyeong": 33,
-    "amountManwon": 53500,
-    "roadNm": "안산천동로1길",
-    "roadBon": "9",
-    "jibun": "447",
-    "date": "2021.10.06",
-    "dateNum": 20211006,
-    "amountText": "5.4억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "주공3단지@37.3307,126.8456": {
   "val": {
@@ -412860,11 +412457,37 @@
  },
  "주공11단지@37.3248,126.848": {
   "val": {
-   "amountText": "2.9억",
-   "pyeong": 15,
-   "date": "2026.09.12"
+   "amountText": "3.4억",
+   "pyeong": 18,
+   "date": "2026.10.06"
   },
   "deals": [
+   {
+    "apt": "주공11",
+    "manwon": 33500,
+    "text": "3.4억",
+    "pyeong": 18,
+    "amountManwon": 33500,
+    "roadNm": "충장로",
+    "roadBon": "533",
+    "jibun": "591",
+    "date": "2026.10.06",
+    "dateNum": 20261006,
+    "amountText": "3.4억"
+   },
+   {
+    "apt": "주공11",
+    "manwon": 28900,
+    "text": "2.9억",
+    "pyeong": 18,
+    "amountManwon": 28900,
+    "roadNm": "충장로",
+    "roadBon": "533",
+    "jibun": "591",
+    "date": "2026.10.01",
+    "dateNum": 20261001,
+    "amountText": "2.9억"
+   },
    {
     "apt": "주공11",
     "manwon": 29000,
@@ -413045,32 +412668,6 @@
     "jibun": "591",
     "date": "2026.07.04",
     "dateNum": 20260704,
-    "amountText": "3.5억"
-   },
-   {
-    "apt": "주공11",
-    "manwon": 34700,
-    "text": "3.5억",
-    "pyeong": 18,
-    "amountManwon": 34700,
-    "roadNm": "충장로",
-    "roadBon": "533",
-    "jibun": "591",
-    "date": "2026.07.01",
-    "dateNum": 20260701,
-    "amountText": "3.5억"
-   },
-   {
-    "apt": "주공11",
-    "manwon": 34700,
-    "text": "3.5억",
-    "pyeong": 18,
-    "amountManwon": 34700,
-    "roadNm": "충장로",
-    "roadBon": "533",
-    "jibun": "591",
-    "date": "2026.07.01",
-    "dateNum": 20260701,
     "amountText": "3.5억"
    },
    {
@@ -413982,87 +413579,9 @@
     "date": "2021.11.13",
     "dateNum": 20211113,
     "amountText": "4.0억"
-   },
-   {
-    "apt": "주공11",
-    "manwon": 42000,
-    "text": "4.2억",
-    "pyeong": 18,
-    "amountManwon": 42000,
-    "roadNm": "충장로",
-    "roadBon": "533",
-    "jibun": "591",
-    "date": "2021.10.25",
-    "dateNum": 20211025,
-    "amountText": "4.2억"
-   },
-   {
-    "apt": "주공11",
-    "manwon": 39700,
-    "text": "4.0억",
-    "pyeong": 18,
-    "amountManwon": 39700,
-    "roadNm": "충장로",
-    "roadBon": "533",
-    "jibun": "591",
-    "date": "2021.10.25",
-    "dateNum": 20211025,
-    "amountText": "4.0억"
-   },
-   {
-    "apt": "주공11",
-    "manwon": 42000,
-    "text": "4.2억",
-    "pyeong": 18,
-    "amountManwon": 42000,
-    "roadNm": "충장로",
-    "roadBon": "533",
-    "jibun": "591",
-    "date": "2021.10.19",
-    "dateNum": 20211019,
-    "amountText": "4.2억"
-   },
-   {
-    "apt": "주공11",
-    "manwon": 41500,
-    "text": "4.2억",
-    "pyeong": 18,
-    "amountManwon": 41500,
-    "roadNm": "충장로",
-    "roadBon": "533",
-    "jibun": "591",
-    "date": "2021.10.14",
-    "dateNum": 20211014,
-    "amountText": "4.2억"
-   },
-   {
-    "apt": "주공11",
-    "manwon": 43700,
-    "text": "4.4억",
-    "pyeong": 18,
-    "amountManwon": 43700,
-    "roadNm": "충장로",
-    "roadBon": "533",
-    "jibun": "591",
-    "date": "2021.10.08",
-    "dateNum": 20211008,
-    "amountText": "4.4억"
-   },
-   {
-    "apt": "주공11",
-    "manwon": 42000,
-    "text": "4.2억",
-    "pyeong": 18,
-    "amountManwon": 42000,
-    "roadNm": "충장로",
-    "roadBon": "533",
-    "jibun": "591",
-    "date": "2021.10.04",
-    "dateNum": 20211004,
-    "amountText": "4.2억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "주공10단지@37.3217,126.8472": {
   "val": {
@@ -415162,30 +414681,43 @@
     "date": "2021.11.13",
     "dateNum": 20211113,
     "amountText": "4.7억"
-   },
-   {
-    "apt": "주공10",
-    "manwon": 42000,
-    "text": "4.2억",
-    "pyeong": 20,
-    "amountManwon": 42000,
-    "roadNm": "화랑로",
-    "roadBon": "527",
-    "jibun": "584",
-    "date": "2021.10.04",
-    "dateNum": 20211004,
-    "amountText": "4.2억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "예술인@37.3218,126.8439": {
   "val": {
-   "amountText": "3.4억",
+   "amountText": "3.2억",
    "pyeong": 22,
-   "date": "2026.09.05"
+   "date": "2026.09.23"
   },
   "deals": [
+   {
+    "apt": "예술인",
+    "manwon": 32000,
+    "text": "3.2억",
+    "pyeong": 22,
+    "amountManwon": 32000,
+    "roadNm": "화랑로",
+    "roadBon": "495",
+    "jibun": "583",
+    "date": "2026.09.23",
+    "dateNum": 20260923,
+    "amountText": "3.2억"
+   },
+   {
+    "apt": "예술인",
+    "manwon": 34000,
+    "text": "3.4억",
+    "pyeong": 23,
+    "amountManwon": 34000,
+    "roadNm": "화랑로",
+    "roadBon": "495",
+    "jibun": "583",
+    "date": "2026.09.14",
+    "dateNum": 20260914,
+    "amountText": "3.4억"
+   },
    {
     "apt": "예술인",
     "manwon": 34000,
@@ -415367,32 +414899,6 @@
     "date": "2026.02.04",
     "dateNum": 20260204,
     "amountText": "3.6억"
-   },
-   {
-    "apt": "예술인",
-    "manwon": 42000,
-    "text": "4.2억",
-    "pyeong": 26,
-    "amountManwon": 42000,
-    "roadNm": "화랑로",
-    "roadBon": "495",
-    "jibun": "583",
-    "date": "2026.01.30",
-    "dateNum": 20260130,
-    "amountText": "4.2억"
-   },
-   {
-    "apt": "예술인",
-    "manwon": 39500,
-    "text": "4.0억",
-    "pyeong": 26,
-    "amountManwon": 39500,
-    "roadNm": "화랑로",
-    "roadBon": "495",
-    "jibun": "583",
-    "date": "2026.01.29",
-    "dateNum": 20260129,
-    "amountText": "4.0억"
    },
    {
     "apt": "예술인",
@@ -416316,30 +415822,43 @@
     "date": "2021.11.09",
     "dateNum": 20211109,
     "amountText": "4.3억"
-   },
-   {
-    "apt": "예술인",
-    "manwon": 35000,
-    "text": "3.5억",
-    "pyeong": 19,
-    "amountManwon": 35000,
-    "roadNm": "화랑로",
-    "roadBon": "495",
-    "jibun": "583",
-    "date": "2021.10.16",
-    "dateNum": 20211016,
-    "amountText": "3.5억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "주공4단지@37.3196,126.8435": {
   "val": {
-   "amountText": "5.2억",
+   "amountText": "5.0억",
    "pyeong": 23,
-   "date": "2026.09.04"
+   "date": "2026.09.22"
   },
   "deals": [
+   {
+    "apt": "주공4",
+    "manwon": 49500,
+    "text": "5.0억",
+    "pyeong": 23,
+    "amountManwon": 49500,
+    "roadNm": "화랑로",
+    "roadBon": "510",
+    "jibun": "588",
+    "date": "2026.09.22",
+    "dateNum": 20260922,
+    "amountText": "5.0억"
+   },
+   {
+    "apt": "주공4",
+    "manwon": 52000,
+    "text": "5.2억",
+    "pyeong": 23,
+    "amountManwon": 52000,
+    "roadNm": "화랑로",
+    "roadBon": "510",
+    "jibun": "588",
+    "date": "2026.09.19",
+    "dateNum": 20260919,
+    "amountText": "5.2억"
+   },
    {
     "apt": "주공4",
     "manwon": 52000,
@@ -416521,32 +416040,6 @@
     "date": "2026.04.17",
     "dateNum": 20260417,
     "amountText": "4.4억"
-   },
-   {
-    "apt": "주공4",
-    "manwon": 46800,
-    "text": "4.7억",
-    "pyeong": 23,
-    "amountManwon": 46800,
-    "roadNm": "화랑로",
-    "roadBon": "510",
-    "jibun": "588",
-    "date": "2026.04.02",
-    "dateNum": 20260402,
-    "amountText": "4.7억"
-   },
-   {
-    "apt": "주공4",
-    "manwon": 50500,
-    "text": "5.0억",
-    "pyeong": 25,
-    "amountManwon": 50500,
-    "roadNm": "화랑로",
-    "roadBon": "510",
-    "jibun": "588",
-    "date": "2026.03.28",
-    "dateNum": 20260328,
-    "amountText": "5.0억"
    },
    {
     "apt": "주공4",
@@ -417275,43 +416768,43 @@
     "date": "2021.11.29",
     "dateNum": 20211129,
     "amountText": "6.2억"
-   },
-   {
-    "apt": "주공4",
-    "manwon": 67000,
-    "text": "6.7억",
-    "pyeong": 25,
-    "amountManwon": 67000,
-    "roadNm": "화랑로",
-    "roadBon": "510",
-    "jibun": "588",
-    "date": "2021.10.09",
-    "dateNum": 20211009,
-    "amountText": "6.7억"
-   },
-   {
-    "apt": "주공4",
-    "manwon": 61000,
-    "text": "6.1억",
-    "pyeong": 26,
-    "amountManwon": 61000,
-    "roadNm": "화랑로",
-    "roadBon": "510",
-    "jibun": "588",
-    "date": "2021.10.01",
-    "dateNum": 20211001,
-    "amountText": "6.1억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "안산파크푸르지오@37.3194,126.8475": {
   "val": {
-   "amountText": "7.6억",
+   "amountText": "7.4억",
    "pyeong": 26,
-   "date": "2026.09.15"
+   "date": "2026.09.30"
   },
   "deals": [
+   {
+    "apt": "파크푸르지오",
+    "manwon": 74500,
+    "text": "7.4억",
+    "pyeong": 26,
+    "amountManwon": 74500,
+    "roadNm": "화랑로",
+    "roadBon": "534",
+    "jibun": "747",
+    "date": "2026.09.30",
+    "dateNum": 20260930,
+    "amountText": "7.4억"
+   },
+   {
+    "apt": "파크푸르지오",
+    "manwon": 70000,
+    "text": "7.0억",
+    "pyeong": 22,
+    "amountManwon": 70000,
+    "roadNm": "화랑로",
+    "roadBon": "534",
+    "jibun": "747",
+    "date": "2026.09.15",
+    "dateNum": 20260915,
+    "amountText": "7.0억"
+   },
    {
     "apt": "파크푸르지오",
     "manwon": 76200,
@@ -417347,9 +416840,35 @@
     "roadNm": "화랑로",
     "roadBon": "534",
     "jibun": "747",
+    "date": "2026.09.11",
+    "dateNum": 20260911,
+    "amountText": "8.0억"
+   },
+   {
+    "apt": "파크푸르지오",
+    "manwon": 79500,
+    "text": "8.0억",
+    "pyeong": 26,
+    "amountManwon": 79500,
+    "roadNm": "화랑로",
+    "roadBon": "534",
+    "jibun": "747",
     "date": "2026.08.24",
     "dateNum": 20260824,
     "amountText": "8.0억"
+   },
+   {
+    "apt": "파크푸르지오",
+    "manwon": 77000,
+    "text": "7.7억",
+    "pyeong": 26,
+    "amountManwon": 77000,
+    "roadNm": "화랑로",
+    "roadBon": "534",
+    "jibun": "747",
+    "date": "2026.08.21",
+    "dateNum": 20260821,
+    "amountText": "7.7억"
    },
    {
     "apt": "파크푸르지오",
@@ -417467,58 +416986,6 @@
     "date": "2026.06.11",
     "dateNum": 20260611,
     "amountText": "5.9억"
-   },
-   {
-    "apt": "파크푸르지오",
-    "manwon": 78500,
-    "text": "7.8억",
-    "pyeong": 26,
-    "amountManwon": 78500,
-    "roadNm": "화랑로",
-    "roadBon": "534",
-    "jibun": "747",
-    "date": "2026.06.09",
-    "dateNum": 20260609,
-    "amountText": "7.8억"
-   },
-   {
-    "apt": "파크푸르지오",
-    "manwon": 79500,
-    "text": "8.0억",
-    "pyeong": 26,
-    "amountManwon": 79500,
-    "roadNm": "화랑로",
-    "roadBon": "534",
-    "jibun": "747",
-    "date": "2026.06.03",
-    "dateNum": 20260603,
-    "amountText": "8.0억"
-   },
-   {
-    "apt": "파크푸르지오",
-    "manwon": 72200,
-    "text": "7.2억",
-    "pyeong": 22,
-    "amountManwon": 72200,
-    "roadNm": "화랑로",
-    "roadBon": "534",
-    "jibun": "747",
-    "date": "2026.05.09",
-    "dateNum": 20260509,
-    "amountText": "7.2억"
-   },
-   {
-    "apt": "파크푸르지오",
-    "manwon": 73900,
-    "text": "7.4억",
-    "pyeong": 26,
-    "amountManwon": 73900,
-    "roadNm": "화랑로",
-    "roadBon": "534",
-    "jibun": "747",
-    "date": "2026.05.09",
-    "dateNum": 20260509,
-    "amountText": "7.4억"
    },
    {
     "apt": "파크푸르지오",
@@ -418184,7 +417651,7 @@
     "amountText": "6.8억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "호수공원대림@37.3064,126.8237": {
   "val": {
@@ -425025,30 +424492,56 @@
     "date": "2021.11.30",
     "dateNum": 20211130,
     "amountText": "6.2억"
-   },
-   {
-    "apt": "보네르빌리지",
-    "manwon": 65000,
-    "text": "6.5억",
-    "pyeong": 35,
-    "amountManwon": 65000,
-    "roadNm": "안산천남로",
-    "roadBon": "211",
-    "jibun": "778",
-    "date": "2021.10.16",
-    "dateNum": 20211016,
-    "amountText": "6.5억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "주공그린빌9단지@37.3105,126.8408": {
   "val": {
-   "amountText": "5.5억",
+   "amountText": "5.7억",
    "pyeong": 26,
-   "date": "2026.09.07"
+   "date": "2026.10.07"
   },
   "deals": [
+   {
+    "apt": "주공그린빌9",
+    "manwon": 57000,
+    "text": "5.7억",
+    "pyeong": 26,
+    "amountManwon": 57000,
+    "roadNm": "안산천남로",
+    "roadBon": "245",
+    "jibun": "765",
+    "date": "2026.10.07",
+    "dateNum": 20261007,
+    "amountText": "5.7억"
+   },
+   {
+    "apt": "주공그린빌9",
+    "manwon": 51300,
+    "text": "5.1억",
+    "pyeong": 23,
+    "amountManwon": 51300,
+    "roadNm": "안산천남로",
+    "roadBon": "245",
+    "jibun": "765",
+    "date": "2026.09.28",
+    "dateNum": 20260928,
+    "amountText": "5.1억"
+   },
+   {
+    "apt": "주공그린빌9",
+    "manwon": 46500,
+    "text": "4.6억",
+    "pyeong": 23,
+    "amountManwon": 46500,
+    "roadNm": "안산천남로",
+    "roadBon": "245",
+    "jibun": "765",
+    "date": "2026.09.16",
+    "dateNum": 20260916,
+    "amountText": "4.6억"
+   },
    {
     "apt": "주공그린빌9",
     "manwon": 54800,
@@ -425217,45 +424710,6 @@
     "date": "2026.06.02",
     "dateNum": 20260602,
     "amountText": "5.0억"
-   },
-   {
-    "apt": "주공그린빌9",
-    "manwon": 55000,
-    "text": "5.5억",
-    "pyeong": 23,
-    "amountManwon": 55000,
-    "roadNm": "안산천남로",
-    "roadBon": "245",
-    "jibun": "765",
-    "date": "2026.05.31",
-    "dateNum": 20260531,
-    "amountText": "5.5억"
-   },
-   {
-    "apt": "주공그린빌9",
-    "manwon": 53800,
-    "text": "5.4억",
-    "pyeong": 23,
-    "amountManwon": 53800,
-    "roadNm": "안산천남로",
-    "roadBon": "245",
-    "jibun": "765",
-    "date": "2026.05.22",
-    "dateNum": 20260522,
-    "amountText": "5.4억"
-   },
-   {
-    "apt": "주공그린빌9",
-    "manwon": 57500,
-    "text": "5.8억",
-    "pyeong": 26,
-    "amountManwon": 57500,
-    "roadNm": "안산천남로",
-    "roadBon": "245",
-    "jibun": "765",
-    "date": "2026.05.21",
-    "dateNum": 20260521,
-    "amountText": "5.8억"
    },
    {
     "apt": "주공그린빌9",
@@ -425467,6 +424921,32 @@
    },
    {
     "apt": "주공그린빌9",
+    "manwon": 50000,
+    "text": "5.0억",
+    "pyeong": 23,
+    "amountManwon": 50000,
+    "roadNm": "안산천남로",
+    "roadBon": "245",
+    "jibun": "765",
+    "date": "2024.12.23",
+    "dateNum": 20241223,
+    "amountText": "5.0억"
+   },
+   {
+    "apt": "주공그린빌9",
+    "manwon": 55000,
+    "text": "5.5억",
+    "pyeong": 26,
+    "amountManwon": 55000,
+    "roadNm": "안산천남로",
+    "roadBon": "245",
+    "jibun": "765",
+    "date": "2024.12.05",
+    "dateNum": 20241205,
+    "amountText": "5.5억"
+   },
+   {
+    "apt": "주공그린빌9",
     "manwon": 51000,
     "text": "5.1억",
     "pyeong": 23,
@@ -425646,32 +425126,6 @@
     "date": "2024.07.17",
     "dateNum": 20240717,
     "amountText": "4.9억"
-   },
-   {
-    "apt": "주공그린빌9",
-    "manwon": 50000,
-    "text": "5.0억",
-    "pyeong": 23,
-    "amountManwon": 50000,
-    "roadNm": "안산천남로",
-    "roadBon": "245",
-    "jibun": "765",
-    "date": "2024.06.07",
-    "dateNum": 20240607,
-    "amountText": "5.0억"
-   },
-   {
-    "apt": "주공그린빌9",
-    "manwon": 48500,
-    "text": "4.8억",
-    "pyeong": 23,
-    "amountManwon": 48500,
-    "roadNm": "안산천남로",
-    "roadBon": "245",
-    "jibun": "765",
-    "date": "2024.06.03",
-    "dateNum": 20240603,
-    "amountText": "4.8억"
    },
    {
     "apt": "주공그린빌9",
@@ -425984,48 +425438,9 @@
     "date": "2021.11.05",
     "dateNum": 20211105,
     "amountText": "5.4억"
-   },
-   {
-    "apt": "주공그린빌9",
-    "manwon": 52500,
-    "text": "5.2억",
-    "pyeong": 23,
-    "amountManwon": 52500,
-    "roadNm": "안산천남로",
-    "roadBon": "245",
-    "jibun": "765",
-    "date": "2021.10.18",
-    "dateNum": 20211018,
-    "amountText": "5.2억"
-   },
-   {
-    "apt": "주공그린빌9",
-    "manwon": 56200,
-    "text": "5.6억",
-    "pyeong": 23,
-    "amountManwon": 56200,
-    "roadNm": "안산천남로",
-    "roadBon": "245",
-    "jibun": "765",
-    "date": "2021.10.13",
-    "dateNum": 20211013,
-    "amountText": "5.6억"
-   },
-   {
-    "apt": "주공그린빌9",
-    "manwon": 55000,
-    "text": "5.5억",
-    "pyeong": 23,
-    "amountManwon": 55000,
-    "roadNm": "안산천남로",
-    "roadBon": "245",
-    "jibun": "765",
-    "date": "2021.10.03",
-    "dateNum": 20211003,
-    "amountText": "5.5억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "주공그린빌8단지@37.3107,126.8375": {
   "val": {
@@ -470118,11 +469533,50 @@
  },
  "비산삼성래미안@37.4008,126.9396": {
   "val": {
-   "amountText": "9.7억",
-   "pyeong": 55,
-   "date": "2026.09.01"
+   "amountText": "10.4억",
+   "pyeong": 35,
+   "date": "2026.09.21"
   },
   "deals": [
+   {
+    "apt": "삼성래미안",
+    "manwon": 104000,
+    "text": "10.4억",
+    "pyeong": 35,
+    "amountManwon": 104000,
+    "roadNm": "관악대로",
+    "roadBon": "121",
+    "jibun": "425",
+    "date": "2026.09.21",
+    "dateNum": 20260921,
+    "amountText": "10.4억"
+   },
+   {
+    "apt": "삼성래미안",
+    "manwon": 91500,
+    "text": "9.2억",
+    "pyeong": 35,
+    "amountManwon": 91500,
+    "roadNm": "관악대로",
+    "roadBon": "135",
+    "jibun": "425",
+    "date": "2026.09.10",
+    "dateNum": 20260910,
+    "amountText": "9.2억"
+   },
+   {
+    "apt": "삼성래미안",
+    "manwon": 96500,
+    "text": "9.6억",
+    "pyeong": 26,
+    "amountManwon": 96500,
+    "roadNm": "관악대로",
+    "roadBon": "121",
+    "jibun": "425",
+    "date": "2026.09.09",
+    "dateNum": 20260909,
+    "amountText": "9.6억"
+   },
    {
     "apt": "삼성래미안",
     "manwon": 97000,
@@ -470291,45 +469745,6 @@
     "date": "2026.08.06",
     "dateNum": 20260806,
     "amountText": "9.5억"
-   },
-   {
-    "apt": "삼성래미안",
-    "manwon": 95000,
-    "text": "9.5억",
-    "pyeong": 35,
-    "amountManwon": 95000,
-    "roadNm": "관악대로",
-    "roadBon": "121",
-    "jibun": "425",
-    "date": "2026.08.06",
-    "dateNum": 20260806,
-    "amountText": "9.5억"
-   },
-   {
-    "apt": "삼성래미안",
-    "manwon": 80000,
-    "text": "8.0억",
-    "pyeong": 18,
-    "amountManwon": 80000,
-    "roadNm": "관악대로",
-    "roadBon": "135",
-    "jibun": "425",
-    "date": "2026.07.31",
-    "dateNum": 20260731,
-    "amountText": "8.0억"
-   },
-   {
-    "apt": "삼성래미안",
-    "manwon": 84000,
-    "text": "8.4억",
-    "pyeong": 26,
-    "amountManwon": 84000,
-    "roadNm": "관악대로",
-    "roadBon": "135",
-    "jibun": "425",
-    "date": "2026.07.31",
-    "dateNum": 20260731,
-    "amountText": "8.4억"
    },
    {
     "apt": "삼성래미안",
@@ -471201,87 +470616,9 @@
     "date": "2021.11.02",
     "dateNum": 20211102,
     "amountText": "9.0억"
-   },
-   {
-    "apt": "삼성래미안",
-    "manwon": 92500,
-    "text": "9.2억",
-    "pyeong": 26,
-    "amountManwon": 92500,
-    "roadNm": "관악대로",
-    "roadBon": "135",
-    "jibun": "425",
-    "date": "2021.10.30",
-    "dateNum": 20211030,
-    "amountText": "9.2억"
-   },
-   {
-    "apt": "삼성래미안",
-    "manwon": 91000,
-    "text": "9.1억",
-    "pyeong": 26,
-    "amountManwon": 91000,
-    "roadNm": "관악대로",
-    "roadBon": "135",
-    "jibun": "425",
-    "date": "2021.10.12",
-    "dateNum": 20211012,
-    "amountText": "9.1억"
-   },
-   {
-    "apt": "삼성래미안",
-    "manwon": 101000,
-    "text": "10.1억",
-    "pyeong": 35,
-    "amountManwon": 101000,
-    "roadNm": "관악대로",
-    "roadBon": "135",
-    "jibun": "425",
-    "date": "2021.10.07",
-    "dateNum": 20211007,
-    "amountText": "10.1억"
-   },
-   {
-    "apt": "삼성래미안",
-    "manwon": 95000,
-    "text": "9.5억",
-    "pyeong": 26,
-    "amountManwon": 95000,
-    "roadNm": "관악대로",
-    "roadBon": "121",
-    "jibun": "425",
-    "date": "2021.10.04",
-    "dateNum": 20211004,
-    "amountText": "9.5억"
-   },
-   {
-    "apt": "삼성래미안",
-    "manwon": 123000,
-    "text": "12.3억",
-    "pyeong": 50,
-    "amountManwon": 123000,
-    "roadNm": "관악대로",
-    "roadBon": "135",
-    "jibun": "425",
-    "date": "2021.10.01",
-    "dateNum": 20211001,
-    "amountText": "12.3억"
-   },
-   {
-    "apt": "삼성래미안",
-    "manwon": 124700,
-    "text": "12.5억",
-    "pyeong": 55,
-    "amountManwon": 124700,
-    "roadNm": "관악대로",
-    "roadBon": "121",
-    "jibun": "425",
-    "date": "2021.10.01",
-    "dateNum": 20211001,
-    "amountText": "12.5억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "이-편한세상@37.3999,126.9425": {
   "val": {
@@ -525914,11 +525251,50 @@
  },
  "주공뜨란채@37.4004,126.9259": {
   "val": {
-   "amountText": "9.4억",
-   "pyeong": 26,
-   "date": "2026.09.04"
+   "amountText": "8.9억",
+   "pyeong": 18,
+   "date": "2026.09.24"
   },
   "deals": [
+   {
+    "apt": "주공뜨란채(아)",
+    "manwon": 89000,
+    "text": "8.9억",
+    "pyeong": 18,
+    "amountManwon": 89000,
+    "roadNm": "안양천서로",
+    "roadBon": "289",
+    "jibun": "1380",
+    "date": "2026.09.24",
+    "dateNum": 20260924,
+    "amountText": "8.9억"
+   },
+   {
+    "apt": "주공뜨란채(아)",
+    "manwon": 100000,
+    "text": "10억",
+    "pyeong": 26,
+    "amountManwon": 100000,
+    "roadNm": "안양천서로",
+    "roadBon": "289",
+    "jibun": "1380",
+    "date": "2026.09.22",
+    "dateNum": 20260922,
+    "amountText": "10억"
+   },
+   {
+    "apt": "주공뜨란채(아)",
+    "manwon": 76000,
+    "text": "7.6억",
+    "pyeong": 14,
+    "amountManwon": 76000,
+    "roadNm": "안양천서로",
+    "roadBon": "289",
+    "jibun": "1380",
+    "date": "2026.09.13",
+    "dateNum": 20260913,
+    "amountText": "7.6억"
+   },
    {
     "apt": "주공뜨란채(아)",
     "manwon": 94000,
@@ -526087,45 +525463,6 @@
     "date": "2026.07.07",
     "dateNum": 20260707,
     "amountText": "9.3억"
-   },
-   {
-    "apt": "주공뜨란채(아)",
-    "manwon": 59000,
-    "text": "5.9억",
-    "pyeong": 14,
-    "amountManwon": 59000,
-    "roadNm": "안양천서로",
-    "roadBon": "289",
-    "jibun": "1380",
-    "date": "2026.06.29",
-    "dateNum": 20260629,
-    "amountText": "5.9억"
-   },
-   {
-    "apt": "주공뜨란채(아)",
-    "manwon": 71300,
-    "text": "7.1억",
-    "pyeong": 14,
-    "amountManwon": 71300,
-    "roadNm": "안양천서로",
-    "roadBon": "289",
-    "jibun": "1380",
-    "date": "2026.06.29",
-    "dateNum": 20260629,
-    "amountText": "7.1억"
-   },
-   {
-    "apt": "주공뜨란채(아)",
-    "manwon": 70500,
-    "text": "7.0억",
-    "pyeong": 14,
-    "amountManwon": 70500,
-    "roadNm": "안양천서로",
-    "roadBon": "289",
-    "jibun": "1380",
-    "date": "2026.06.27",
-    "dateNum": 20260627,
-    "amountText": "7.0억"
    },
    {
     "apt": "주공뜨란채(아)",
@@ -526815,30 +526152,56 @@
     "date": "2022.05.13",
     "dateNum": 20220513,
     "amountText": "5.8억"
-   },
-   {
-    "apt": "주공뜨란채(아)",
-    "manwon": 77800,
-    "text": "7.8억",
-    "pyeong": 18,
-    "amountManwon": 77800,
-    "roadNm": "안양천서로",
-    "roadBon": "289",
-    "jibun": "1380",
-    "date": "2021.10.12",
-    "dateNum": 20211012,
-    "amountText": "7.8억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "삼성래미안@37.4023,126.9241": {
   "val": {
-   "amountText": "9.4억",
+   "amountText": "10억",
    "pyeong": 24,
-   "date": "2026.09.19"
+   "date": "2026.09.23"
   },
   "deals": [
+   {
+    "apt": "삼성래미안",
+    "manwon": 100000,
+    "text": "10억",
+    "pyeong": 24,
+    "amountManwon": 100000,
+    "roadNm": "안양천서로",
+    "roadBon": "311",
+    "jibun": "90-1",
+    "date": "2026.09.23",
+    "dateNum": 20260923,
+    "amountText": "10억"
+   },
+   {
+    "apt": "삼성래미안",
+    "manwon": 82000,
+    "text": "8.2억",
+    "pyeong": 17,
+    "amountManwon": 82000,
+    "roadNm": "안양천서로",
+    "roadBon": "311",
+    "jibun": "90-1",
+    "date": "2026.09.23",
+    "dateNum": 20260923,
+    "amountText": "8.2억"
+   },
+   {
+    "apt": "삼성래미안",
+    "manwon": 99500,
+    "text": "10.0억",
+    "pyeong": 24,
+    "amountManwon": 99500,
+    "roadNm": "안양천서로",
+    "roadBon": "311",
+    "jibun": "90-1",
+    "date": "2026.09.22",
+    "dateNum": 20260922,
+    "amountText": "10.0억"
+   },
    {
     "apt": "삼성래미안",
     "manwon": 94000,
@@ -526854,6 +526217,32 @@
    },
    {
     "apt": "삼성래미안",
+    "manwon": 93000,
+    "text": "9.3억",
+    "pyeong": 24,
+    "amountManwon": 93000,
+    "roadNm": "안양천서로",
+    "roadBon": "311",
+    "jibun": "90-1",
+    "date": "2026.09.17",
+    "dateNum": 20260917,
+    "amountText": "9.3억"
+   },
+   {
+    "apt": "삼성래미안",
+    "manwon": 91100,
+    "text": "9.1억",
+    "pyeong": 24,
+    "amountManwon": 91100,
+    "roadNm": "안양천서로",
+    "roadBon": "311",
+    "jibun": "90-1",
+    "date": "2026.09.13",
+    "dateNum": 20260913,
+    "amountText": "9.1억"
+   },
+   {
+    "apt": "삼성래미안",
     "manwon": 102000,
     "text": "10.2억",
     "pyeong": 24,
@@ -526864,6 +526253,32 @@
     "date": "2026.09.09",
     "dateNum": 20260909,
     "amountText": "10.2억"
+   },
+   {
+    "apt": "삼성래미안",
+    "manwon": 95000,
+    "text": "9.5억",
+    "pyeong": 24,
+    "amountManwon": 95000,
+    "roadNm": "안양천서로",
+    "roadBon": "311",
+    "jibun": "90-1",
+    "date": "2026.09.05",
+    "dateNum": 20260905,
+    "amountText": "9.5억"
+   },
+   {
+    "apt": "삼성래미안",
+    "manwon": 96000,
+    "text": "9.6억",
+    "pyeong": 24,
+    "amountManwon": 96000,
+    "roadNm": "안양천서로",
+    "roadBon": "311",
+    "jibun": "90-1",
+    "date": "2026.09.04",
+    "dateNum": 20260904,
+    "amountText": "9.6억"
    },
    {
     "apt": "삼성래미안",
@@ -526955,97 +526370,6 @@
     "date": "2026.07.21",
     "dateNum": 20260721,
     "amountText": "8.8억"
-   },
-   {
-    "apt": "삼성래미안",
-    "manwon": 78500,
-    "text": "7.8억",
-    "pyeong": 17,
-    "amountManwon": 78500,
-    "roadNm": "안양천서로",
-    "roadBon": "311",
-    "jibun": "90-1",
-    "date": "2026.07.19",
-    "dateNum": 20260719,
-    "amountText": "7.8억"
-   },
-   {
-    "apt": "삼성래미안",
-    "manwon": 94500,
-    "text": "9.4억",
-    "pyeong": 24,
-    "amountManwon": 94500,
-    "roadNm": "안양천서로",
-    "roadBon": "311",
-    "jibun": "90-1",
-    "date": "2026.07.15",
-    "dateNum": 20260715,
-    "amountText": "9.4억"
-   },
-   {
-    "apt": "삼성래미안",
-    "manwon": 76000,
-    "text": "7.6억",
-    "pyeong": 17,
-    "amountManwon": 76000,
-    "roadNm": "안양천서로",
-    "roadBon": "311",
-    "jibun": "90-1",
-    "date": "2026.07.13",
-    "dateNum": 20260713,
-    "amountText": "7.6억"
-   },
-   {
-    "apt": "삼성래미안",
-    "manwon": 82000,
-    "text": "8.2억",
-    "pyeong": 17,
-    "amountManwon": 82000,
-    "roadNm": "안양천서로",
-    "roadBon": "311",
-    "jibun": "90-1",
-    "date": "2026.07.11",
-    "dateNum": 20260711,
-    "amountText": "8.2억"
-   },
-   {
-    "apt": "삼성래미안",
-    "manwon": 83000,
-    "text": "8.3억",
-    "pyeong": 17,
-    "amountManwon": 83000,
-    "roadNm": "안양천서로",
-    "roadBon": "311",
-    "jibun": "90-1",
-    "date": "2026.06.27",
-    "dateNum": 20260627,
-    "amountText": "8.3억"
-   },
-   {
-    "apt": "삼성래미안",
-    "manwon": 88000,
-    "text": "8.8억",
-    "pyeong": 24,
-    "amountManwon": 88000,
-    "roadNm": "안양천서로",
-    "roadBon": "311",
-    "jibun": "90-1",
-    "date": "2026.06.26",
-    "dateNum": 20260626,
-    "amountText": "8.8억"
-   },
-   {
-    "apt": "삼성래미안",
-    "manwon": 86000,
-    "text": "8.6억",
-    "pyeong": 24,
-    "amountManwon": 86000,
-    "roadNm": "안양천서로",
-    "roadBon": "311",
-    "jibun": "90-1",
-    "date": "2026.06.23",
-    "dateNum": 20260623,
-    "amountText": "8.6억"
    },
    {
     "apt": "삼성래미안",
@@ -527904,35 +527228,9 @@
     "date": "2021.11.07",
     "dateNum": 20211107,
     "amountText": "8.0억"
-   },
-   {
-    "apt": "삼성래미안",
-    "manwon": 65000,
-    "text": "6.5억",
-    "pyeong": 24,
-    "amountManwon": 65000,
-    "roadNm": "안양천서로",
-    "roadBon": "311",
-    "jibun": "90-1",
-    "date": "2021.10.12",
-    "dateNum": 20211012,
-    "amountText": "6.5억"
-   },
-   {
-    "apt": "삼성래미안",
-    "manwon": 73200,
-    "text": "7.3억",
-    "pyeong": 17,
-    "amountManwon": 73200,
-    "roadNm": "안양천서로",
-    "roadBon": "311",
-    "jibun": "90-1",
-    "date": "2021.10.11",
-    "dateNum": 20211011,
-    "amountText": "7.3억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "래미안안양메가트리아@37.3944,126.9342": {
   "val": {
@@ -660688,11 +659986,37 @@
  },
  "LH동분당센트럴파크@37.4136,127.1478": {
   "val": {
-   "amountText": "11.7억",
+   "amountText": "11억",
    "pyeong": 26,
-   "date": "2026.09.22"
+   "date": "2026.10.01"
   },
   "deals": [
+   {
+    "apt": "LH동분당센트럴파크",
+    "manwon": 110000,
+    "text": "11억",
+    "pyeong": 26,
+    "amountManwon": 110000,
+    "roadNm": "도촌남로",
+    "roadBon": "22",
+    "jibun": "700",
+    "date": "2026.10.01",
+    "dateNum": 20261001,
+    "amountText": "11억"
+   },
+   {
+    "apt": "LH동분당센트럴파크",
+    "manwon": 108500,
+    "text": "10.8억",
+    "pyeong": 26,
+    "amountManwon": 108500,
+    "roadNm": "도촌남로",
+    "roadBon": "22",
+    "jibun": "700",
+    "date": "2026.09.28",
+    "dateNum": 20260928,
+    "amountText": "10.8억"
+   },
    {
     "apt": "LH동분당센트럴파크",
     "manwon": 117000,
@@ -660705,6 +660029,19 @@
     "date": "2026.09.22",
     "dateNum": 20260922,
     "amountText": "11.7억"
+   },
+   {
+    "apt": "LH동분당센트럴파크",
+    "manwon": 115000,
+    "text": "11.5억",
+    "pyeong": 26,
+    "amountManwon": 115000,
+    "roadNm": "도촌남로",
+    "roadBon": "22",
+    "jibun": "700",
+    "date": "2026.09.18",
+    "dateNum": 20260918,
+    "amountText": "11.5억"
    },
    {
     "apt": "LH동분당센트럴파크",
@@ -660861,45 +660198,6 @@
     "date": "2026.04.21",
     "dateNum": 20260421,
     "amountText": "10억"
-   },
-   {
-    "apt": "LH동분당센트럴파크",
-    "manwon": 100000,
-    "text": "10억",
-    "pyeong": 23,
-    "amountManwon": 100000,
-    "roadNm": "도촌남로",
-    "roadBon": "22",
-    "jibun": "700",
-    "date": "2026.04.21",
-    "dateNum": 20260421,
-    "amountText": "10억"
-   },
-   {
-    "apt": "LH동분당센트럴파크",
-    "manwon": 101000,
-    "text": "10.1억",
-    "pyeong": 23,
-    "amountManwon": 101000,
-    "roadNm": "도촌남로",
-    "roadBon": "22",
-    "jibun": "700",
-    "date": "2026.03.11",
-    "dateNum": 20260311,
-    "amountText": "10.1억"
-   },
-   {
-    "apt": "LH동분당센트럴파크",
-    "manwon": 104500,
-    "text": "10.4억",
-    "pyeong": 26,
-    "amountManwon": 104500,
-    "roadNm": "도촌남로",
-    "roadBon": "22",
-    "jibun": "700",
-    "date": "2026.02.28",
-    "dateNum": 20260228,
-    "amountText": "10.4억"
    },
    {
     "apt": "LH동분당센트럴파크",
@@ -661565,7 +660863,7 @@
     "amountText": "8.6억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "산들마을@37.4193,127.137": {
   "val": {
@@ -662717,61 +662015,9 @@
     "date": "2021.11.03",
     "dateNum": 20211103,
     "amountText": "8.0억"
-   },
-   {
-    "apt": "산들마을2단지",
-    "manwon": 79500,
-    "text": "8.0억",
-    "pyeong": 16,
-    "amountManwon": 79500,
-    "roadNm": "여수울로",
-    "roadBon": "51",
-    "jibun": "602",
-    "date": "2021.10.24",
-    "dateNum": 20211024,
-    "amountText": "8.0억"
-   },
-   {
-    "apt": "산들마을2단지",
-    "manwon": 58800,
-    "text": "5.9억",
-    "pyeong": 16,
-    "amountManwon": 58800,
-    "roadNm": "여수울로",
-    "roadBon": "51",
-    "jibun": "602",
-    "date": "2021.10.15",
-    "dateNum": 20211015,
-    "amountText": "5.9억"
-   },
-   {
-    "apt": "산들마을2단지",
-    "manwon": 85500,
-    "text": "8.6억",
-    "pyeong": 16,
-    "amountManwon": 85500,
-    "roadNm": "여수울로",
-    "roadBon": "51",
-    "jibun": "602",
-    "date": "2021.10.11",
-    "dateNum": 20211011,
-    "amountText": "8.6억"
-   },
-   {
-    "apt": "산들마을2단지",
-    "manwon": 78000,
-    "text": "7.8억",
-    "pyeong": 16,
-    "amountManwon": 78000,
-    "roadNm": "여수울로",
-    "roadBon": "51",
-    "jibun": "602",
-    "date": "2021.10.06",
-    "dateNum": 20211006,
-    "amountText": "7.8억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "연꽃마을4단지@37.4177,127.1354": {
   "val": {
@@ -663624,22 +662870,9 @@
     "date": "2021.12.14",
     "dateNum": 20211214,
     "amountText": "12.6억"
-   },
-   {
-    "apt": "연꽃마을(4단지)",
-    "manwon": 140000,
-    "text": "14억",
-    "pyeong": 37,
-    "amountManwon": 140000,
-    "roadNm": "여수울로",
-    "roadBon": "50",
-    "jibun": "601",
-    "date": "2021.10.27",
-    "dateNum": 20211027,
-    "amountText": "14억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "센트럴타운@37.4179,127.1314": {
   "val": {
@@ -664700,48 +663933,9 @@
     "date": "2021.11.22",
     "dateNum": 20211122,
     "amountText": "12.2억"
-   },
-   {
-    "apt": "센트럴타운(3단지)",
-    "manwon": 122500,
-    "text": "12.2억",
-    "pyeong": 26,
-    "amountManwon": 122500,
-    "roadNm": "성남대로",
-    "roadBon": "1000",
-    "jibun": "600",
-    "date": "2021.10.21",
-    "dateNum": 20211021,
-    "amountText": "12.2억"
-   },
-   {
-    "apt": "센트럴타운(3단지)",
-    "manwon": 125000,
-    "text": "12.5억",
-    "pyeong": 26,
-    "amountManwon": 125000,
-    "roadNm": "성남대로",
-    "roadBon": "1000",
-    "jibun": "600",
-    "date": "2021.10.16",
-    "dateNum": 20211016,
-    "amountText": "12.5억"
-   },
-   {
-    "apt": "센트럴타운(3단지)",
-    "manwon": 123000,
-    "text": "12.3억",
-    "pyeong": 26,
-    "amountManwon": 123000,
-    "roadNm": "성남대로",
-    "roadBon": "1000",
-    "jibun": "600",
-    "date": "2021.10.06",
-    "dateNum": 20211006,
-    "amountText": "12.3억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "진로@37.4511,127.156": {
   "val": {
@@ -670659,35 +669853,9 @@
     "date": "2021.11.19",
     "dateNum": 20211119,
     "amountText": "12.8억"
-   },
-   {
-    "apt": "판교밸리호반써밋",
-    "manwon": 138000,
-    "text": "13.8억",
-    "pyeong": 26,
-    "amountManwon": 138000,
-    "roadNm": "고등로",
-    "roadBon": "34",
-    "jibun": "592",
-    "date": "2021.10.05",
-    "dateNum": 20211005,
-    "amountText": "13.8억"
-   },
-   {
-    "apt": "판교밸리호반써밋",
-    "manwon": 143000,
-    "text": "14.3억",
-    "pyeong": 26,
-    "amountManwon": 143000,
-    "roadNm": "고등로",
-    "roadBon": "34",
-    "jibun": "592",
-    "date": "2021.10.02",
-    "dateNum": 20211002,
-    "amountText": "14.3억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "무지개(2단지)(엘지)@37.3369,127.1146": {
   "val": {
@@ -720799,9 +719967,74 @@
   "val": {
    "amountText": "11.3억",
    "pyeong": 11,
-   "date": "2026.08.21"
+   "date": "2026.10.05"
   },
   "deals": [
+   {
+    "apt": "청솔마을(주공9단지)",
+    "manwon": 113000,
+    "text": "11.3억",
+    "pyeong": 11,
+    "amountManwon": 113000,
+    "roadNm": "미금로",
+    "roadBon": "216",
+    "jibun": "133",
+    "date": "2026.10.05",
+    "dateNum": 20261005,
+    "amountText": "11.3억"
+   },
+   {
+    "apt": "청솔마을(주공9단지)",
+    "manwon": 125000,
+    "text": "12.5억",
+    "pyeong": 13,
+    "amountManwon": 125000,
+    "roadNm": "미금로",
+    "roadBon": "216",
+    "jibun": "133",
+    "date": "2026.10.05",
+    "dateNum": 20261005,
+    "amountText": "12.5억"
+   },
+   {
+    "apt": "청솔마을(주공9단지)",
+    "manwon": 128500,
+    "text": "12.8억",
+    "pyeong": 13,
+    "amountManwon": 128500,
+    "roadNm": "미금로",
+    "roadBon": "216",
+    "jibun": "133",
+    "date": "2026.10.01",
+    "dateNum": 20261001,
+    "amountText": "12.8억"
+   },
+   {
+    "apt": "아름마을(두산)",
+    "manwon": 198500,
+    "text": "19.8억",
+    "pyeong": 40,
+    "amountManwon": 198500,
+    "roadNm": "탄천로",
+    "roadBon": "95",
+    "jibun": "133",
+    "date": "2026.09.05",
+    "dateNum": 20260905,
+    "amountText": "19.8억"
+   },
+   {
+    "apt": "청솔마을(주공9단지)",
+    "manwon": 104000,
+    "text": "10.4억",
+    "pyeong": 11,
+    "amountManwon": 104000,
+    "roadNm": "미금로",
+    "roadBon": "216",
+    "jibun": "133",
+    "date": "2026.08.29",
+    "dateNum": 20260829,
+    "amountText": "10.4억"
+   },
    {
     "apt": "청솔마을(주공9단지)",
     "manwon": 113000,
@@ -720944,71 +720177,6 @@
     "date": "2026.07.10",
     "dateNum": 20260710,
     "amountText": "10.5억"
-   },
-   {
-    "apt": "아름마을(삼호)",
-    "manwon": 200000,
-    "text": "20억",
-    "pyeong": 40,
-    "amountManwon": 200000,
-    "roadNm": "탄천로",
-    "roadBon": "95",
-    "jibun": "133",
-    "date": "2026.07.10",
-    "dateNum": 20260710,
-    "amountText": "20억"
-   },
-   {
-    "apt": "청솔마을(주공9단지)",
-    "manwon": 104000,
-    "text": "10.4억",
-    "pyeong": 11,
-    "amountManwon": 104000,
-    "roadNm": "미금로",
-    "roadBon": "216",
-    "jibun": "133",
-    "date": "2026.07.10",
-    "dateNum": 20260710,
-    "amountText": "10.4억"
-   },
-   {
-    "apt": "청솔마을(주공9단지)",
-    "manwon": 107000,
-    "text": "10.7억",
-    "pyeong": 11,
-    "amountManwon": 107000,
-    "roadNm": "미금로",
-    "roadBon": "216",
-    "jibun": "133",
-    "date": "2026.07.09",
-    "dateNum": 20260709,
-    "amountText": "10.7억"
-   },
-   {
-    "apt": "청솔마을(주공9단지)",
-    "manwon": 120000,
-    "text": "12억",
-    "pyeong": 13,
-    "amountManwon": 120000,
-    "roadNm": "미금로",
-    "roadBon": "216",
-    "jibun": "133",
-    "date": "2026.07.07",
-    "dateNum": 20260707,
-    "amountText": "12억"
-   },
-   {
-    "apt": "청솔마을(주공9단지)",
-    "manwon": 111000,
-    "text": "11.1억",
-    "pyeong": 13,
-    "amountManwon": 111000,
-    "roadNm": "미금로",
-    "roadBon": "216",
-    "jibun": "133",
-    "date": "2026.07.03",
-    "dateNum": 20260703,
-    "amountText": "11.1억"
    },
    {
     "apt": "청솔마을(주공9단지)",
@@ -721675,6 +720843,19 @@
    },
    {
     "apt": "청솔마을(주공9단지)",
+    "manwon": 55500,
+    "text": "5.6억",
+    "pyeong": 11,
+    "amountManwon": 55500,
+    "roadNm": "미금로",
+    "roadBon": "216",
+    "jibun": "133",
+    "date": "2022.10.20",
+    "dateNum": 20221020,
+    "amountText": "5.6억"
+   },
+   {
+    "apt": "청솔마을(주공9단지)",
     "manwon": 69000,
     "text": "6.9억",
     "pyeong": 11,
@@ -721831,19 +721012,6 @@
    },
    {
     "apt": "청솔마을(주공9단지)",
-    "manwon": 70000,
-    "text": "7.0억",
-    "pyeong": 11,
-    "amountManwon": 70000,
-    "roadNm": "미금로",
-    "roadBon": "216",
-    "jibun": "133",
-    "date": "2022.04.10",
-    "dateNum": 20220410,
-    "amountText": "7.0억"
-   },
-   {
-    "apt": "청솔마을(주공9단지)",
     "manwon": 68000,
     "text": "6.8억",
     "pyeong": 11,
@@ -721880,74 +721048,9 @@
     "date": "2021.11.09",
     "dateNum": 20211109,
     "amountText": "8.4억"
-   },
-   {
-    "apt": "청솔마을(주공9단지)",
-    "manwon": 72000,
-    "text": "7.2억",
-    "pyeong": 11,
-    "amountManwon": 72000,
-    "roadNm": "미금로",
-    "roadBon": "216",
-    "jibun": "133",
-    "date": "2021.10.23",
-    "dateNum": 20211023,
-    "amountText": "7.2억"
-   },
-   {
-    "apt": "청솔마을(주공9단지)",
-    "manwon": 84700,
-    "text": "8.5억",
-    "pyeong": 13,
-    "amountManwon": 84700,
-    "roadNm": "미금로",
-    "roadBon": "216",
-    "jibun": "133",
-    "date": "2021.10.18",
-    "dateNum": 20211018,
-    "amountText": "8.5억"
-   },
-   {
-    "apt": "청솔마을(주공9단지)",
-    "manwon": 71000,
-    "text": "7.1억",
-    "pyeong": 11,
-    "amountManwon": 71000,
-    "roadNm": "미금로",
-    "roadBon": "216",
-    "jibun": "133",
-    "date": "2021.10.15",
-    "dateNum": 20211015,
-    "amountText": "7.1억"
-   },
-   {
-    "apt": "아름마을(두산)",
-    "manwon": 186000,
-    "text": "18.6억",
-    "pyeong": 40,
-    "amountManwon": 186000,
-    "roadNm": "탄천로",
-    "roadBon": "95",
-    "jibun": "133",
-    "date": "2021.10.02",
-    "dateNum": 20211002,
-    "amountText": "18.6억"
-   },
-   {
-    "apt": "아름마을(두산)",
-    "manwon": 187000,
-    "text": "18.7억",
-    "pyeong": 40,
-    "amountManwon": 187000,
-    "roadNm": "탄천로",
-    "roadBon": "95",
-    "jibun": "133",
-    "date": "2021.10.01",
-    "dateNum": 20211001,
-    "amountText": "18.7억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "아름마을(태영)@37.4047,127.1206": {
   "val": {
@@ -722891,35 +721994,9 @@
     "date": "2021.11.02",
     "dateNum": 20211102,
     "amountText": "15.8억"
-   },
-   {
-    "apt": "아름마을(태영)",
-    "manwon": 163000,
-    "text": "16.3억",
-    "pyeong": 41,
-    "amountManwon": 163000,
-    "roadNm": "판교로",
-    "roadBon": "430",
-    "jibun": "132",
-    "date": "2021.10.27",
-    "dateNum": 20211027,
-    "amountText": "16.3억"
-   },
-   {
-    "apt": "아름마을(한성)",
-    "manwon": 135500,
-    "text": "13.6억",
-    "pyeong": 26,
-    "amountManwon": 135500,
-    "roadNm": "판교로",
-    "roadBon": "430",
-    "jibun": "132",
-    "date": "2021.10.07",
-    "dateNum": 20211007,
-    "amountText": "13.6억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "아름마을(한성)@37.4027,127.1211": {
   "val": {
@@ -723863,35 +722940,9 @@
     "date": "2021.11.02",
     "dateNum": 20211102,
     "amountText": "15.8억"
-   },
-   {
-    "apt": "아름마을(태영)",
-    "manwon": 163000,
-    "text": "16.3억",
-    "pyeong": 41,
-    "amountManwon": 163000,
-    "roadNm": "판교로",
-    "roadBon": "430",
-    "jibun": "132",
-    "date": "2021.10.27",
-    "dateNum": 20211027,
-    "amountText": "16.3억"
-   },
-   {
-    "apt": "아름마을(한성)",
-    "manwon": 135500,
-    "text": "13.6억",
-    "pyeong": 26,
-    "amountManwon": 135500,
-    "roadNm": "판교로",
-    "roadBon": "430",
-    "jibun": "132",
-    "date": "2021.10.07",
-    "dateNum": 20211007,
-    "amountText": "13.6억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "아름마을1단지건영@37.4044,127.1224": {
   "val": {
@@ -724835,35 +723886,9 @@
     "date": "2021.11.02",
     "dateNum": 20211102,
     "amountText": "15.8억"
-   },
-   {
-    "apt": "아름마을(태영)",
-    "manwon": 163000,
-    "text": "16.3억",
-    "pyeong": 41,
-    "amountManwon": 163000,
-    "roadNm": "판교로",
-    "roadBon": "430",
-    "jibun": "132",
-    "date": "2021.10.27",
-    "dateNum": 20211027,
-    "amountText": "16.3억"
-   },
-   {
-    "apt": "아름마을(한성)",
-    "manwon": 135500,
-    "text": "13.6억",
-    "pyeong": 26,
-    "amountManwon": 135500,
-    "roadNm": "판교로",
-    "roadBon": "430",
-    "jibun": "132",
-    "date": "2021.10.07",
-    "dateNum": 20211007,
-    "amountText": "13.6억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "이매촌(금강)@37.3903,127.1239": {
   "val": {
@@ -729229,7 +728254,7 @@
     "amountText": "15.8억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "이매촌(진흥)@37.396,127.127": {
   "val": {
@@ -730251,43 +729276,30 @@
     "date": "2021.11.30",
     "dateNum": 20211130,
     "amountText": "12.3억"
-   },
-   {
-    "apt": "한솔마을(2단지)(LG)",
-    "manwon": 168000,
-    "text": "16.8억",
-    "pyeong": 50,
-    "amountManwon": 168000,
-    "roadNm": "정자로",
-    "roadBon": "143",
-    "jibun": "111",
-    "date": "2021.10.30",
-    "dateNum": 20211030,
-    "amountText": "16.8억"
-   },
-   {
-    "apt": "이매촌(진흥)",
-    "manwon": 183000,
-    "text": "18.3억",
-    "pyeong": 41,
-    "amountManwon": 183000,
-    "roadNm": "양현로",
-    "roadBon": "138",
-    "jibun": "111",
-    "date": "2021.10.18",
-    "dateNum": 20211018,
-    "amountText": "18.3억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "이매촌11단지삼환@37.4042,127.1269": {
   "val": {
-   "amountText": "17.7억",
-   "pyeong": 26,
-   "date": "2026.08.17"
+   "amountText": "21억",
+   "pyeong": 39,
+   "date": "2026.09.23"
   },
   "deals": [
+   {
+    "apt": "이매촌(삼성)",
+    "manwon": 210000,
+    "text": "21억",
+    "pyeong": 39,
+    "amountManwon": 210000,
+    "roadNm": "양현로",
+    "roadBon": "192",
+    "jibun": "100",
+    "date": "2026.09.23",
+    "dateNum": 20260923,
+    "amountText": "21억"
+   },
    {
     "apt": "이매촌(삼성)",
     "manwon": 177000,
@@ -730394,6 +729406,19 @@
    },
    {
     "apt": "이매촌(삼성)",
+    "manwon": 120800,
+    "text": "12.1억",
+    "pyeong": 18,
+    "amountManwon": 120800,
+    "roadNm": "양현로",
+    "roadBon": "192",
+    "jibun": "100",
+    "date": "2026.05.15",
+    "dateNum": 20260515,
+    "amountText": "12.1억"
+   },
+   {
+    "apt": "이매촌(삼성)",
     "manwon": 155000,
     "text": "15.5억",
     "pyeong": 22,
@@ -730469,32 +729494,6 @@
     "date": "2026.03.14",
     "dateNum": 20260314,
     "amountText": "17억"
-   },
-   {
-    "apt": "이매촌(삼성)",
-    "manwon": 169000,
-    "text": "16.9억",
-    "pyeong": 22,
-    "amountManwon": 169000,
-    "roadNm": "양현로",
-    "roadBon": "220",
-    "jibun": "100",
-    "date": "2026.02.12",
-    "dateNum": 20260212,
-    "amountText": "16.9억"
-   },
-   {
-    "apt": "이매촌(삼성)",
-    "manwon": 183000,
-    "text": "18.3억",
-    "pyeong": 26,
-    "amountManwon": 183000,
-    "roadNm": "양현로",
-    "roadBon": "192",
-    "jibun": "100",
-    "date": "2026.01.17",
-    "dateNum": 20260117,
-    "amountText": "18.3억"
    },
    {
     "apt": "이매촌(삼성)",
@@ -731135,6 +730134,19 @@
    },
    {
     "apt": "이매촌(삼성)",
+    "manwon": 110000,
+    "text": "11억",
+    "pyeong": 31,
+    "amountManwon": 110000,
+    "roadNm": "양현로",
+    "roadBon": "192",
+    "jibun": "100",
+    "date": "2022.10.22",
+    "dateNum": 20221022,
+    "amountText": "11억"
+   },
+   {
+    "apt": "이매촌(삼성)",
     "manwon": 155000,
     "text": "15.5억",
     "pyeong": 39,
@@ -731327,43 +730339,30 @@
     "date": "2021.11.02",
     "dateNum": 20211102,
     "amountText": "15.2억"
-   },
-   {
-    "apt": "이매촌(삼성)",
-    "manwon": 156000,
-    "text": "15.6억",
-    "pyeong": 39,
-    "amountManwon": 156000,
-    "roadNm": "양현로",
-    "roadBon": "192",
-    "jibun": "100",
-    "date": "2021.10.13",
-    "dateNum": 20211013,
-    "amountText": "15.6억"
-   },
-   {
-    "apt": "이매촌(삼성)",
-    "manwon": 148000,
-    "text": "14.8억",
-    "pyeong": 26,
-    "amountManwon": 148000,
-    "roadNm": "양현로",
-    "roadBon": "192",
-    "jibun": "100",
-    "date": "2021.10.11",
-    "dateNum": 20211011,
-    "amountText": "14.8억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "이매촌(삼성)@37.403,127.1268": {
   "val": {
-   "amountText": "17.7억",
-   "pyeong": 26,
-   "date": "2026.08.17"
+   "amountText": "21억",
+   "pyeong": 39,
+   "date": "2026.09.23"
   },
   "deals": [
+   {
+    "apt": "이매촌(삼성)",
+    "manwon": 210000,
+    "text": "21억",
+    "pyeong": 39,
+    "amountManwon": 210000,
+    "roadNm": "양현로",
+    "roadBon": "192",
+    "jibun": "100",
+    "date": "2026.09.23",
+    "dateNum": 20260923,
+    "amountText": "21억"
+   },
    {
     "apt": "이매촌(삼성)",
     "manwon": 177000,
@@ -731470,6 +730469,19 @@
    },
    {
     "apt": "이매촌(삼성)",
+    "manwon": 120800,
+    "text": "12.1억",
+    "pyeong": 18,
+    "amountManwon": 120800,
+    "roadNm": "양현로",
+    "roadBon": "192",
+    "jibun": "100",
+    "date": "2026.05.15",
+    "dateNum": 20260515,
+    "amountText": "12.1억"
+   },
+   {
+    "apt": "이매촌(삼성)",
     "manwon": 155000,
     "text": "15.5억",
     "pyeong": 22,
@@ -731545,32 +730557,6 @@
     "date": "2026.03.14",
     "dateNum": 20260314,
     "amountText": "17억"
-   },
-   {
-    "apt": "이매촌(삼성)",
-    "manwon": 169000,
-    "text": "16.9억",
-    "pyeong": 22,
-    "amountManwon": 169000,
-    "roadNm": "양현로",
-    "roadBon": "220",
-    "jibun": "100",
-    "date": "2026.02.12",
-    "dateNum": 20260212,
-    "amountText": "16.9억"
-   },
-   {
-    "apt": "이매촌(삼성)",
-    "manwon": 183000,
-    "text": "18.3억",
-    "pyeong": 26,
-    "amountManwon": 183000,
-    "roadNm": "양현로",
-    "roadBon": "192",
-    "jibun": "100",
-    "date": "2026.01.17",
-    "dateNum": 20260117,
-    "amountText": "18.3억"
    },
    {
     "apt": "이매촌(삼성)",
@@ -732211,6 +731197,19 @@
    },
    {
     "apt": "이매촌(삼성)",
+    "manwon": 110000,
+    "text": "11억",
+    "pyeong": 31,
+    "amountManwon": 110000,
+    "roadNm": "양현로",
+    "roadBon": "192",
+    "jibun": "100",
+    "date": "2022.10.22",
+    "dateNum": 20221022,
+    "amountText": "11억"
+   },
+   {
+    "apt": "이매촌(삼성)",
     "manwon": 155000,
     "text": "15.5억",
     "pyeong": 39,
@@ -732403,43 +731402,43 @@
     "date": "2021.11.02",
     "dateNum": 20211102,
     "amountText": "15.2억"
-   },
-   {
-    "apt": "이매촌(삼성)",
-    "manwon": 156000,
-    "text": "15.6억",
-    "pyeong": 39,
-    "amountManwon": 156000,
-    "roadNm": "양현로",
-    "roadBon": "192",
-    "jibun": "100",
-    "date": "2021.10.13",
-    "dateNum": 20211013,
-    "amountText": "15.6억"
-   },
-   {
-    "apt": "이매촌(삼성)",
-    "manwon": 148000,
-    "text": "14.8억",
-    "pyeong": 26,
-    "amountManwon": 148000,
-    "roadNm": "양현로",
-    "roadBon": "192",
-    "jibun": "100",
-    "date": "2021.10.11",
-    "dateNum": 20211011,
-    "amountText": "14.8억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "이매촌(동신9)@37.3981,127.1272": {
   "val": {
-   "amountText": "21.5억",
-   "pyeong": 41,
-   "date": "2026.09.14"
+   "amountText": "13.5억",
+   "pyeong": 15,
+   "date": "2026.10.02"
   },
   "deals": [
+   {
+    "apt": "한솔마을(1단지)(청구)",
+    "manwon": 135000,
+    "text": "13.5억",
+    "pyeong": 15,
+    "amountManwon": 135000,
+    "roadNm": "불정로",
+    "roadBon": "219",
+    "jibun": "110",
+    "date": "2026.10.02",
+    "dateNum": 20261002,
+    "amountText": "13.5억"
+   },
+   {
+    "apt": "하얀마을(5단지)(주공)",
+    "manwon": 104000,
+    "text": "10.4억",
+    "pyeong": 12,
+    "amountManwon": 104000,
+    "roadNm": "미금일로",
+    "roadBon": "21",
+    "jibun": "110",
+    "date": "2026.10.01",
+    "dateNum": 20261001,
+    "amountText": "10.4억"
+   },
    {
     "apt": "한솔마을(1단지)(청구)",
     "manwon": 215000,
@@ -732452,6 +731451,19 @@
     "date": "2026.09.14",
     "dateNum": 20260914,
     "amountText": "21.5억"
+   },
+   {
+    "apt": "하얀마을(5단지)(주공)",
+    "manwon": 96000,
+    "text": "9.6억",
+    "pyeong": 12,
+    "amountManwon": 96000,
+    "roadNm": "미금일로",
+    "roadBon": "21",
+    "jibun": "110",
+    "date": "2026.09.12",
+    "dateNum": 20260912,
+    "amountText": "9.6억"
    },
    {
     "apt": "하얀마을(5단지)(주공)",
@@ -732608,45 +731620,6 @@
     "date": "2026.07.01",
     "dateNum": 20260701,
     "amountText": "8.8억"
-   },
-   {
-    "apt": "하얀마을(5단지)(주공)",
-    "manwon": 94000,
-    "text": "9.4억",
-    "pyeong": 12,
-    "amountManwon": 94000,
-    "roadNm": "미금일로",
-    "roadBon": "21",
-    "jibun": "110",
-    "date": "2026.06.30",
-    "dateNum": 20260630,
-    "amountText": "9.4억"
-   },
-   {
-    "apt": "하얀마을(5단지)(주공)",
-    "manwon": 100000,
-    "text": "10억",
-    "pyeong": 12,
-    "amountManwon": 100000,
-    "roadNm": "미금일로",
-    "roadBon": "21",
-    "jibun": "110",
-    "date": "2026.06.27",
-    "dateNum": 20260627,
-    "amountText": "10억"
-   },
-   {
-    "apt": "하얀마을(5단지)(주공)",
-    "manwon": 97000,
-    "text": "9.7억",
-    "pyeong": 12,
-    "amountManwon": 97000,
-    "roadNm": "미금일로",
-    "roadBon": "21",
-    "jibun": "110",
-    "date": "2026.06.26",
-    "dateNum": 20260626,
-    "amountText": "9.7억"
    },
    {
     "apt": "하얀마을(5단지)(주공)",
@@ -733494,7 +732467,7 @@
     "amountText": "7.9억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "양지마을5단지한양@37.3736,127.1173": {
   "val": {
@@ -1451574,7 +1450547,7 @@
     "amountText": "21억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "서초포레스타6단지@37.45,127.0557": {
   "val": {
@@ -1451857,7 +1450830,7 @@
     "amountText": "15.5억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "서초포레스타7단지@37.4485,127.0567": {
   "val": {
@@ -1451958,15 +1450931,28 @@
     "amountText": "14.8억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "서초더샵포레@37.452,127.0638": {
   "val": {
-   "amountText": "18.5억",
+   "amountText": "18억",
    "pyeong": 31,
-   "date": "2026.07.31"
+   "date": "2026.09.10"
   },
   "deals": [
+   {
+    "apt": "서초더샵포레",
+    "manwon": 180000,
+    "text": "18억",
+    "pyeong": 31,
+    "amountManwon": 180000,
+    "roadNm": "헌릉로8길",
+    "roadBon": "58",
+    "jibun": "411",
+    "date": "2026.09.10",
+    "dateNum": 20260910,
+    "amountText": "18억"
+   },
    {
     "apt": "서초더샵포레",
     "manwon": 185000,
@@ -1452161,19 +1451147,6 @@
     "date": "2026.04.10",
     "dateNum": 20260410,
     "amountText": "20억"
-   },
-   {
-    "apt": "서초더샵포레",
-    "manwon": 188500,
-    "text": "18.8억",
-    "pyeong": 26,
-    "amountManwon": 188500,
-    "roadNm": "헌릉로8길",
-    "roadBon": "58",
-    "jibun": "411",
-    "date": "2026.02.11",
-    "dateNum": 20260211,
-    "amountText": "18.8억"
    },
    {
     "apt": "서초더샵포레",
@@ -1452824,35 +1451797,9 @@
     "date": "2021.11.19",
     "dateNum": 20211119,
     "amountText": "20억"
-   },
-   {
-    "apt": "서초더샵포레",
-    "manwon": 192000,
-    "text": "19.2억",
-    "pyeong": 31,
-    "amountManwon": 192000,
-    "roadNm": "헌릉로8길",
-    "roadBon": "58",
-    "jibun": "411",
-    "date": "2021.10.17",
-    "dateNum": 20211017,
-    "amountText": "19.2억"
-   },
-   {
-    "apt": "서초더샵포레",
-    "manwon": 155000,
-    "text": "15.5억",
-    "pyeong": 35,
-    "amountManwon": 155000,
-    "roadNm": "헌릉로8길",
-    "roadBon": "58",
-    "jibun": "411",
-    "date": "2021.10.06",
-    "dateNum": 20211006,
-    "amountText": "15.5억"
    }
   ],
-  "ts": 1790451373.1309712
+  "ts": 1791751814.3637626
  },
  "흑석리버파크자이@37.5017,126.9621": {
   "val": {
